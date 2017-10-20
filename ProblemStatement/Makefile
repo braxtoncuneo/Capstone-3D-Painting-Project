@@ -1,4 +1,4 @@
-LATEX	= latex -shell-escape
+LATEX	= /usr/local/apps/tex_live/current/bin/x86_64-linux/latex -shell-escape
 BIBTEX	= bibtex
 DVIPS	= dvips
 DVIPDF  = dvipdft
