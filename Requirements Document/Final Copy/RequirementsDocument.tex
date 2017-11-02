@@ -1,0 +1,222 @@
+\documentclass[onecolumn, draftclsnofoot,10pt, compsoc]{IEEEtran}
+\usepackage{graphicx}
+\usepackage{url}
+\usepackage{setspace}
+\usepackage{longtable}
+
+\usepackage{geometry}
+\geometry{textheight=9.5in, textwidth=7in}
+
+% 1. Fill in these details
+\def \CapstoneTeamName{			PolyVox}
+\def \CapstoneTeamNumber{		66}
+\def \GroupMemberOne{			Chris Bakkom}
+\def \GroupMemberTwo{			Richard Cunard}
+\def \GroupMemberThree{			Braxton Cuneo}
+\def \CapstoneProjectName{		3D Virtual Reality Painting}
+\def \CapstoneSponsorCompany{		EECS}
+\def \CapstoneSponsorPersonOne{		Dr. Kirsten Winters}
+\def \CapstoneSponsorPersonTwo{		Dr. Mike Bailey}
+
+% 2. Uncomment the appropriate line below so that the document type works
+\def \DocType{		%Problem Statement
+				Requirements Document
+				%Technology Review
+				%Design Document
+				%Progress Report
+				}
+			
+\newcommand{\NameSigPair}[1]{\par
+\makebox[2.75in][r]{#1} \hfil 	\makebox[3.25in]{\makebox[2.25in]{\hrulefill} \hfill		\makebox[.75in]{\hrulefill}}
+\par\vspace{-12pt} \textit{\tiny\noindent
+\makebox[2.75in]{} \hfil		\makebox[3.25in]{\makebox[2.25in][r]{Signature} \hfill	\makebox[.75in][r]{Date}}}}
+% 3. If the document is not to be signed, uncomment the RENEWcommand below
+%\renewcommand{\NameSigPair}[1]{#1}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+\begin{titlepage}
+    \pagenumbering{gobble}
+    \begin{singlespace}
+    	\includegraphics[height=4cm]{coe_v_spot1}
+        \hfill 
+        % 4. If you have a logo, use this includegraphics command to put it on the coversheet.
+        %\includegraphics[height=4cm]{CompanyLogo}   
+        \par\vspace{.2in}
+        \centering
+        \scshape{
+            \huge CS Capstone \DocType \par
+            {\large\today}\par
+            \vspace{.5in}
+            \textbf{\Huge\CapstoneProjectName}\par
+            \vfill
+            {\large Prepared for}\par
+            \Huge \CapstoneSponsorCompany\par
+            \vspace{5pt}
+            {\Large\NameSigPair{\CapstoneSponsorPersonOne}\par}
+	    {\Large\NameSigPair{\CapstoneSponsorPersonTwo}\par}
+            {\large Prepared by }\par
+            Group\CapstoneTeamNumber\par
+            % 5. comment out the line below this one if you do not wish to name your team
+            \CapstoneTeamName\par 
+            \vspace{5pt}
+            {\Large
+                \NameSigPair{\GroupMemberOne}\par
+                \NameSigPair{\GroupMemberTwo}\par
+                \NameSigPair{\GroupMemberThree}\par
+            }
+            \vspace{20pt}
+        }
+        %\begin{abstract}
+        % 6. Fill in your abstract    
+        	
+        %\end{abstract}     
+    \end{singlespace}
+\end{titlepage}
+\newpage
+\pagenumbering{arabic}
+\tableofcontents
+% 7. uncomment this (if applicable). Consider adding a page break.
+%\listoffigures
+%\listoftables
+\clearpage
+
+% 8. now you write!
+\section{Introduction}
+\subsection{Purpose}
+This document defines the technical requirements for the 3D Painting Project for the 2017 Oregon State University Computer Science Capstone class. Once this requirement document is reviewed by the project clients (Dr. Mike Bailey and Dr. Kirsten Winters) and the class instructor (Dr. Kevin McGrath) it will serve as a contract defining the deliverables to be produced by team PolyVox (Christopher Bokkam, Richard Cunard and Braxton Cuneo).
+\subsection{Scope}
+The project will be solely comprised of designing and constructing PolyVox, a virtual reality art program. PolyVox will allow the user to create, modify and remove three dimensional geometry, color existing geometry, save and load configurations of geometry, and accomplish all of the above in near-real time through the use of motion controls. The goal of the project is to allow for ease of use in developing virtual paintings and sculptures. The software is to act as a virtual ‘canvas’ for the creation of three dimensional art; the user will be able to create and view art created by themselves and others in three dimensional virtual space. 
+\subsection{Definitions}
+\begin{longtable}{ | l | p{12cm} | }
+ \hline			
+Adding geometry & Altering the environment such that it contains additional geometry without the exclusion of any geometry extant immediately prior to this alteration.  \\ \hline 
+Attribute & A class of value representable as an integer or floating point number  \\ \hline
+Attribute datum & A specific instance of an attribute  \\ \hline
+Color & A set of four attribute data, all represented by a floating point value, corresponding to red, green, and blue color channels, as well as an alpha (transparency) channel.  \\ \hline
+CPU & Central Processing Unit; The component of the computer that runs and operates the programs being run, and performs the necessary computations to do so.  \\ \hline
+Environment & The state of every instance of a geometric element explicitly represented by the system during a given instant. This includes the transformation of each particular geometric element, the size of each geometric element along each of its three axes, and the states of all attribute data present in each voxel of each geometric element. \\ \hline
+Framerate & The measure of time between each temporally consecutive instance of a new image rendered by the system being displayed to the user. \\ \hline 
+Grid &  Specifically, a finite three dimensional cartesian regular grid which is oriented relative to a three-dimensional origin by a transformation representable by a quaternion. \\ \hline
+Geometric element & A set of all voxels contained within a grid.  \\ \hline
+Geometry & One or more instances of a geometric element.  \\ \hline
+GPU & Graphics Processing Unit; a processor specifically designed to perform the computations used to render three-dimensional computer graphics.  \\ \hline
+HMD & Head Mounted Display; A wearable display system placed over the user’s head and face with a display placed directly in front of the user’s eyes. The HMD also tracks the user’s head movements and sends movement data to the program.  \\ \hline
+Latency & The measure of time between a user manipulating the devices they are interfacing with and the effects of these manipulations being conveyed by the output of these interfacing devices. \\ \hline
+Modifying geometry & Altering the environment such that the state of attribute data contained by geometry in the environment has been altered without the addition or removal of geometry.  \\ \hline
+Motion Control & The practice of manipulating devices which measure and convey to a computer their position and orientation relative to a reference point.  \\ \hline
+Removing geometry & Altering the environment such that it excludes geometry without the inclusion of any geometry not extant immediately prior to this alteration.  \\ \hline
+Resolution & The number of columns and rows of pixels used in a display. In the case of  VR headset, resolution is the effective resolution experienced by one eye using the headset. \\ \hline
+Virtual Reality & The practice of placing a display in front of each eye of an individual and displaying images for each eye which, through binocular vision, convey, to the individual looking into said displays, a scene with the illusion of depth.  \\ \hline
+Voxel & An element of a grid with an associated set of attribute data including at least one instance of color.  \\ \hline
+ 
+\hline 
+\end{longtable}
+\subsection{References}
+\bibliographystyle{IEEEtran}
+\bibliography{Bibliography}{}
+\subsection{Overview}
+The remainder of this document consists of two chapters, an appendix, and an index.
+
+In the first of these chapters, the nature and characteristics of PolyVox will be described, including the state of the field PolyVox occupies, the basic functions of PolyVox, the characteristics of the prototypical user of PolyVox, assumptions made in this document, as well as the constraints and dependencies of Polyvox.
+
+In the second chapter, the requirements of the proposed project are detailed, including requirements regarding external interfaces, system features, performance, and software system attributes.
+\section{Overall Description}
+\subsection{Product Perspective}
+Virtual reality is a young and rapidly developing medium. As of yet, there has been little research into its possible applications. Until recently, nearly every virtual art program has been designed with a conventional screen as its interface. The advent of VR and precision motion controls allows for a different design paradigm. Recently, some developers have begun experimenting with different implementations of this technology. Google has developed the Tilt Brush program, which allows for creation of art using two dimensional planes. Brown University developed a motion based system known as CavePainting, which employs motion sensors to detect movement on a large whiteboard. PolyVox, however, differentiates itself through its focus on three dimensional art. Unlike either previously mentioned example, PolyVox will be capable of rapid generation of three dimensional objects.\cite{cave}\cite{tilt}
+\subsection{Product Functions}
+ To be considered functionally complete, the system must be able to: add, modify and remove three dimensional geometry in the virtual environment; altering the color of geometry extant in the current environment; saving and loading the state of the geometry and its coloration in the scene.
+\subsection{User Characteristics}
+The program is targeted towards users with an interest in creating visual art, such as sculpting and painting. Users are not expected to have technical knowledge or experience beyond the level required to operate a consumer gaming console.
+\subsection{Constraints}
+The primary constraints of the project stem from a necessary minimum program performance and system latency. The program must be capable of operating to spec using a computer meeting a minimum system specification (as defined by the HTC Vive recommended technical specifications). This affects not only the stability of the program, but user safety, as reduced frame rate or increased latency can result in physical discomfort and sickness to the user, and may limit certain technical features, such as maximum polygon count and draw distance. Additionally, measurement precision of the system’s controls will be limited to that of whatever motion tracking system is chosen for the project.
+\subsection{Assumptions and Dependencies}
+The current software specifications are dependent on the availability of the following:
+\begin{enumerate}
+	\item A VR system capable of head mounted tracking
+	\item Motion control hardware capable of measuring movement the level of required precision as defined in this document
+	\item A computer with CPU and GPU hardware meeting the HTC Vive technical specifications [3] running either Windows 8.1 or Windows 10
+	\item Access to a game development toolkit (such as a game engine) with VR support
+\end{enumerate}
+\section{Specific Requirements}
+\subsection{External Interfaces}
+\subsubsection{User Interfaces}
+\textbf{VR Motion Tracking Headset:}
+\newline
+A headset used for tracking user movement and displaying the program and the user interface. The headset will interface with the computer running the program, receiving render data and outputting motion tracking data. The headset must act within range of whatever external hardware motion tracking relies upon. The headset motion tracking must be accurate to under 1 millimeter of positional precision, under 1 degree of rotational precision, and with a maximum latency of 16 milliseconds. The headset acts as both an output display for the computer and user controller for acting within the program. 
+\newline
+\textbf{Motion/Button based controllers:}
+\newline
+A set of motion controls equipped with buttons will be the primary means of operating the program. Motion controllers will be used to interact with the user interface, such as altering geometry and accessing the save/load functionality. 
+The controllers will receive input from the computer to inform the haptic output they provide and will send motion tracking data and button inputs to the computer running the program. The controllers will operate within the range specified by whatever external motion tracking hardware is chosen for the project, and must be accurate to under 1 millimeter of precision, under 1 degree of rotational precision, and with a maximum latency of 16 milliseconds. The controllers will not operate with or upon any other element of the system than the computer running the program.
+\subsubsection{Hardware Interfaces}
+\textbf{Computer meeting minimum Hardware Specifications:}
+A computer with sufficient hardware specifications is needed to run both the VR hardware and program software. The project will define the specifications as the hardware recommended of the HTC Vive. [Reference here] The computer will serve as the primary source of input for the user display (VR headset), based on data received from motion tracking devices and user input. The computer must be able to process user inputs, graphical rendering, and produce output to the user display at a rate such that it will not increase latency beyond the maximum threshold (16 milliseconds).
+\subsubsection{Software Interfaces}
+\textbf{Core Program (PolyVox):}
+\newline
+The program will act as the central point of connection and processing for all data in the system. Its main purpose within the system is to direct information throughout the hardware, allowing the user to interact with the system as a whole.
+\subsection{System Features} 
+\textbf{Addition and Removal of Geometry by User:}
+\newline
+In order to be able to meet the basic sentiment of the project, allowing the user to create three-dimensional media, the system, by user interaction with the motion control interface, should be able to add and remove geometry from the environment. This feature will be considered fulfilled if at least five people, given five minutes of instruction while in the environment, add geometry in nine out of ten attempts and remove geometry in nine out of ten attempts.
+\newline 
+\textbf{Modification of Geometry by User:}
+\newline
+As with addition and removal of geometry, the sentiment of the project necessitates that the system, by user interaction with the motion control interface, should be capable of altering the shape and color of existing geometry from the environment. This feature will be considered fulfilled if at least five people, given five minutes of instruction while in the environment, change geometry in nine out of ten attempts.
+\newline 
+\textbf{Saving of the Current Environment by User:}
+\newline
+As the intent of the project is to allow the creation of art, users should have some way of storing and retrieving projects for future viewing and editing. The system, by user interaction with the motion control interface, should be capable of saving or loading an existing environment to a hard drive or other non-volatile system memory. This feature will be considered complete when nine out of ten unique environments may be saved successfully.
+\newline 
+\textbf{Ability to Change User Camera Position within a Scene:}
+\newline
+To allow locomotive freedom when developing their art, users should have some mechanism by which they navigate the environment. The system, should be capable of altering the position and rotation of the user's point of view in the environment in accordance with the position and rotation of the user's headset, relative to some point of reference. This feature will be considered fulfilled if at least five people, given five minutes of instruction while in the environment, are able to move their user camera position and rotation by moving and rotating their headset in nine out of ten attempts.
+\newline 
+\textbf{Ability to Scale View of Environment:}
+\newline
+In order to allow creative freedom for the user to develop larger and elaborate projects by allowing to change the scale on which the user is working. The system, by user interaction with the motion control interface, should be capable of proportionally changing the size at which the system displays the entirety of the environment geometry. This feature will be considered fulfilled if at least five people, given five minutes of instruction while in the environment, are able to successfully change the size of the environment geometry in nine out of ten attempts.
+\subsection{Performance requirements}
+\textbf{Visual Updates}
+\newline
+The software must be able to update the visuals presented on the HMD. This requires a reasonable amount of time between the update position and what is displayed to the user. This update time must be equal to or less than one sixtieth of a second. This value will help the system reduce the amount of dizziness, or motion sickness that virtual reality may cause. It also allows the system to be presented in an aesthetically pleasing way.
+\newline
+\textbf{Headset Tracking}
+\newline
+The viewing space must be able to update with the movement of the user. This is the essential in programs design, because it allows the user to have a full three dimensional viewing space specified by their movement. This movement must be mapped to the software so it can place the user viewing space in the right location. The accuracy of the procedure must be less than one millimeter of positional accuracy and less than one degree of rotational accuracy, relative to the outward facing normal vector, difference in rotation.
+\newline
+\textbf{Display Resolution:}
+\newline
+To maintain user comfort and the clarity of the program display, the system must be able to render at an adequate resolution. The rendering resolution will be set at a minimum of of 1080 by 1200 pixels for each of the HMD’s two display screens (technically considered to be a 2160 by 1200 resolution). This standard is based on the native resolution of both the Oculus Rift and the HTC Vive. Maintaining a minimum resolution will aid in reducing user discomfort.
+\subsection{Software System Attributes}
+\textbf{Performance:}
+\newline
+One of the primary attributes of focus for the project is performance; VR programs require consistently reliable performance in order to function. Significant and/or frequent performance drops are not only highly disruptive to the use of the system, but potentially physically uncomfortable for the user.
+\newline
+\textbf{Scalability:}
+\newline
+The aim of the project is to allow for the creation large and complex art projects. As such, scalability is a priority when designing the program in order to allow the user freedom in developing a sculpture or painting.
+\newline
+\textbf{User Experience/Usability:}
+\newline
+User experience is a significant element of any interactive program. The program should be designed with usability as a major factor, to allow for a greater number and diversity of users.
+\newline
+\textbf{Reliability:}
+\newline
+Critical errors or system crashes would be be at best a major inconvenience for users, and, at worst, would render the program unusable. The system should be built with reliability in mind, as a failure of the program can lead to hours of lost work for the user.
+\newline
+\textbf{Maintainability:}
+\newline
+The ability to add or modify the program, while not the first priority, would be beneficial to the project and the program as a whole. Should the project be completed ahead of time, or become open source, maintainable code will be easier to add features to.
+\section{Appendix}
+\textbf{HTC Vive Reccomended Hardware Specifications:}
+\begin{description}
+ \item[$\bullet$  Processor: Intel Core™ i5-4590 or AMD FX 8350, equivalent or better]
+ \item[$\bullet$  Graphics: NVIDIA GeForce GTX 1060 or AMD Radeon RX 480, equivalent or better]
+ \item[$\bullet$  RAM: 4 Gigabytes of RAM or more]
+\item[$\bullet$  Video Output: 1x HDMI 1.4 port, or DisplayPort 1.2 or newer]
+\item[$\bullet$  USB: 1x USB 2.0 port or newer]
+\item[$\bullet$  Operating System: Windows 7 SP1, Windows 8.1 or later or Windows 10]
+\end{description}
+\cite{vive}
+\end{document}
