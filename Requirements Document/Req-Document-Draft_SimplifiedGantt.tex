@@ -114,75 +114,56 @@ Voxel & An element of a grid with an associated set of attribute data including 
 \hline 
 \end{longtable}
 \subsection{Gantt Chart}
-\begin{ganttchart}{1}{20} 
+\begin{ganttchart}{1}{20}
+	
 	\gantttitle{PolyVox: Task list work flow}{20} \\
-	%Elem0
-	\ganttmilestone{MILESTONE: Research}{2}\\
-	%Elem1
-	\ganttbar{Research}{1}{1} \\ 
-
-	%Elem2
-	\ganttmilestone{MILESTONE: Pre-Production}{6} \\
-	%Elem3
-	\ganttbar{Test Capture of HMD and Hand Controls}{5}{5}\\
-	%Elem4
-	\ganttbar{Design UI and Editing Environment}{5}{5}\\
-	%Elem5
-	\ganttbar{Data Layout and GPU manipulation Prototype}{5}{5}\\
-	%Elem6
-	\ganttbar{HMD display test}{5}{5}\\
 	
-	%Elem7
-	\ganttmilestone{MILESTONE: Initial Prototypes}{8}\\
-	%Elem8
-	\ganttbar{Brush Tools Prototype}{7}{7}\\
-	%Elem9
-	\ganttbar{UI Prototype}{7}{7}\\
-	%Elem10
-	\ganttbar{Element manipulation}{7}{7}\\
+	%Project Tasks
+	\ganttbar{Research}{1}{1}\\
+	\ganttbar{Design}{2}{3}\\
+	\ganttbar{User interface}{4}{8}\\
+	\ganttbar{3D editor}{6}{11}\\
+	\ganttbar{Creation Tools}{9}{11}\\
+	\ganttbar{HMD and motion controls capture}{2}{3} \ganttbar{}{10}{14}\\
+	\ganttbar{Desktop applicaiton}{12}{14}\\
+	\ganttbar{VR application}{15}{17}\\
+	\ganttbar{User tests}{18}{19}\\
+	\ganttbar{Software Limitation tests}{19}{19}\\
+	\ganttbar{Demo Preperation}{20}{20}\\
 	
-	%Elem11
-	\ganttmilestone{MILESTONE: Desktop Prototype}{10} \\
-	%Elem12
-	\ganttbar{Prototype of desktop application}{9}{9}\\
+	%Links
+	\ganttlink{elem0}{elem5}
+	\ganttlink{elem0}{elem1}
 	
-	%Elem13
-	\ganttmilestone{MILESTONE: Integration}{11}\\
-	%Elem14
-	\ganttbar{Secondary modes of navigation}{10}{10} \\
-	%Elem15
-	\ganttbar{Bring motion controls, display and editor together}{10}{10}\\
-	
-	%Elem16
-	\ganttmilestone{MILESTONE: Finalizing the project}{13} \\
-	%Elem17
-	\ganttbar{Polish editing tools and UI}{12}{12} \\
-	%Elem18
-	\ganttbar{User Tests}{12}{12} \\
-	%Elem19
-	\ganttbar{Limits of environment state}{12}{12} \\
-	%Elem20
-	\ganttbar{Limits of manipulation}{12}{12} \\
-	
-	%Elem21
-	\ganttmilestone{MILESTONE: Prep for Expo}{15}\\
-	%Elem22
-	\ganttbar{Demo experience plan}{14}{14}\\
-	
-	%Links showing flow from one task dependency to the next
+	\ganttlink{elem1}{elem2}
+	\ganttlink{elem1}{elem3}
 	\ganttlink{elem1}{elem4}
-	\ganttlink{elem1}{elem5}
-	\ganttlink{elem4}{elem9}
-	\ganttlink{elem4}{elem10}
-	\ganttlink{elem5}{elem8}
-	\ganttlink{elem8}{elem12}
-	\ganttlink{elem9}{elem12}
-	\ganttlink{elem10}{elem12}
-	\ganttlink{elem3}{elem15}
-	\ganttlink{elem6}{elem15}
-	\ganttlink{elem12}{elem15}
-	\ganttlink{elem15}{elem17}
-	\ganttlink{elem17}{elem18}
+	\ganttlink{elem1}{elem6}
+	
+	\ganttlink{elem3}{elem4}
+	
+	\ganttlink{elem2}{elem7}
+	\ganttlink{elem3}{elem7}
+	\ganttlink{elem4}{elem7}
+	
+	\ganttlink{elem6}{elem8}
+	\ganttlink{elem7}{elem8}
+	
+	\ganttlink{elem8}{elem9}
+	\ganttlink{elem8}{elem10}
+	\ganttlink{elem8}{elem11}
+	
+	%MILESTONES
+	\ganttmilestone{MILESTONES}{3}
+	\ganttmilestone{}{8}
+	\ganttmilestone{}{12}
+	\ganttmilestone{}{17}\\
+	
+	\gantttitle{Planning}{3}
+	\gantttitle{Basic platform}{5}
+	\gantttitle{Toolset}{4}
+	\gantttitle{Application}{5}
+	\gantttitle{Finalize}{3}
 
 \end{ganttchart}
 
