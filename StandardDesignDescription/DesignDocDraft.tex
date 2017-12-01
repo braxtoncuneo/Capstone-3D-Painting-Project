@@ -150,20 +150,12 @@ The packets sent by the controllers and HMD will be done through USB and sent to
 \subsubsection{Architecture of the User Interface}
 The UI will essentially be a game object that can be moved and accessed around the peripheral of the user. The user should have the option to specify rotation lock, where the UI object follows them everywhere they look. This allows the user to have access to the toolset at all times. Turning this off will only invoke position lock, where the UI object is always at a relative position to the user. \\
 
-\begin{figure}[h!]
-	\includegraphics[width=0.4\linewidth]{UIDiagram.png}
-	\caption{UI Architecture}
-	\label{Figure 1.0}
-\end{figure}
-
 The UI will have two initial states, active and inactive. The inactive UI will be a small game object only capable of a few actions. The user can turn on or off rotation lock. The user can move the UI object to another relative position while in this state. The state also has a way of moving the UI into the active state. 
 The active state will have all of the same features as the inactive state, except that it can invoke the inactive state instead of the active state. It also can navigate a tree structure that gives the user access to all of the tools and environment settings. \\
 
 The UI response to track pad inputs on the Vive controller as well as the track pad target position. The trackpad press event. This acts as a confirmation operation when toggling states or selecting items in the UI. The UI will be structured to take advantage of non physical position dependence by allowing the trackpad to operate independently of the controller's physical position and orientation. This allows the user to operate the UI in the world space without relying on VR tracking. \\
 
 The active UI design needs to be full capable of accessing all of the features in its layout. The layout will always have a button at the top for moving backwards. When at the top layer, this button moves from active to inactive. Each item in the UI will either be a UI element or a traversal node. The traversal nodes allow separation of UI pages and access to other nodes. The UI elements are access to settings and tools. UI elements can be things like brush type or brush color. \\
-
-This UI architecture is outlined in figure 1.0.\\
 
 \subsubsection{Architecture of the Voxel State}
 
