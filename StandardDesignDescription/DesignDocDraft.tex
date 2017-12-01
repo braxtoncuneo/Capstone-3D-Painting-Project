@@ -1,7 +1,9 @@
 \documentclass[onecolumn, draftclsnofoot,10pt, compsoc]{IEEEtran}
 \usepackage{graphicx}
 \usepackage{url}
+\usepackage{svg}
 \usepackage{setspace}
+\usepackage{float}
 \usepackage{longtable}
 \usepackage{pgfgantt}
 
@@ -99,8 +101,8 @@ Attribute & A class of value representable as an integer or floating point numbe
 Attribute datum & A specific instance of an attribute  \\ \hline
 Color & A set of four attribute data, all represented by a floating point value, corresponding to red, green, and blue color channels, as well as an alpha (transparency) channel.  \\ \hline
 CPU & Central Processing Unit; The component of the computer that runs and operates the programs being run, and performs the necessary computations to do so.  \\ \hline
-Environment & The state of every instance of a geometric element explicitly represented by the system during a given instant. This includes the transformation of each particular geometric element, the size of each geometric element along each of its three axes, and the states of all attribute data present in each voxel of each geometric element. \\ \hline
-Framerate & The measure of time between each temporally consecutive instance of a new image rendered by the system being displayed to the user. \\ \hline 
+Environment & The state of every instance of a geometric element explicitly represented by PolyVox during a given instant. This includes the transformation of each particular geometric element, the size of each geometric element along each of its three axes, and the states of all attribute data present in each voxel of each geometric element. \\ \hline
+Framerate & The measure of time between each temporally consecutive instance of a new image rendered by PolyVox being displayed to the user. \\ \hline 
 Grid &  Specifically, a finite three dimensional cartesian regular grid which is oriented relative to a three-dimensional origin by a transformation representable by a quaternion. \\ \hline
 Geometric element & A set of all voxels contained within a grid.  \\ \hline
 Geometry & One or more instances of a geometric element.  \\ \hline
@@ -121,38 +123,32 @@ Yggdrasil & A collection of GPU programs which collectively manage the voxel sta
 
 \subsection{References}
 \bibliographystyle{IEEEtran}
-\bibliography{Bibliography}{}
+\bibliography{DesignDocDraft}{}
 
-\section{Body}
+\section{Stakeholders}
 
-\subsection{Stakeholders}
-
-\subsubsection{Dr. Mike Bailey}
+\subsection{Dr. Mike Bailey}
 Dr. Bailey was brought onto the project after being approached by Dr. Kirsten Winters, who inquired about designing a three-dimensional art program in VR. Dr. Bailey’s primary stake in the project is the development of VR and graphical technology, with less concern for specific feature sets. His primary design concern is development of a stable and sufficiently robust graphics engine compatible with VR.
-\subsubsection{Dr. Kirsten Winters}
+\subsection{Dr. Kirsten Winters}
 Dr. Winters is responsible for the inception of the program, and brought the concept of a 3D art program to Dr. Mike Bailey. Her initial vision of the project is, by intention, rather vague. As such, her main design concerns are higher-level functionality, such as the general ability to create three-dimensional geometry using motion controls, as well as program optimization (in order to ensure a comfortable user experience).
-\subsubsection{Intel}
+\subsection{Intel}
 In recent years, Intel has been supporting the development of VR and AR applications, going as far as forming a VR-centric department, the Intel VR Center of Excellence, in an effort to push VR into mainstream popularity. With this goal in mind, Intel has agreed to aid the project and supply resources, with the intent of producing a viable VR product. Given these factors, Intel’s primary design concerns are focused around ease of use for users. These include program stability, accuracy of motion controls, functioning user interface, and a sufficient feature set, as well as comfortable user experience. 
-\subsubsection{Development Team}
+\subsection{Development Team}
 In addition to the project clients, the development team has a stake in the success of the project. All team members (in addition to all clients and the OSU college of EECS) will receive equal, non-exclusive rights to the ownership of the program. As such the development team has an interest in developing a powerful and functional toolset for the program. With that in mind, the development team’s primary design concerns are building a rich feature set and maintaining program stability.
 
-\subsection{Design Views}
+\section{Design Views}
 
-\subsubsection{Interactions between the hardware and the Interchange}
+\subsection{Interactions between the hardware and the Interchange}
 The HTC Vive needs to have the HDMI, USB cable, and power adapter attached to the link box. The link box is then attached to the computer with an HDMI cable and USB cable. This completes the connection between the HMD and the computer.
 The lighthouses, the integrated VR tracking solution, need to be mounted on the wall or with stands. They must be connected to power and programmed to the ‘a’ and ‘b’ channels. They must also have a BNC sync cable running between them. If the sync cable does not fit the volume model, then we must use channels ‘b’ and ‘c.’ The light houses must be spaced at least 15 feet apart. \\
 
 The driver is done with the Steam VR asset in the Unity add on window. Driver takes in input through the HMD and relays to the camera rig object in unity. Steam VR lib allows for controller input. This input must then be mapped to a trackable object in unity. This object can then be used by the interchange for various data manipulation. The same can be done for the HMD. 
-The packets sent by the controllers and HMD will be done through USB and sent to the system. We will need position and orientation of the HMD and at least on of the Vive controllers. We will also need trackpad and trigger inputs from the controller. This will be sent to the system and into the interchange driver.\\
+The packets sent by the controllers and HMD will be done through USB and sent to PolyVox. We will need position and orientation of the HMD and at least on of the Vive controllers. We will also need trackpad and trigger inputs from the controller. This will be sent to PolyVox and into the interchange driver.\\
 
 
-\subsubsection{Architecture of the User Interface}
+\subsection{Architecture of the User Interface}
 The UI will essentially be a game object that can be moved and accessed around the peripheral of the user. The user should have the option to specify rotation lock, where the UI object follows them everywhere they look. This allows the user to have access to the toolset at all times. Turning this off will only invoke position lock, where the UI object is always at a relative position to the user. \\
 
-<<<<<<< HEAD
-=======
-
->>>>>>> origin/master
 The UI will have two initial states, active and inactive. The inactive UI will be a small game object only capable of a few actions. The user can turn on or off rotation lock. The user can move the UI object to another relative position while in this state. The state also has a way of moving the UI into the active state. 
 The active state will have all of the same features as the inactive state, except that it can invoke the inactive state instead of the active state. It also can navigate a tree structure that gives the user access to all of the tools and environment settings. \\
 
@@ -160,30 +156,141 @@ The UI response to track pad inputs on the Vive controller as well as the track 
 
 The active UI design needs to be full capable of accessing all of the features in its layout. The layout will always have a button at the top for moving backwards. When at the top layer, this button moves from active to inactive. Each item in the UI will either be a UI element or a traversal node. The traversal nodes allow separation of UI pages and access to other nodes. The UI elements are access to settings and tools. UI elements can be things like brush type or brush color. \\
 
-<<<<<<< HEAD
-=======
 
->>>>>>> origin/master
-\subsubsection{Architecture of the Voxel State}
 
-\subsubsection{Architecture of the graphics engine (Yggdrasil)}
+\subsection{Architecture of the Voxel State}
 
-\subsubsection{Architecture of the Interchange}
+The Voxel State is the representation of the virtual environment the user is interacting with, as stored and organized within the GPU.
+
+The primary design concerns pertaining to the Voxel State are efficiency of space, speed of manipulation, and versatility: 
+
+Because the overall system is intended for an art program, which implies extreme freedom of manipulation, one cannot assume a maximum limit upon the amount of data required to represent what the user is creating. Therefore, the best way to meet the potential memory demands of the user is to be efficient with whatever amount of memory is at the disposal of the GPU. 
+
+Additionally, because of the high refresh rate expected from PolyVox, it is necessary to enable fast parallel access to the data within the Voxel Sate. The speed offered by a GPU is limited if operations require serial access to data. Thus, representing data in a distributed fashion that allows multiple agents to operate on different data at the same time is crucial.
+
+Lastly, given that the nature of this project is exploratory, little is known about the specific methods which would be applied to PolyVox as a whole. In order to best meet such uncertainty, versatility in use must be incorporated into how the Voxel State represents geometry.
+
+\subsubsection{The Data Buffer} 
+
+The Data Buffer, as the name implies, is an array used to hold the data representing the Voxel State. The Data Buffer is broken up into segments of contiguous, non-overlapping sections of memory known as nodes.\\
+
+
+\subsubsection{Node}
+
+A node represents the state of a voxel and the index of its children in memory. The layout of data within a node is as follows: 
+( Byte positions are in octal for ease of representation )\\
+
+\begin{figure}[H]
+\begin{center}
+\includegraphics[width=\textwidth, viewport=50 120 475 380, clip=true]{nodeLayout.eps}
+\caption{The data layout of a node.}
+\end{center}
+\end{figure}
+
+The purpose of each of these fields is as follows:
+
+\begin{itemize}
+
+\item The meta value indicates the type of the voxel represented by a given node. This informs how data within each of the three attribute values are interpreted.
+\item The surface value represents the normal of the surface represented by the voxel as well as the position of this surface within the voxel.
+\item The attribute values, as stated previously, may be interpreted in a variety of ways depending upon the value of the meta value.
+\item The child values are the offset of each child of the node in the data buffer, in units equal to the size of a node. Should the value of a child node be set to the maximum representable value for a 32-bit unsigned integer, this indicates that a child corresponding to this field does not exist. Considering such a node would theoretically be at the end of a buffer over 190 GB in size, which is well beyond the memory capacity of all current consumer graphics hardware, it is assumed such a node would not be created.
+\end{itemize}
+
+
+\subsubsection{The Head Buffer}
+
+The Head Buffer is an array which stores the head node of each sparse voxel octree resident to the Voxel State. This buffer exists to provide a means of simply indexing into the head nodes of each SVO, which is a necessary initial operation for manipulating or tracing through an SVO.\\
+
+
+\subsubsection{The Heap Buffer}
+
+The Heap Buffer is where references to free nodes in the Data Buffer are stored for retrieval by Yggdrasil as need for more memory arises. The Heap Buffer houses an array of integers (grouped into sets of  four) with a number of sets equivalent to the number of processor units present on the GPU. When a process from Yggdrasil intending to manipulate the Voxel State runs on the GPU, it must necessarily be the only manipulating process running on the GPU at the time. This is because each work item run during these jobs uses its global identification number to determine which of these sets of integers to use in order to get free memory.
+
+The first integer of these groups is the index of a node not used in the Data Buffer. This node forms the head of a linked list of other nodes, with each node using the child 0 and child 1 fields of each node to link it to its headward and tailward neighbors. Should the work unit corresponding to this triplet be in need of a free node, it retrieves the node from this index.
+
+The second integer of these groups is the index of a node roughly in the center of the linked list indexed by the first integer. This is done for list balancing, which is discussed in the Yggdrasil section.
+
+The third integer indicates the number of links in the list pointed to by the first integer, whereas the fourth integer indicates the number of links following the link indexed by the second integer. These are also used for list balancing.
+
+When properly managed (by Yggdrasil), the Heap Buffer provides constant-time access to each thread in the GPU and with no fragmentation among allocated memory, since allocating one node simply costs one nodes worth of memory. This means that not only is adding and removing items from the octree quick regardless of how much memory is being used, but only the memory that is needed is allocated from the Data Buffer.\\
+
+
+
+\subsection{Architecture of the graphics engine (Yggdrasil)}
+
+Yggdrasil (named for the cosmic world tree of norse mythology) is the framework of GPU-native programs that are in charge of managing and rendering the Voxel State for PolyVox.
+
+As with the Voxel State, efficiency of memory usage as well as speed are strong design concerns. For this reason, reducing function runtime per input as well as memory footprint required for operations is key.\\
+ 
+
+\subsubsection{The Data Buffer}
+
+The Data Buffer holds all of the nodes that PolyVox uses to represent the voxels being viewed and interacted with by the user. Yggdrasil uses the position of a node in the Data Buffer when referencing it during Yggdrasil’s regular operation.\\~\\
+
+\subsubsection{The Head Buffer}
+
+The Head Buffer is an array holding the index of the root of all SVOs present in the Data Buffer. This is used to uniquely identify every SVO in the Voxel State and is used at the beginning of each operation to begin tree traversals.\\
+
+\subsubsection{The Heap Buffer}
+
+The Heap Buffer is an array holding references to the heads of a series of linked lists composed of nodes. Additionally, next to each list reference is a reference to a link somewhere in the middle of the list, the number of links in the list, and the number of links between the second reference and the tail. This additional data is used to keep the length of the lists in the Heap Buffer close to one another, ensuring heavily used lists do not quickly run out of links.\\
+
+
+\subsubsection{The Tool Executer}
+
+The Tool Executer is a general-purpose OpenCL program template for the application of arbitrary operations to the Voxel State according to the user’s brush strokes and the currently selected tool. Whenever a new tool is loaded into PolyVox by the Interchange, the OpenCL code specific to that tool is injected into the template, which is then compiled into a tool executer. Regardless of what code is injected, much of the operation of the tool executer is the same.
+
+The Tool Executer is passed a number of inputs based off the state of the brush stroke being performed by the user. This state includes what part of the stroke (beginning, middle, end) the operation is in, the line segment representing the path the stroke just made, the selected height, width, and depth of the brush tip used, the weight of the stroke, and the speed of the stroke.
+
+Based off of the dimensions of the brush tip as well as the line segment representing the section of brush stroke just made, the Tool Executer traverses the SVO being actively edited, finding the smallest voxel in the octree which completely contains the bounds of the stroke section.
+
+Once this voxel is found, the voxel is given to the first section of injected tool code, which determines how much further the Tool Executer traverses into the octee. The code may either report that no more traversal is needed, or request further traversal. This request will be refused if the maximum resolution depth has been reached. If not, the Tool Executer allocates and attaches any missing child nodes, if necessary, then traverses into the nodes. This process is repeated until all traversals have reached bottom.
+
+Once all Tool Executer traversals have reached their final depth, the voxels at the end of each trace are handed to a different set of injected code, which evaluates what the new state of each voxel should be. Once the new states are assigned and the injected code passes back execution, the Tool Executer reverses its traversals, applying a third piece of injected code to each parent voxel, ensuring that each one has a high-level representation of its children.
+
+Once all traversals have been reversed, the Tool Executer terminates.\\
+
+
+\subsubsection{The Renderer}
+
+The Renderer is the OpenGL program executed in order to create the imagery that appears to the user in their HMD. The Renderer receives a set of triangles from the Interchange corresponding to the bounds of the SVO volumes visible to the user. This means that SVOs which do not intersect with the near plane of the user’s vision would be represented as boxes. For those SVOs that do intersect with the user’s near plane of vision would be represented as boxes truncated along the user’s near plane of vision.
+
+Each of the vertices are given their corresponding position in the SVO as well as the index in the Head Buffer where the head of the box’s corresponding SVO is stored. Using this data, the fragment shader traverses the SVO as a voxel cone trace. As this trace is performed, for any given voxel it traces through, it will trace through its child nodes instead if that voxel has a cross section in the view projection larger than the fragment. This trace is performed until the contribution of samples to the final value of the trace drops below one part in 256. Once the final value for a trace has been rendered, it is used as the color value for the fragment corresponding to that trace.\\
+
+\subsubsection{The Memory Manager}
+
+The Memory Manager is an OpenCL program which serves two purposes. Firstly, it performs balancing operations upon the Heap Buffer, alleviating imbalances in how much memory is available to each work group. Secondly, it provides information regarding the availability of memory in PolyVox to the Interchange, allowing the Interchange to take necessary action, such as calling for more memory, culling excess detail, or providing a warning to the user.
+
+The balancing procedure performed is relatively simple, each work item is given one of the linked lists. These work items then establish their position in a binary tree, where work items with a global id, n, have work items n*2 and n*2+1 as children. Work items at even depths in the tree inspect the data in its left child, retrieving the data member referencing a link in the middle of its linked list. Using this reference as well as the reference to a link in the middle of its own linked list, the acting working group switches the links across the two lists, causing all trailing links to also be appended to the other list. The link count members as well as the reference to the middle link for each work item are updated accordingly.
+
+As stated previously, the middle links referenced for each linked list must be generally towards the center of the linked list. This is why the reference is traversed up or down the linked list up to sixteen links in order to begin approaching the halfway point for each list.
+
+This process is applied by the acting work groups to their right children, and these two processes are repeated by working groups at odd depths.
+
+Repeating this process multiple times, exchanging the tail half of each list, rebalancing halfway link references, then exchanging again, causes links to be more evenly distributed across the Heap Buffer.
+
+Once these exchanges occur the number of times requested by the Interchange, the minimum and maximum linked list size is calculated through reduction and returned to the Interchange. This gives the Interchange a measure of how balanced the linked lists became as a result of the operation.\\
+
+
+
+\subsection{Architecture of the Interchange}
 The interchange will be the primary point of communication and manager for the disparate elements of the program. The interchange must be able to receive information supplied via the user interface and interface hardware and relay the corresponding instruction to the Yggdrasil engine to properly render the scene, and is directly responsible for directing state transition of all other components.
 
-The Interchange must be capable of properly coordinating all other elements of the system as a whole, and is a central element  in executing commands supplied via user interactions, implementing program features, and directing the graphics engine’s rendering operations. As such it is relevant to design concerns of all stakeholders involved in the project. In particular, it is central to the operation of the user interface and motion controls, from which it will receive user commands, and the operation of the graphics engine, which it will send commands to. As the Interchange will be the point at which the program’s toolset is constructed, it will also dictate the program’s available features.\\ \\
-\textbf{Design Elements:}\\ 
-\textbf{Unity Engine} \\
-The interchange will be built in and run on the Unity Game Engine. Unity has its own proprietary rendering and modeling systems, as well as native compatibility with motion tracking systems and duel rendering used in VR. Additionally, Unity has native scripting compatibility and will serve as the platform for developing the program tools and features.\cite{unity} \\  
-\textbf{C\#} \\
+The Interchange must be capable of properly coordinating all other elements of PolyVox as a whole, and is a central element  in executing commands supplied via user interactions, implementing program features, and directing the graphics engine’s rendering operations. As such it is relevant to design concerns of all stakeholders involved in the project. In particular, it is central to the operation of the user interface and motion controls, from which it will receive user commands, and the operation of the graphics engine, which it will send commands to. As the Interchange will be the point at which the program’s toolset is constructed, it will also dictate the program’s available features.\\
+
+\subsubsection{Unity Engine}
+The interchange will be built in and run on the Unity Game Engine. Unity has its own proprietary rendering and modeling systems, as well as native compatibility with motion tracking systems and duel rendering used in VR. Additionally, Unity has native scripting compatibility and will serve as the platform for developing the program tools and features.\cite{unity}
+\subsubsection{C\#}
 C\# is one of the most frequently used languages for scripting in game engines, and is natively compatible with Unity. Most features and tools for the program will be constructed using C\#. \\
-When in operation, the Interchange will receive positional information from the user via both the HMD and VR motion controls in the form of four-vector positional coordinates. Using Unity’s native VR drivers, the interchange will translate these coordinates into a position relative to the voxel state. \\ \\ 
-\textbf{Design:} \\
+When in operation, the Interchange will receive positional information from the user via both the HMD and VR motion controls in the form of four-vector positional coordinates. Using Unity’s native VR drivers, the interchange will translate these coordinates into a position relative to the voxel state. \\
+
+\subsubsection{Design:}
 Additionally, the data received from the user may or may not include a user-inputted command via a button press. The button pressed will be sent to a function, which is also passed the current state of the UI (such as what ‘brush’ is selected, or what menu the user currently has open). The function will process the user command to determine any possible UI state changes, as well as any changes to the voxel state the user command will perform (such as creating or destroying a voxel) based on whatever tool or UI element is currently being operated. 
 
 Any changes in the state are returned by the function as a set of commands to the graphics engine. The graphics engine will then process the commands from the Interchange. Before the render is sent to the HMD, the graphics engine will return a flag that will determine if the Interchange needs to perform additional actions, such as sending a command to the GPU to allocate additional memory. If so, the Interchange will send the appropriate commands, and the graphics engine will reattempt the render. This repeats until the flag sent from the GPU is null. 
 
-While the operations of the interchange are primarily just in service to other elements of the program, they are still vitally necessary to the system’s operation. The Interchange effectively acts as the driver for the graphics engine and the motion control system, and is needed in order to develop a working feature set and comfortable user interface.
+While the operations of the interchange are primarily just in service to other elements of the program, they are still vitally necessary to PolyVox’s operation. The Interchange effectively acts as the driver for the graphics engine and the motion control system, and is needed in order to develop a working feature set and comfortable user interface.
 
 
 \end{document}
