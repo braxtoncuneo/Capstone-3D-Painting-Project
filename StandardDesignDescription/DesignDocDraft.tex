@@ -146,15 +146,9 @@ The driver is done with the Steam VR asset in the Unity add on window. Driver ta
 The packets sent by the controllers and HMD will be done through USB and sent to the system. We will need position and orientation of the HMD and at least on of the Vive controllers. We will also need trackpad and trigger inputs from the controller. This will be sent to the system and into the interchange driver.\\
 
 
-
 \subsubsection{Architecture of the User Interface}
 The UI will essentially be a game object that can be moved and accessed around the peripheral of the user. The user should have the option to specify rotation lock, where the UI object follows them everywhere they look. This allows the user to have access to the toolset at all times. Turning this off will only invoke position lock, where the UI object is always at a relative position to the user. \\
 
-\begin{figure}[h!]
-	\includegraphics[width=0.4\linewidth]{UIDiagram.png}
-	\caption{UI Architecture}
-	\label{Figure 1.0}
-\end{figure}
 
 The UI will have two initial states, active and inactive. The inactive UI will be a small game object only capable of a few actions. The user can turn on or off rotation lock. The user can move the UI object to another relative position while in this state. The state also has a way of moving the UI into the active state. 
 The active state will have all of the same features as the inactive state, except that it can invoke the inactive state instead of the active state. It also can navigate a tree structure that gives the user access to all of the tools and environment settings. \\
@@ -163,7 +157,6 @@ The UI response to track pad inputs on the Vive controller as well as the track 
 
 The active UI design needs to be full capable of accessing all of the features in its layout. The layout will always have a button at the top for moving backwards. When at the top layer, this button moves from active to inactive. Each item in the UI will either be a UI element or a traversal node. The traversal nodes allow separation of UI pages and access to other nodes. The UI elements are access to settings and tools. UI elements can be things like brush type or brush color. \\
 
-This UI architecture is outlined in figure 1.0.\\
 
 \subsubsection{Architecture of the Voxel State}
 
@@ -175,7 +168,7 @@ The interchange will be the primary point of communication and manager for the d
 The Interchange must be capable of properly coordinating all other elements of the system as a whole, and is a central element  in executing commands supplied via user interactions, implementing program features, and directing the graphics engine’s rendering operations. As such it is relevant to design concerns of all stakeholders involved in the project. In particular, it is central to the operation of the user interface and motion controls, from which it will receive user commands, and the operation of the graphics engine, which it will send commands to. As the Interchange will be the point at which the program’s toolset is constructed, it will also dictate the program’s available features.\\ \\
 \textbf{Design Elements:}\\ 
 \textbf{Unity Engine} \\
-The interchange will be built in and run on the Unity Game Engine. Unity has its own proprietary rendering and modeling systems, as well as native compatibility with motion tracking systems and duel rendering used in VR. Additionally, Unity has native scripting compatibility and will serve as the platform for developing the program tools and features. \\  
+The interchange will be built in and run on the Unity Game Engine. Unity has its own proprietary rendering and modeling systems, as well as native compatibility with motion tracking systems and duel rendering used in VR. Additionally, Unity has native scripting compatibility and will serve as the platform for developing the program tools and features.\cite{unity} \\  
 \textbf{C\#} \\
 C\# is one of the most frequently used languages for scripting in game engines, and is natively compatible with Unity. Most features and tools for the program will be constructed using C\#. \\
 When in operation, the Interchange will receive positional information from the user via both the HMD and VR motion controls in the form of four-vector positional coordinates. Using Unity’s native VR drivers, the interchange will translate these coordinates into a position relative to the voxel state. \\ \\ 
@@ -186,5 +179,5 @@ Any changes in the state are returned by the function as a set of commands to th
 
 While the operations of the interchange are primarily just in service to other elements of the program, they are still vitally necessary to the system’s operation. The Interchange effectively acts as the driver for the graphics engine and the motion control system, and is needed in order to develop a working feature set and comfortable user interface.
 
-\cite{vive}\cite{tilt}\cite{cave}\cite{unreal}\cite{unity}
+
 \end{document}
