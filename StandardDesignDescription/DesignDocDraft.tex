@@ -207,6 +207,13 @@ The Head Buffer is an array which stores the head node of each sparse voxel octr
 
 The Heap Buffer is where references to free nodes in the Data Buffer are stored for retrieval by Yggdrasil as need for more memory arises. The Heap Buffer houses an array of integers (grouped into sets of  four) with a number of sets equivalent to the number of processor units present on the GPU. When a process from Yggdrasil intending to manipulate the Voxel State runs on the GPU, it must necessarily be the only manipulating process running on the GPU at the time. This is because each work item run during these jobs uses its global identification number to determine which of these sets of integers to use in order to get free memory.
 
+\begin{figure}[H]
+\begin{center}
+\includegraphics[width=\textwidth]{HeapBufferElement.eps}
+\caption{The structure and nature of an element of the Heap Buffer}
+\end{center}
+\end{figure}
+
 The first integer of these groups is the index of a node not used in the Data Buffer. This node forms the head of a linked list of other nodes, with each node using the child 0 and child 1 fields of each node to link it to its headward and tailward neighbors. Should the work unit corresponding to this triplet be in need of a free node, it retrieves the node from this index.
 
 The second integer of these groups is the index of a node roughly in the center of the linked list indexed by the first integer. This is done for list balancing, which is discussed in the Yggdrasil section.
@@ -261,6 +268,17 @@ Each of the vertices are given their corresponding position in the SVO as well a
 \subsubsection{The Memory Manager}
 
 The Memory Manager is an OpenCL program which serves two purposes. Firstly, it performs balancing operations upon the Heap Buffer, alleviating imbalances in how much memory is available to each work group. Secondly, it provides information regarding the availability of memory in PolyVox to the Interchange, allowing the Interchange to take necessary action, such as calling for more memory, culling excess detail, or providing a warning to the user.
+
+
+
+\begin{figure}[H]
+\begin{center}
+\includegraphics[width=\textwidth]{TailSwap.eps}
+\caption{An example of a tail swap that could be carried out during a balancing procedure}
+\end{center}
+\end{figure}
+
+
 
 The balancing procedure performed is relatively simple, each work item is given one of the linked lists. These work items then establish their position in a binary tree, where work items with a global id, n, have work items n*2 and n*2+1 as children. Work items at even depths in the tree inspect the data in its left child, retrieving the data member referencing a link in the middle of its linked list. Using this reference as well as the reference to a link in the middle of its own linked list, the acting working group switches the links across the two lists, causing all trailing links to also be appended to the other list. The link count members as well as the reference to the middle link for each work item are updated accordingly.
 
