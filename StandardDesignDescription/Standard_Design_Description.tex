@@ -113,6 +113,7 @@ Modifying geometry & Altering the voxel state such that the state of attribute d
 Motion Control & The practice of manipulating devices which measure and convey to a computer their position and orientation relative to a reference point.  \\ \hline
 Removing geometry & Altering the voxel state such that it excludes geometry from the Voxel State.  \\ \hline
 Resolution & The number of columns and rows of pixels used in a display. In the case of  a VR headset, resolution is the number of columns and rows of pixels visible to one eye using the headset. \\ \hline
+SVO & Sparse Voxel Octree; A technique used in ray tracing for voxels. Individual voxels are subdivided into octants, and the system determines which, if any, octants within a view are unneeded to render a complete image. If an octant is determined to be unnecessary, the system skips any rendering computations that would have otherwise been performed on it.\\ \hline
 Virtual Reality & The practice of placing a display in front of each eye of an individual and displaying images for each eye which, through binocular vision, convey, to the individual looking into said displays, a scene with the illusion of depth.  \\ \hline
 Voxel & An element of a 3D grid with an associated set of attribute data including at least one instance of color.  \\ \hline
 Voxel State & The state of every instance of a geometric element explicitly represented by PolyVox during a given instant. This includes the transformation of each particular geometric element, the size of each geometric element along each of its three axes, and the states of all attribute data present in each voxel of each geometric element. \\ \hline
@@ -213,7 +214,7 @@ Once all Tool Executer traversals have reached their final depth, the voxels at 
 Once all traversals have been reversed, the Tool Executer terminates.
 \subsubsection{The Renderer}
 
-The Renderer is the OpenGL program executed in order to create the imagery that appears to the user in their HMD. The Renderer receives a set of triangles from the Interchange corresponding to the bounds of the SVO volumes visible to the user. This means that SVOs which do not intersect with the near plane of the user’s vision would be represented as boxes. For those SVOs that do intersect with the user’s near plane of vision would be represented as boxes truncated along the user’s near plane of vision.
+The Renderer is the OpenGL program executed in order to create the imagery that appears to the user in their HMD. The Renderer receives a set of triangles from the Interchange corresponding to the bounds of the SVO volumes visible to the user. This means that SVOs which do not intersect with the near plane of the user’s vision would be represented as boxes. Those SVOs that do intersect with the user’s near plane of vision would be represented as boxes truncated along the user’s near plane of vision.
 
 Each of the vertices are given their corresponding position in the SVO as well as the index in the Head Buffer where the head of the box’s corresponding SVO is stored. Using this data, the fragment shader traverses the SVO as a voxel cone trace. As this trace is performed, for any given voxel it traces through, it will trace through its child nodes instead if that voxel has a cross section in the view projection larger than the fragment. This trace is performed until the contribution of samples to the final value of the trace drops below the smallest nonzero value representable by the trace's alpha component. Once the final value for a trace has been rendered, it is used as the color value for the fragment corresponding to that trace.\\
 
@@ -282,7 +283,7 @@ The Interchange will be built in and run on the Unity Game Engine. Unity has its
 C\# is one of the most frequently used languages for scripting in game engines, and is natively compatible with Unity. Most features and tools for the program will be constructed using C\#. 
 
 \subsubsection{Design}
-When in operation, the Interchange will receive positional information from the user via both the HMD and VR motion controls in the form of four-vector positional coordinates. Using Unity’s native VR drivers, the Interchange will translate these coordinates into a position relative to the voxel state.
+When in operation, the Interchange will receive positional information from the user via both the HMD and VR motion controls in the form of four-element vector positional coordinates. Using Unity’s native VR drivers, the Interchange will translate these coordinates into a position relative to the voxel state.
 
 Additionally, the data received from the user may or may not include a user-inputted command via a button press. When pressed, the button input will be sent to a function, which is also passed the current state of the UI (such as what ‘brush’ is selected, or what menu the user currently has open). The function will process the user command to determine any possible UI state changes, as well as any changes to the voxel state the user command will perform (such as creating or destroying a voxel) based on whatever tool or UI element is currently being operated. 
 
