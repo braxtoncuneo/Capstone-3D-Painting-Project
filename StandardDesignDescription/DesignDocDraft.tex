@@ -176,11 +176,11 @@ The Head Buffer is an array which stores the head node of each sparse voxel octr
 
 \subsubsection{The Heap Buffer}
 
-The Heap Buffer is where references to free nodes in the Data Buffer are stored for retrieval by Yggdrasil as need for more memory arises. The Heap Buffer houses an array of integers, grouped into sets of four, with a number of sets equivalent to the number of processor units present on the GPU. When a process from Yggdrasil intending to manipulate the Voxel State runs on the GPU, it must necessarily be the only manipulating process running on the GPU at the time. This is because each work item run during these jobs uses its global identification number to determine which of these sets of integers to use in order to get free memory.
+The Heap Buffer is where references to free nodes in the Data Buffer are stored for retrieval by Yggdrasil as need for more memory arises. The Heap Buffer houses an array of integers, grouped into sets of four, with a number of sets equivalent to the number of processor units present on the GPU. When a process from Yggdrasil intending to manipulate the Voxel State runs on the GPU, it must necessarily be the only manipulating process running on the GPU at the time. This is because each work item run during these jobs uses its global identification number to determine which of these sets of integers to use in order to get free memory. See figure 2 for diagram.
 
 \begin{figure}[H]
 \begin{center}
-\includegraphics[width=\textwidth]{HeapBufferElement.eps}
+\includegraphics[width=\textwidth]{images/HeapBufferElement.eps}
 \caption{The structure and nature of an element of the Heap Buffer}
 \end{center}
 \end{figure}
@@ -221,13 +221,13 @@ Each of the vertices are given their corresponding position in the SVO as well a
 
 \subsubsection{The Memory Manager}
 
-The Memory Manager is an OpenCL program which serves two purposes. Firstly, it performs balancing operations upon the Heap Buffer, alleviating imbalances in how much memory is available to each work group. Secondly, it provides information regarding the availability of memory in PolyVox to the Interchange, allowing the Interchange to take necessary action, such as calling for more memory, culling excess detail, or providing a warning to the user.
+The Memory Manager is an OpenCL program which serves two purposes. Firstly, it performs balancing operations upon the Heap Buffer, alleviating imbalances in how much memory is available to each work group. Secondly, it provides information regarding the availability of memory in PolyVox to the Interchange, allowing the Interchange to take necessary action, such as calling for more memory, culling excess detail, or providing a warning to the user. See figure 3 for diagram.
 
 
 
 \begin{figure}[H]
 \begin{center}
-\includegraphics[width=\textwidth]{TailSwap.eps}
+\includegraphics[width=\textwidth]{images/TailSwap.eps}
 \caption{An example of a tail swap that could be carried out during a balancing procedure}
 \end{center}
 \end{figure}
@@ -264,7 +264,14 @@ The active state will have all of the same features as the inactive state, excep
 
 The UI response to track pad inputs on the Vive controller as well as the track pad target position. The trackpad press event. This acts as a confirmation operation when toggling states or selecting items in the UI. The UI will be structured to take advantage of non physical position dependence by allowing the trackpad to operate independently of the controller's physical position and orientation. This allows the user to operate the UI in the world space without relying on VR tracking.
 
-The active UI design needs to be full capable of accessing all of the features in its layout. The layout will always have a button at the top for moving backwards. When at the top layer, this button moves from active to inactive. Each item in the UI will either be a UI element or a traversal node. The traversal nodes allow separation of UI pages and access to other nodes. The UI elements are access to settings and tools. UI elements can be things like brush type or brush color. 
+The active UI design needs to be full capable of accessing all of the features in its layout. The layout will always have a button at the top for moving backwards. When at the top layer, this button moves from active to inactive. Each item in the UI will either be a UI element or a traversal node. The traversal nodes allow separation of UI pages and access to other nodes. The UI elements are access to settings and tools. UI elements can be things like brush type or brush color. See figure 4 for diagram.
+
+\begin{figure}[H]
+\begin{center}
+\includegraphics[width=\textwidth]{images/UIDiagram.eps}
+\caption{An example of a tail swap that could be carried out during a balancing procedure}
+\end{center}
+\end{figure}
 
 \subsection{Architecture of the Interchange}
 The interchange will be the primary point of communication and manager for the disparate elements of the program. The interchange must be able to receive information supplied via the user interface and interface hardware and relay the corresponding instruction to the Yggdrasil engine to properly render the scene, and is directly responsible for directing state transition of all other components. Due to the experimental nature of the project, the design of the Interchange must be kept at a high level. Specifics of functions and the processing of data will need to be determined in development. 
@@ -284,7 +291,7 @@ Additionally, the data received from the user may or may not include a user-inpu
 
 Any changes in the state are returned by the function as a set of commands to the graphics engine. The graphics engine will then process the commands from the Interchange. Before the render is sent to the HMD, the graphics engine will return a flag that will determine if the Interchange needs to perform additional actions, such as sending a command to the GPU to allocate additional memory. If so, the Interchange will send the appropriate commands, and the graphics engine will reattempt the render. This repeats until the flag sent from the GPU is null. 
 
-While the operations of the interchange are primarily just in service to other elements of the program, they are still vitally necessary to PolyVox’s operation. The Interchange effectively acts as the driver for the graphics engine and the motion control system, and is needed in order to develop a working feature set and comfortable user interface. See figure 3 for diagram.
+While the operations of the interchange are primarily just in service to other elements of the program, they are still vitally necessary to PolyVox’s operation. The Interchange effectively acts as the driver for the graphics engine and the motion control system, and is needed in order to develop a working feature set and comfortable user interface. See figure 5 for diagram.
 
 \begin{figure}[H]
 \begin{center}
