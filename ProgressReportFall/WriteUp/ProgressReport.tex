@@ -1,0 +1,180 @@
+\documentclass[onecolumn, draftclsnofoot,10pt, compsoc]{IEEEtran}
+\usepackage{graphicx}
+\usepackage{url}
+\usepackage{setspace}
+\usepackage{longtable}
+\usepackage{pgfgantt}
+\usepackage{tabu}
+
+\usepackage{geometry}
+\geometry{textheight=9.5in, textwidth=7in}
+
+% 1. Fill in these details
+\def \CapstoneTeamName{			PolyVox}
+\def \CapstoneTeamNumber{		66}
+\def \GroupMemberOne{			Chris Bakkom}
+\def \GroupMemberTwo{			Richard Cunard}
+\def \GroupMemberThree{			Braxton Cuneo}
+\def \CapstoneProjectName{		3D Virtual Reality Painting}
+\def \CapstoneSponsorCompany{		EECS}
+\def \CapstoneSponsorPersonOne{		Dr. Kirsten Winters}
+\def \CapstoneSponsorPersonTwo{		Dr. Mike Bailey}
+
+% 2. Uncomment the appropriate line below so that the document type works
+\def \DocType{		%Problem Statement
+				Progress Report
+				%Technology Review
+				%Design Document
+				%Progress Report
+				}
+			
+\newcommand{\NameSigPair}[1]{\par
+\makebox[2.75in][r]{#1} \hfil 	\makebox[3.25in]{\makebox[2.25in]{\hrulefill} \hfill		\makebox[.75in]{\hrulefill}}
+\par\vspace{-12pt} \textit{\tiny\noindent
+\makebox[2.75in]{} \hfil		\makebox[3.25in]{\makebox[2.25in][r]{Signature} \hfill	\makebox[.75in][r]{Date}}}}
+% 3. If the document is not to be signed, uncomment the RENEWcommand below
+%\renewcommand{\NameSigPair}[1]{#1}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+\begin{titlepage}
+    \pagenumbering{gobble}
+    \begin{singlespace}
+    	\includegraphics[height=4cm]{coe_v_spot1}
+        \hfill 
+        % 4. If you have a logo, use this includegraphics command to put it on the coversheet.
+        %\includegraphics[height=4cm]{CompanyLogo}   
+        \par\vspace{.2in}
+        \centering
+        \scshape{
+            \huge CS Capstone \DocType \par
+            {\large\today}\par
+            \vspace{.5in}
+            \textbf{\Huge\CapstoneProjectName}\par
+            \vfill
+            {\large Prepared for}\par
+            \Huge \CapstoneSponsorCompany\par
+            \vspace{5pt}
+            {\Large\NameSigPair{\CapstoneSponsorPersonOne}\par}
+	    {\Large\NameSigPair{\CapstoneSponsorPersonTwo}\par}
+            {\large Prepared by }\par
+            Group\CapstoneTeamNumber\par
+            % 5. comment out the line below this one if you do not wish to name your team
+            \CapstoneTeamName\par 
+            \vspace{5pt}
+            {\Large
+                \NameSigPair{\GroupMemberOne}\par
+                \NameSigPair{\GroupMemberTwo}\par
+                \NameSigPair{\GroupMemberThree}\par
+            }
+            \vspace{20pt}
+        }
+        \begin{abstract}
+        % 6. Fill in your abstract    
+This document is an outline and review of what the group has been working on this fall term. It reviews the progress we've made as well as our plans for the future. 
+        \end{abstract}     
+    \end{singlespace}
+\end{titlepage}
+\newpage
+\pagenumbering{arabic}
+\tableofcontents
+% 7. uncomment this (if applicable). Consider adding a page break.
+%\listoffigures
+%\listoftables
+\clearpage
+
+% 8. now you write!
+\section{Report}
+Our team has been developing ‘3D Virtual Reality Painting Project’ submitted by Dr. Mike Bailey and Dr. Kirsten Winters. The core premise of the project, which was subsequently named PolyVox, is to create VR application that allows the user to freely create art in a 3D space. The original inception of the project came from an idea by Dr. Winters, who described her vision of the project as “Being able to move your hand through the air to create something”. Given how open to interpretation this description was, Dr. Bailey and Dr. Winters decided it was best to give the project team a significant amount of latitude in determining the specific nature of the program and its features.\\
+
+Overall, the concept of the program has developed into a voxel-based 3D art program using a VR and motion control based interface. The basic premise is to allow the user, through use of wireless motion controls, to create, modify and destroy voxel-based geometry within a 3D virtual space. The ultimate goal of the project is somewhat experimental in its nature, and a significant part of its development will be focused around determining what can be done on a technical level. The only significant technical requirements are the ability to have a scene where geometry can be created, modified, destroyed, saved and loaded. How far the project progresses and what specific features are added are to be determined during development.\\
+
+As of writing, the team has finished the general design of the program, having just completed the Standard Design Description. Development is set to start during the Winter Break, where the team will begin working with the VR hardware. Given that VR is a platform that no member of the team has developed for previously, the team will need to work with a development methodology that accounts for this fact. Again, due to the experimental nature of the project, much of the work that will be done will be to test and evaluate different development tools and techniques.\\
+
+The most significant issue, as of yet, is the lack of available information and documentation for VR development. VR development as a field is still quite new, and the team’s lack of experience has caused some difficulty in making design decisions. Our main means of addressing this issue will be the process by which the program is developed. Implementing a methodology that employs short development cycles, such as agile or extreme development will likely be necessary. Additionally, myself and possibly other members of the team will be taking VR development course during Winter term, which hopefully will provide a source of relevant technical knowledge.\\
+
+\subsection{Week by week}
+
+\begin{center}
+	\begin{tabular}{ | m{1cm} |m{5cm} | m{5cm}| m{5cm} | } 
+		\hline
+		Week & Posotives & Deltas & Actions \\ 
+		\hline
+		
+		1 & 
+		The first week was primarily devoted to preparations for the coming project, including putting together the team member’s respective OneNote pages. The team decided to bid directly to Dr. Bailey, and were quickly accepted to the project. & 
+		Given that there was no work to be done on the project itself, there is little to evaluate for the first week, and thus, no changes to pursue. &
+		N/A \\ 
+		\hline
+		
+		2 &
+		Having already formed the group the previous week, meeting and coordinating had already been done. The group agreed to meet with Dr. Bailey and Dr. Winters on odd numbered weeks. Additionally, the team began their individual drafts for the requirements document. &
+		At this point we had not found the scope of our assignment, which affected topics in the futures, causing documents to be rewritten. &
+		Establish scope and purpose verbally and with a document as early as possible. \\
+		\hline
+		
+		3 &
+		The team finished their individual rough drafts of the requirements document. Additionally, the first team meeting was held, during which the team discussed high-level concepts and ideas for the program, as well as possible technical implementations that might be employed. &
+		Some of the discussions got a little bit off topic and beyond the scope of the meeting.&
+		Writing up a plan or meeting outline to direct the flow of the meeting. Designate one group member as meeting leader to make sure discussions stay on point. \\
+		\hline
+		
+		4 &
+		The team met and completed work on the problem statement, following feedback given on the rough drafts that had been submitted. Additionally, the team met with Dr. Winters to bring her up to speed on the state of the project and the ideas the team had on the program’s design. &
+		Due to several schedule conflicts, the team had to scrap several meetings without getting any substantive work done. It is in the best interest of the project that the team coordinate better on scheduling and meetings. &
+		The team will use a coordinated schedule tracker, such as google calendar to maintain a collective schedule and, at the beginning of the week, the team will agree to set meeting times for that week. \\
+		\hline
+	\end{tabular}
+
+	\begin{tabular}{ | m{1cm} |m{5cm} | m{5cm}| m{5cm} | } 
+		\hline
+		Week & Posotives & Deltas & Actions \\ 
+		\hline
+		
+		5 &
+		The team met with Andrew Emmott, the TA assigned to the group, for the first time. The group then met with Dr. Winters and Dr. Bailey and discussed project specifications, which were then incorporated into the first draft of the requirements document. Additionally, Richard met with Dr. Cindy Grimm, who was able to provide some resources and technical advice that were of use in drafting the requirements document. &
+		There seemed to be a bit more distance between the project manager, Andrew, and us and our project. Most questions he had were pretty generic.  &
+		Send the project manager and email with a report of what we’re working and what we have completed. Get a bit more specific on some of the details of the project to keep him informed. \\
+		\hline
+		
+		6 &
+		The group performed edits on the requirements document and submitted it. Additionally, Richard met briefly with Todd Kesterson, who gave the team the contact info for the VR club on campus. Additionally, the team attended a presentation by Brian Pawlowski, a former student of Dr. Bailey’s who works at Intel’s Center for VR Excellence. After his presentation, the team spoke with him, and discussed possibly involving Intel in the project. &
+		A lot of the modules in the requirements document did not flow into each other. Some of the transitions were a little choppy or unrelated to previous topics. &
+		Have in person meetings or web meetings when writing these documents so we can use collaborative writing techniques. This should improve the document from just email communications and revisions to an active development of these documents. \\
+		\hline
+		
+		7 &
+		The group began working on the drafts for their individual tech reviews. Dr. Bailey was unable to attend the weekly meeting due to a schedule conflict. Dr. Bailey also spoke with representatives from Intel, who were interested in being involved in the project, offering to help supply equipment to the team. &
+		The technology reviews were very independent and the group members were not fully aware of the aspects in each others tech reviews. &
+		Increase communication on projects, not just with email, but more face to face and web conference, collaborative work sessions. \\
+		\hline
+		
+	\end{tabular}
+
+	\begin{tabular}{ | m{1cm} |m{5cm} | m{5cm}| m{5cm} | } 
+	\hline
+	Week & Posotives & Deltas & Actions \\ 
+	\hline
+
+	8 &
+	The team was primarily devoted to finishing their tech review drafts. During the weekly meeting with Andrew, the team was advised to be fairly granular in the technologies they covered, which led to some team members changing their selected technology. &
+	Having technologies that relied on each other lacked some coordination on what components group members would review and how they would relate.&
+	Look more closely at how the technologies relate to each other and have discussions on how the reviews can be linked together. \\
+	\hline
+	
+	9 &
+	The only event of note for the team was finishing the tech reviews. Due to the Thanksgiving weekend, there was not much communication between team members. Additionally, the team canceled the weekly meeting, rescheduling it for week ten.&
+	The canceling of the meetings led to a large lapse in time where the team did not have a full collaboration with the client on the elements and design decisions of the project.&
+	Organize secondary meeting structure. Set a time that everyone can meet if the current meeting time does not work due to unseen circumstances. \\
+	\hline
+	
+	10 &
+	The team devoted several days to finishing the Standard Design Description. The weekly meeting was canceled once again due to schedule conflicts arising for both Dr. Bailey and Dr. Winters.&
+	We didn't have a client direction of the design document. We had some email replies from them, but not meeting. 
+	&Set up a web conference to allow the client more flexibility in the time they can spend giving feedback while maintaining active interaction with the group members. \\
+	\hline
+
+	\end{tabular}
+\end{center}
+
+\end{document}
