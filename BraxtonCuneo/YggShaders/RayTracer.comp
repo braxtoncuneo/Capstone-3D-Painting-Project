@@ -1,0 +1,39 @@
+
+//These should be set by the interchange to dimensions appropriate to the GPU
+#define X_SIZE 8
+#define Y_SIZE 8
+
+#define DEPTH_LIMIT
+
+// This should be replaced with the contents of CommonCode.comp
+#include "CommonCode.comp"
+
+uniform mat4 viewMatrix;
+uniform uint pixWidth;
+uniform uint pixHeight;
+uniform uint depthLimit;
+uint task;
+
+
+uint makeRootTrace(){
+
+}
+
+
+void initTasks(){
+    uint
+}
+
+
+layout(local_size_x = X_SIZE, local_size_y = Y_SIZE) in;
+void main(){
+	initYggCompute();
+
+
+
+}
+
+
+
+
+
