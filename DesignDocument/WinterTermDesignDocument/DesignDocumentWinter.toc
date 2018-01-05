@@ -1,0 +1,108 @@
+\contentsline {section}{\numberline {1}Introduction}{4}{section.1}
+\contentsline {subsection}{\numberline {1.1}Purpose}{4}{subsection.1.1}
+\contentsline {subsection}{\numberline {1.2}Scope}{4}{subsection.1.2}
+\contentsline {subsection}{\numberline {1.3}Intended Audience}{4}{subsection.1.3}
+\contentsline {section}{\numberline {2}Glossary}{4}{section.2}
+\contentsline {subsection}{\numberline {2.1}References}{5}{subsection.2.1}
+\contentsline {section}{\numberline {3}Stakeholders}{5}{section.3}
+\contentsline {subsection}{\numberline {3.1}Dr. Mike Bailey}{5}{subsection.3.1}
+\contentsline {subsection}{\numberline {3.2}Dr. Kirsten Winters}{6}{subsection.3.2}
+\contentsline {subsection}{\numberline {3.3}Intel}{6}{subsection.3.3}
+\contentsline {subsection}{\numberline {3.4}Development Team}{6}{subsection.3.4}
+\contentsline {section}{\numberline {4}Design Views}{6}{section.4}
+\contentsline {subsection}{\numberline {4.1}Components of the User Interface}{6}{subsection.4.1}
+\contentsline {subsection}{\numberline {4.2}Block Tools}{7}{subsection.4.2}
+\contentsline {subsubsection}{\numberline {4.2.1}The Creation Tool}{7}{subsubsection.4.2.1}
+\contentsline {subsubsection}{\numberline {4.2.2}The Deletion Tool}{7}{subsubsection.4.2.2}
+\contentsline {subsubsection}{\numberline {4.2.3}The Mapping Tool}{7}{subsubsection.4.2.3}
+\contentsline {subsubsection}{\numberline {4.2.4}The Selection Tool}{7}{subsubsection.4.2.4}
+\contentsline {subsubsection}{\numberline {4.2.5}The Hide/Unhide Tool}{7}{subsubsection.4.2.5}
+\contentsline {subsubsection}{\numberline {4.2.6}The Save Tool}{7}{subsubsection.4.2.6}
+\contentsline {subsection}{\numberline {4.3}Voxel Tools}{7}{subsection.4.3}
+\contentsline {subsubsection}{\numberline {4.3.1}Basic Tools}{8}{subsubsection.4.3.1}
+\contentsline {subsubsection}{\numberline {4.3.2}Adjacency Tools}{8}{subsubsection.4.3.2}
+\contentsline {subsubsection}{\numberline {4.3.3}Fill Tools}{8}{subsubsection.4.3.3}
+\contentsline {subsection}{\numberline {4.4}Block Types}{8}{subsection.4.4}
+\contentsline {subsubsection}{\numberline {4.4.1}Standard Blocks}{8}{subsubsection.4.4.1}
+\contentsline {subsubsection}{\numberline {4.4.2}Copy on Write (COW) Blocks}{8}{subsubsection.4.4.2}
+\contentsline {subsubsection}{\numberline {4.4.3}Canon Blocks}{9}{subsubsection.4.4.3}
+\contentsline {subsubsection}{\numberline {4.4.4}Hidden Blocks}{9}{subsubsection.4.4.4}
+\contentsline {subsubsection}{\numberline {4.4.5}The Selected Block and Focus Block}{9}{subsubsection.4.4.5}
+\contentsline {subsubsection}{\numberline {4.4.6}The Root Block}{9}{subsubsection.4.4.6}
+\contentsline {subsection}{\numberline {4.5}Components of the Voxel State}{10}{subsection.4.5}
+\contentsline {subsubsection}{\numberline {4.5.1}Nodes and their Usage}{10}{subsubsection.4.5.1}
+\contentsline {threesection}{\numberline {4.5.1.1}Overview}{10}{threesection.4.5.1.1}
+\contentsline {threesection}{\numberline {4.5.1.2}Nodes as Voxels}{10}{threesection.4.5.1.2}
+\contentsline {foursection}{\numberline {4.5.1.2.1}Meta Usage}{10}{foursection.4.5.1.2.1}
+\contentsline {foursection}{\numberline {4.5.1.2.2}Attribute Usage}{11}{foursection.4.5.1.2.2}
+\contentsline {foursection}{\numberline {4.5.1.2.3}Surface Usage}{11}{foursection.4.5.1.2.3}
+\contentsline {foursection}{\numberline {4.5.1.2.4}Face Lighting Index Usage}{11}{foursection.4.5.1.2.4}
+\contentsline {foursection}{\numberline {4.5.1.2.5}Child Usage}{12}{foursection.4.5.1.2.5}
+\contentsline {foursection}{\numberline {4.5.1.2.6}Mapping List Usage}{12}{foursection.4.5.1.2.6}
+\contentsline {threesection}{\numberline {4.5.1.3}Nodes as Face Lighting}{12}{threesection.4.5.1.3}
+\contentsline {threesection}{\numberline {4.5.1.4}Nodes as Transformation Matrices}{13}{threesection.4.5.1.4}
+\contentsline {threesection}{\numberline {4.5.1.5}Nodes as Tasks}{13}{threesection.4.5.1.5}
+\contentsline {subsubsection}{\numberline {4.5.2}The Data Buffer}{13}{subsubsection.4.5.2}
+\contentsline {subsubsection}{\numberline {4.5.3}The Block Buffer}{13}{subsubsection.4.5.3}
+\contentsline {subsubsection}{\numberline {4.5.4}The Heap Buffer}{13}{subsubsection.4.5.4}
+\contentsline {subsubsection}{\numberline {4.5.5}The Task Buffer}{14}{subsubsection.4.5.5}
+\contentsline {subsubsection}{\numberline {4.5.6}The Exchange Buffer}{14}{subsubsection.4.5.6}
+\contentsline {subsection}{\numberline {4.6}Components of the Graphics Engine (Yggdrasil)}{14}{subsection.4.6}
+\contentsline {subsection}{\numberline {4.7}Tasks}{14}{subsection.4.7}
+\contentsline {subsection}{\numberline {4.8}Traversal and Task Ordering}{16}{subsection.4.8}
+\contentsline {subsection}{\numberline {4.9}Tracing}{16}{subsection.4.9}
+\contentsline {subsubsection}{\numberline {4.9.1}Hits}{16}{subsubsection.4.9.1}
+\contentsline {subsubsection}{\numberline {4.9.2}SVO Traversal}{17}{subsubsection.4.9.2}
+\contentsline {subsubsection}{\numberline {4.9.3}Mapped Blocks}{17}{subsubsection.4.9.3}
+\contentsline {subsection}{\numberline {4.10}The Programs of Yggdrasil}{19}{subsection.4.10}
+\contentsline {subsubsection}{\numberline {4.10.1}The Memory Manager}{19}{subsubsection.4.10.1}
+\contentsline {threesection}{\numberline {4.10.1.1}Parameters}{19}{threesection.4.10.1.1}
+\contentsline {threesection}{\numberline {4.10.1.2}Operation}{19}{threesection.4.10.1.2}
+\contentsline {threesection}{\numberline {4.10.1.3}Usage}{19}{threesection.4.10.1.3}
+\contentsline {subsubsection}{\numberline {4.10.2}The Tree Manager}{20}{subsubsection.4.10.2}
+\contentsline {threesection}{\numberline {4.10.2.1}Overview}{20}{threesection.4.10.2.1}
+\contentsline {threesection}{\numberline {4.10.2.2}Parameters}{20}{threesection.4.10.2.2}
+\contentsline {threesection}{\numberline {4.10.2.3}Operation}{20}{threesection.4.10.2.3}
+\contentsline {threesection}{\numberline {4.10.2.4}Usage}{21}{threesection.4.10.2.4}
+\contentsline {subsection}{\numberline {4.11}The Tool Classes}{21}{subsection.4.11}
+\contentsline {subsubsection}{\numberline {4.11.1}Standard Parameters}{21}{subsubsection.4.11.1}
+\contentsline {threesection}{\numberline {4.11.1.1}The Basic Voxel Tool}{22}{threesection.4.11.1.1}
+\contentsline {foursection}{\numberline {4.11.1.1.1}Parameters}{22}{foursection.4.11.1.1.1}
+\contentsline {foursection}{\numberline {4.11.1.1.2}Operation}{22}{foursection.4.11.1.1.2}
+\contentsline {threesection}{\numberline {4.11.1.2}The Adjacency Voxel Tool}{22}{threesection.4.11.1.2}
+\contentsline {foursection}{\numberline {4.11.1.2.1}Parameters}{22}{foursection.4.11.1.2.1}
+\contentsline {foursection}{\numberline {4.11.1.2.2}Operation}{23}{foursection.4.11.1.2.2}
+\contentsline {threesection}{\numberline {4.11.1.3}The Fill Voxel Tool}{23}{threesection.4.11.1.3}
+\contentsline {foursection}{\numberline {4.11.1.3.1}Parameters}{23}{foursection.4.11.1.3.1}
+\contentsline {foursection}{\numberline {4.11.1.3.2}Operation}{23}{foursection.4.11.1.3.2}
+\contentsline {threesection}{\numberline {4.11.1.4}The Block Mapping Program}{23}{threesection.4.11.1.4}
+\contentsline {foursection}{\numberline {4.11.1.4.1}Parameters}{23}{foursection.4.11.1.4.1}
+\contentsline {foursection}{\numberline {4.11.1.4.2}Operation}{24}{foursection.4.11.1.4.2}
+\contentsline {foursection}{\numberline {4.11.1.4.3}Usage}{24}{foursection.4.11.1.4.3}
+\contentsline {threesection}{\numberline {4.11.1.5}The Block Creation Program}{24}{threesection.4.11.1.5}
+\contentsline {foursection}{\numberline {4.11.1.5.1}Parameters}{24}{foursection.4.11.1.5.1}
+\contentsline {foursection}{\numberline {4.11.1.5.2}Operation}{24}{foursection.4.11.1.5.2}
+\contentsline {foursection}{\numberline {4.11.1.5.3}Usage}{24}{foursection.4.11.1.5.3}
+\contentsline {threesection}{\numberline {4.11.1.6}The Block Deletion Program}{25}{threesection.4.11.1.6}
+\contentsline {foursection}{\numberline {4.11.1.6.1}Parameters}{25}{foursection.4.11.1.6.1}
+\contentsline {foursection}{\numberline {4.11.1.6.2}Operation}{25}{foursection.4.11.1.6.2}
+\contentsline {foursection}{\numberline {4.11.1.6.3}Usage}{25}{foursection.4.11.1.6.3}
+\contentsline {subsection}{\numberline {4.12}Tracers}{25}{subsection.4.12}
+\contentsline {subsubsection}{\numberline {4.12.1}Standard Parameters}{25}{subsubsection.4.12.1}
+\contentsline {subsubsection}{\numberline {4.12.2}Simple Tracer}{25}{subsubsection.4.12.2}
+\contentsline {threesection}{\numberline {4.12.2.1}Parameters}{25}{threesection.4.12.2.1}
+\contentsline {threesection}{\numberline {4.12.2.2}Operation}{25}{threesection.4.12.2.2}
+\contentsline {threesection}{\numberline {4.12.2.3}Usage}{26}{threesection.4.12.2.3}
+\contentsline {subsubsection}{\numberline {4.12.3}Full Forward Tracer}{26}{subsubsection.4.12.3}
+\contentsline {threesection}{\numberline {4.12.3.1}Parameters}{26}{threesection.4.12.3.1}
+\contentsline {threesection}{\numberline {4.12.3.2}Operation}{26}{threesection.4.12.3.2}
+\contentsline {threesection}{\numberline {4.12.3.3}Usage}{27}{threesection.4.12.3.3}
+\contentsline {subsection}{\numberline {4.13}Interactions between the Hardware and the Interchange}{27}{subsection.4.13}
+\contentsline {subsubsection}{\numberline {4.13.1}Design Entities}{27}{subsubsection.4.13.1}
+\contentsline {subsubsection}{\numberline {4.13.2}Design}{27}{subsubsection.4.13.2}
+\contentsline {subsection}{\numberline {4.14}Architecture of the User Interface}{28}{subsection.4.14}
+\contentsline {subsubsection}{\numberline {4.14.1}Design Entities}{28}{subsubsection.4.14.1}
+\contentsline {subsubsection}{\numberline {4.14.2}Design}{28}{subsubsection.4.14.2}
+\contentsline {subsection}{\numberline {4.15}Architecture of the Interchange}{29}{subsection.4.15}
+\contentsline {subsubsection}{\numberline {4.15.1}Design Entities}{30}{subsubsection.4.15.1}
+\contentsline {subsubsection}{\numberline {4.15.2}Design}{30}{subsubsection.4.15.2}
