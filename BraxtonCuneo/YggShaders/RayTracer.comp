@@ -15,14 +15,36 @@ uniform uint depthLimit;
 uint task;
 
 
-uint makeRootTrace(){
+uint makeTrace(uint parent){
+	uint trace = allocNode();
+	DataBuffer[metaIdx(trace)] = parent;
+}
+
+void pushTrace(){
+
+
+
+}
+
+uint popTrace(){
+
+
+
+}
+
+void iterateTrace(inout trace){
+
+
 
 }
 
 
-void initTasks(){
-    uint
-}
+
+/// Task Management Code
+
+
+
+
 
 
 layout(local_size_x = X_SIZE, local_size_y = Y_SIZE) in;

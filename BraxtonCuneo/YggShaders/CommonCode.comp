@@ -1,19 +1,27 @@
-#define NODE_SIZE	16
-#define HEADER_SIZE	4
-#define ATT_NUM		4
-#define CHILD_NUM	8
-#define NOT_THERE	0x3FFFFFFF
-#define CACHED		0x40000000
-#define COPY_WRITE	0x80000000
+#define NODE_SIZE		16
+#define HEADER_SIZE		4
+#define ATT_NUM			4
+#define CHILD_NUM		8
+#define THREAD_COUNT	4096
+#define RSRC_PER		3
+#define RSRC_SIZE		2
+#define RSRC_IDX_OFFSET THREAD_COUNT * RSRC_PER * RSRC_SIZE
+#define HIT_DISTANCE 	1.0 / 256.0
+
+
+#define NOT_THERE	0x7FFFFFFF
+#define CACHED		0x80000000
 
 #define NODE_PLAIN_COLOR	0x00000000
 #define NODE_TEXTURE_MAP	0x00000001
 
-#define HEAPSIZE 4
+
+
+/// Yggdrasil Buffer Definitions
 
 layout(std430, binding = 0) buffer DataBuffer { uint data[]; };
 
-layout(std430, binding = 1) buffer HeadBuffer { uint data[]; };
+layout(std430, binding = 1) buffer BlockBuffer { uint data[]; };
 
 layout(std430, binding = 2) buffer HeapBuffer { uint data[]; };
 
@@ -21,146 +29,279 @@ layout(std430, binding = 3) buffer TaskBuffer { uint data[]; };
 
 layout(std430, binding = 4) buffer ExchangeBuffer { uint data[]; };
 
-layout(std430, binding = 5) uniform TransformBuffer { mat4 data[]; };
 
+
+
+/// Global values and struct defs for managing common resources
+
+struct voxelNode{
+    uint meta;
+    uint surface;
+    uint light;
+    uint overlap;
+    uvec4 attributes;
+    uint child[8];
+};
+
+struct traceNode{
+    uint nextNode;
+    uint lastNode;
+    uint hostNode;
+    uint stackHead;
+    uint stackCount;
+    uint overlapHead;
+    uint distanceLeft;
+    uvec3 intPosition;
+    vec3 position;
+    vec3 velocity;
+};
+
+uint heapIdxs_loc[2];
 uint heapCounts_loc[2];
-uint heaps_loc[2];
+uint heapHeads_loc[2];
+
+uint taskQIdxs_loc[2];
 uint taskQCounts_loc[2];
-uint taskQs_loc[2];
+uint taskQHeads_loc[2];
+
 uint id;
+uint swapBit = 1;
 
-uint metaIdx( in uint node ){
-	return node*NODE_SIZE;
+
+/// Direct Node Member Access Macros
+
+#define voxelMeta(node)				DataBuffer.data[ node * NODE_SIZE]
+#define voxelSurface(node)			DataBuffer.data[ node * NODE_SIZE + 1 ]
+#define voxelLight(node)			DataBuffer.data[ node * NODE_SIZE + 2 ]
+#define voxelOverlap(node)			DataBuffer.data[ node * NODE_SIZE + 3 ]
+#define voxelAttribute(node,idx)	DataBuffer.data[ node * NODE_SIZE + 4 + idx ]
+#define voxelChild(node,idx)		DataBuffer.data[ node * NODE_SIZE + 8 + idx ]
+
+#define traceLast(node)					DataBuffer.data[ node * NODE_SIZE ]
+#define traceNext(node)					DataBuffer.data[ node * NODE_SIZE + 1 ]
+#define traceHostNode(node)				DataBuffer.data[ node * NODE_SIZE + 2 ]
+#define traceStackHead(node)			DataBuffer.data[ node * NODE_SIZE + 3 ]
+#define traceStackCount(node)			DataBuffer.data[ node * NODE_SIZE + 4 ]
+#define traceOverlapHead(node)			DataBuffer.data[ node * NODE_SIZE + 5 ]
+#define traceDistanceLeft(node)			DataBuffer.data[ node * NODE_SIZE + 6 ]
+#define traceIntegerPosition(node,idx)	DataBuffer.data[ node * NODE_SIZE + 7  + idx ]
+#define tracePosition(node,idx)			DataBuffer.data[ node * NODE_SIZE + 10 + idx ]
+#define traceVelocity(node,idx)			DataBuffer.data[ node * NODE_SIZE + 13 + idx ]
+
+
+/// Node Loading/Storing
+
+traceNode traceLoad(in uint node){
+	traceNode result;
+    result.lastNode =		traceLast(node);
+	result.nextNode =		traceLast(node);
+    result.hostNode =		traceHostNode(node);
+    result.stackHead =		traceStackHead(node);
+    result.stackCount =		traceStackCount(node);
+    result.overlapHead = 	traceOverlapHead(node);
+    result.distanceLeft =	uintBitsToFloat(traceDistanceLeft(node));
+    result.intPosition = 	uvec3(	traceIntegerPosition(node,0),
+									traceIntegerPosition(node,1),
+									traceIntegerPosition(node,2) );
+    result.position = 	vec3(	uintBitsToFloat(tracePosition(node,0)),
+								uintBitsToFloat(tracePosition(node,1)),
+								uintBitsToFloat(tracePosition(node,2)) );
+    result.velocity = 	vec3(	uintBitsToFloat(traceVelocity(node,0)),
+								uintBitsToFloat(traceVelocity(node,1)),
+								uintBitsToFloat(traceVelocity(node,2)) );
+    return result;
 }
 
-uint surfIdx( in uint node ){
-	return node*NODE_SIZE + 1;
+
+void traceStore(in uint node, in traceNode trace){
+    traceLast(node) =				trace.lastNode;
+	traceNext(node) =				trace.nextNode;
+    traceHostNode(node) =			trace.hostNode;
+    traceStackHead(node) =			trace.stackHead;
+    traceStackCount(node) =			trace.stackCount;
+    traceOverlapHead(node) =		trace.overlapHead;
+    traceDistanceLeft(node) =		floatBitsToUint(trace.distanceLeft);
+    traceIntegerPosition(node,0) =	trace.intPosition.x;
+    traceIntegerPosition(node,1) =	trace.intPosition.y;
+    traceIntegerPosition(node,2) =	trace.intPosition.z;
+    tracePosition(node,0) =			floatBitsToUint(trace.position.x);
+    tracePosition(node,1) =			floatBitsToUint(trace.position.y);
+    tracePosition(node,2) =			floatBitsToUint(trace.position.z);
+    traceVelocity(node,0) =			floatBitsToUint(trace.velocity.x);
+    traceVelocity(node,1) =			floatBitsToUint(trace.velocity.y);
+    traceVelocity(node,2) =			floatBitsToUint(trace.velocity.z);
 }
 
-uint lightListIdx( in uint node ){
-	return node*NODE_SIZE + 2;
+
+/// Resource Value Indexing Functions
+
+uint heapHeadIdx(in uint idx){
+	return heapIdxs_loc[idx]*RSRC_SIZE;
 }
 
-uint overlapListIdx( in uint node ){
-	return node*NODE_SIZE + 3;
+uint heapCountIdx(in uint idx){
+	return heapIdxs_loc[idx]*RSRC_SIZE + 1;
 }
 
-uint attributeIdx( in uint node, in uint idx ){
-	return node*NODE_SIZE + HEADER_SIZE + idx;
+uint heapIdxIdx(int uint idx){
+	return RSRC_IDX_OFFSET + idx;
 }
 
-uint childIdx( in uint node, in uint idx ){
-	return node*NODE_SIZE + HEADER_SIZE + ATT_NUM + idx;
+uint taskQHeadIdx(in uint idx){
+	return taskQIdxs_loc[idx]*RSRC_SIZE;
 }
 
-uint rsrcLeftIdx(){
-	return id*HEAPSIZE;
+uint taskQCountIdx(in uint idx){
+	return taskQIdxs_loc[idx]*RSRC_SIZE + 1;
 }
 
-uint rsrcRightIdx(){
-	return id*HEAPSIZE + 1;
+uint taskQIdxIdx(int uint idx){
+	return RSRC_IDX_OFFSET + idx;
 }
 
-uint rsrcLeftCountIdx(){
-	return id*HEAPSIZE + 2;
-}
 
-uint rsrcRightCountIdx(){
-	return id*HEAPSIZE + 3;
-}
+
+
+/// Memory Management Functions
 
 uint allocNode(){
 	uint bigger = uint(lessThan(heapCounts_loc[0],heapCounts_loc[1]);
-	uint result = heaps_loc[bigger];
-	heaps_loc[bigger] = DataBuffer.data[childIdx(result,0)];
+	uint result = heapHeads_loc[bigger];
+	heapHeads_loc[bigger] = voxelChild(result,0);
 	heapCounts_loc[bigger]--;
 }
 
 void freeNode( in uint node ){
 	uint smaller = uint(greaterThan(heapCounts_loc[0],heapCounts_loc[1]);
-	DataBuffer.data[childIdx(node,0)] = heaps_loc[smaller];
-	heaps_loc[smaller] = node;
+	voxelChild(node,0) = heapHeads_loc[smaller];
+	heapHeads_loc[smaller] = node;
 	heapCounts_loc[smaller]++;
 }
-
-void pushHeaps(){
-	HeapBuffer.data[rsrcLeftIdx()] = heaps_loc[0];
-	HeapBuffer.data[rsrcRightIdx()] = heaps_loc[1];
-	HeapBuffer.data[rsrcLeftCountIdx()] = heapCounts_loc[0];
-	HeapBuffer.data[rsrcRightCountIdx()] = heapCounts_loc[1];
-}
-
-void pullHeaps(){
-	heaps_loc[0] = HeapBuffer.data[rsrcLeftIdx()];
-	heaps_loc[1] = HeapBuffer.data[rsrcRightIdx()];
-	heapCounts_loc[0] = HeapBuffer.data[rsrcLeftCountIdx()];
-	heapCounts_loc[1] = HeapBuffer.data[rsrcRightCountIdx()];
-}
-
-uint grabTask(){
-	uint bigger = uint(lessThan(taskQCounts_loc[0],taskQCounts_loc[1]);
-	uint result = taskQs_loc[bigger];
-	taskQs_loc[bigger] = DataBuffer.data[childIdx(result,0)];
-	taskQCounts_loc[bigger]--;
-}
-
-void postTask( in uint node ){
-	uint smaller = uint(greaterThan(taskQCounts_loc[0],taskQCounts_loc[1]);
-	DataBuffer.data[childIdx(node,0)] = taskQs_loc[smaller];
-	taskQs_loc[smaller] = node;
-	taskQCounts_loc[smaller]++;
-}
-
-void pushTaskQs(){
-	HeapBuffer.data[rsrcLeftIdx()] = taskQs_loc[0];
-	HeapBuffer.data[rsrcRightIdx()] = taskQs_loc[1];
-	HeapBuffer.data[rsrcLeftCountIdx()] = taskQCounts_loc[0];
-	HeapBuffer.data[rsrcRightCountIdx()] = taskQCounts_loc[1];
-}
-
-void pullTaskQs(){
-	taskQs_loc[0] = TaskBuffer.data[rsrcLeftIdx()];
-	taskQs_loc[1] = TaskBuffer.data[rsrcRightIdx()];
-	taskQCounts_loc[0] = TaskBuffer.data[rsrcLeftCountIdx()];
-	taskQCounts_loc[1] = TaskBuffer.data[rsrcRightCountIdx()];
-}
-
 
 void levelHeaps( in uint len ){
 	uint bigger = uint(lessThan(heapCounts_loc[0],heapCounts_loc[1]);
 	uint smaller = 1-bigger;
 	uint diff = abs(heapCounts_loc[0]-heapCounts_loc[1]);
-	uint iter = heaps_loc[bigger];
+	uint iter = heapHeads_loc[bigger];
+	uint holder;
 	for(uint i = 0; i < len; i++){
 		if(i < diff - 1){
-			iter = DataBuffer.data[childIdx(iter,0)];
+			iter = voxelChild(iter,0);
 		}
 	}
 	if(diff > 0){
-		heaps_loc[bigger] = DataBuffer.data[childIdx(iter,0)];
-		DataBuffer.data[childIdx(iter,0)] = heaps_loc[smaller];
-		heapCounts[smaller] += diff;
-		heapCounts[bigger] += diff;
+		holder = heapHeads_loc[bigger];
+		heapHeads_loc[bigger] = voxelChild(iter,0);
+		voxelChild(iter,0) = heapHeads_loc[smaller];
+        heapHeads_loc[smaller] = holder;
+		heapCounts_loc[smaller] += diff;
+		heapCounts_loc[bigger] += diff;
 	}
 }
 
-void levelTasks( in uint len ){
+void pushHeap(in uint idx){
+	HeapBuffer.data[heapHeadIdx(idx)] = heapHeads_loc[idx];
+	HeapBuffer.data[heapCountIdx(idx)] = heapCounts_loc[idx];
+}
+
+void pullHeap(in uint idx){
+	heapHeads_loc[idx] = HeapBuffer.data[heapHeadIdx(idx)];
+	heapCounts_loc[idx] = HeapBuffer.data[heapCountIdx(idx)];
+}
+
+void rotateHeaps(){
+	pushHeap(0);
+	uint swpIdx = id ^ swapBit;
+    heapHeads_loc[0] = atomicExchange(
+						HeapBuffer.data[heapIdxIdx(swpIdx)],
+						heapIdxs_loc[0]
+					);
+	heapHeads_loc[0] = atomicExchange(
+						HeapBuffer.data[heapIdxIdx[id]],
+						heapIdxs_loc[0]
+					);
+	uint temp = heapIdxs_loc[0];
+	heapIdxs_loc[0] = heapIdxs_loc[1];
+	heapIdxs_loc[1] = temp;
+	id = (id<<1);
+	id = (id >= THREAD_COUNT) ? 1 : id;
+    pullHeap(0);
+}
+
+
+
+
+/// Task Management Functions
+
+uint grabTask(){
+	uint bigger = uint(lessThan(taskQCounts_loc[0],taskQCounts_loc[1]);
+	uint result = taskQHeads_loc[bigger];
+	taskQHeads_loc[bigger] = voxelChild(result,0);
+	taskQCounts_loc[bigger]--;
+}
+
+void postTask( in uint node ){
+	uint smaller = uint(greaterThan(taskQCounts_loc[0],taskQCounts_loc[1]);
+	voxelChild(node,0) = taskQHeads_loc[smaller];
+	taskQHeads_loc[smaller] = node;
+	taskQCounts_loc[smaller]++;
+}
+
+void levelHeaps( in uint len ){
 	uint bigger = uint(lessThan(taskQCounts_loc[0],taskQCounts_loc[1]);
 	uint smaller = 1-bigger;
 	uint diff = abs(taskQCounts_loc[0]-taskQCounts_loc[1]);
-	uint iter = taskQs_loc[bigger];
+	uint iter = taskQHeads_loc[bigger];
+	uint holder;
 	for(uint i = 0; i < len; i++){
 		if(i < diff - 1){
-			iter = DataBuffer.data[childIdx(iter,0)];
+			iter = voxelChild(iter,0);
 		}
 	}
 	if(diff > 0){
-		taskQs_loc[bigger] = DataBuffer.data[childIdx(iter,0)];
-		DataBuffer.data[childIdx(iter,0)] = taskQs_loc[smaller];
-		taskQCounts[smaller] += diff;
-		taskQCounts[bigger] += diff;
+		holder = taskQHeads_loc[bigger];
+		taskQHeads_loc[bigger] = voxelChild(iter,0);
+		voxelChild(iter,0) = taskQHeads_loc[smaller];
+        taskQHeads_loc[smaller] = holder;
+		taskQCounts_loc[smaller] += diff;
+		taskQCounts_loc[bigger] += diff;
 	}
 }
+
+
+void pushTaskQ(in uint idx){
+	TaskBuffer.data[taskQHeadIdx(idx)] = taskQHeads_loc[idx];
+	TaskBuffer.data[taskQCountIdx(idx)] = taskQCounts_loc[idx];
+}
+
+void pullTaskQ(in uint idx){
+	taskQHeads_loc[idx] = TaskBuffer.data[taskQHeadIdx(idx)];
+	taskQCounts_loc[idx] = TaskBuffer.data[taskQCountIdx(idx)];
+}
+
+void rotateTaskQs(){
+	pushTaskQ(0);
+	uint swpIdx = id ^ swapBit;
+    taskQHeads_loc[0] = atomicExchange(
+						TaskBuffer.data[taskQIdxIdx(swpIdx)],
+						taskQIdxs_loc[0]
+					);
+	taskQHeads_loc[0] = atomicExchange(
+						TaskQBuffer.data[taskQIdxIdx[id]],
+						taskQIdxs_loc[0]
+					);
+	uint temp = taskQIdxs_loc[0];
+	taskQIdxs_loc[0] = taskQIdxs_loc[1];
+	taskQIdxs_loc[1] = temp;
+	id = (id<<1);
+	id = (id >= THREAD_COUNT) ? 1 : id;
+    pullTaskQ(0);
+}
+
+
+
+
+/// Unsigned Int Stack
 
 void pushStackUint(inout uint top, inout uint count, in uint val){
 	uint modPt = count % (NODE_SIZE - 1);
@@ -190,6 +331,49 @@ uint peekStackUint(in uint top, in uint count){
 	return DataBuffer[NODE_SIZE*top + 1 + modPt];
 }
 
+
+
+
+
+/// Trace Management Code
+
+float distToHit(	in uint posMask, in uvec3 intPos,
+					in vec4 position, in vec4 velocity, in vec4 surface){
+	if(length(surface.xyz)!=0){
+		float velDir = dot(surface.xyz,velocity.xyz);
+		float posDir = dot(surface.xyz,position.xyz);
+	}
+}
+
+uint marchRay( 	in uint trace, inout vec2 bestSteps, inout uvec2 bestTraces,
+				inout vec3 colorMask, inout vec3 lightSample){
+
+	traceNode data = loadTrace(trace);
+
+    data.position.xyz = data.position.xyz + data.velocity.xyz * bestSteps.x;
+	data.distanceLeft = data.distanceLeft - bestSteps.x;
+	if(data.distanceLeft < HIT_DISTANCE)
+
+    if(trace == bestTraces.x){
+        data.distanceLeft = distToHit();
+        if(data.distanceLeft > bestSteps.y){
+            bestSteps.y = data.distanceLeft;
+            bestTraces.y = trace;
+            if(data.distanceLeft > bestSteps.x){
+                bestSteps.xy = vec2(data.distanceLeft,bestSteps.x);
+                bestTraces.xy = uvec2(trace,bestTraces.x);
+            }
+        }
+    }
+
+	storeTrace(trace,data);
+    return data.nextNode;
+}
+
+
+
+/// Other Stuff
+
 uint childSeek(	in uint currentNode, in uint posMask,
 				in uvec3 current, in uvec3 target	){
 	uint idx = 0;
@@ -210,41 +394,16 @@ vec4 getLocalCoordinates(in vec4 currentCoords, in mat4 childTransform){
 	return childTransform * currentCoords;
 }
 
-vec4 getVoxelCoordinates(in )
 
-bool hitsSurface( 	in vec4 position, in vec4 direction,
-					in float scale, in uint surf ){
-	vec4 surface = unpackSNorm(surf);
-	vec4 start = mod(position+scale/2,scale)/scale;
-	vec4 end = start + direction * scale;
-	start = dot(start.xyz,surface.xyz);
-	end = dot(end.xyz,surface.xyz);
-    bool hits = any( lessThanEqual(
-					vec2(	dot(start.xyz,surface.xyz),
-							dot(end.xyz,surface.xyz)	),
-					surface.ww
-				));
-	sta
-
-}
-
-uint makePlainColorNode(in vec4 color, in vec4 surf){
-	uint result = allocNode();
-    DataBuffer[metaIdx(result)] = NODE_PLAIN_COLOR;
-    DataBuffer[surfIdx(result)] = packSNorm4x8(surf);
-    DataBuffer[lightListIdx(result)] = 0;
-    DataBuffer[overlapListIdx(result)] = 0;
-    DataBuffer[attributeIdx(result,0)] = packSNorm4x8(color);
-    for(uint i = 0; i < 8; i++){
-		DataBuffer[attributeIdx(result,i)] = NOT_THERE;
-    }
-}
 
 
 void initYggCompute(){
 	id = gl_GlobalInvocationID();
-	pullHeaps();
-	pullTaskQs();
+	pullHeap(0);
+	pullHeap(1);
+	pullTaskQ(0);
+	pullTaskQ(1);
+	swapMask = 1;
 }
 
 
