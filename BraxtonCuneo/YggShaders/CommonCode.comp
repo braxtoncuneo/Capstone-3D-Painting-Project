@@ -6,6 +6,7 @@
 #define RSRC_PER		3
 #define RSRC_SIZE		2
 #define RSRC_IDX_OFFSET THREAD_COUNT * RSRC_PER * RSRC_SIZE
+#define ROOT_TASK		RSRC_IDX_OFFSET + THREAD_COUNT * RSRC_PER
 #define HIT_DISTANCE 	1.0 / 256.0
 
 
@@ -14,20 +15,6 @@
 
 #define NODE_PLAIN_COLOR	0x00000000
 #define NODE_TEXTURE_MAP	0x00000001
-
-
-
-/// Yggdrasil Buffer Definitions
-
-layout(std430, binding = 0) buffer DataBuffer { uint data[]; };
-
-layout(std430, binding = 1) buffer BlockBuffer { uint data[]; };
-
-layout(std430, binding = 2) buffer HeapBuffer { uint data[]; };
-
-layout(std430, binding = 3) buffer TaskBuffer { uint data[]; };
-
-layout(std430, binding = 4) buffer ExchangeBuffer { uint data[]; };
 
 
 
@@ -44,16 +31,35 @@ struct voxelNode{
 };
 
 struct traceNode{
-    uint nextNode;
-    uint lastNode;
-    uint hostNode;
+    //0-6
+    uint last;
+    uint next;
+    uint host;
     uint stackHead;
     uint stackCount;
     uint overlapHead;
-    uint distanceLeft;
-    uvec3 intPosition;
+    float nextHit;
     vec3 position;
     vec3 velocity;
+};
+
+struct traceTaskNode{
+	uint last;
+	uint next;
+    uint parent;
+    uint childCount;
+    vec3 position;
+    vec3 velocity;
+    vec3 lightMask;
+    vec3 lightSample;
+};
+
+struct block{
+    uint parent;
+    uint referenceCount;
+    uint type;
+    uint root;
+	mat4 transformation;
 };
 
 uint heapIdxs_loc[2];
@@ -68,7 +74,25 @@ uint id;
 uint swapBit = 1;
 
 
+
+/// Yggdrasil Buffer Definitions
+
+layout(std430, binding = 0) buffer DataBuffer { uint data[]; };
+
+layout(std430, binding = 1) buffer BlockBuffer { block data[]; };
+
+layout(std430, binding = 2) buffer HeapBuffer { uint data[]; };
+
+layout(std430, binding = 3) buffer TaskBuffer { uint data[]; };
+
+layout(std430, binding = 4) buffer ExchangeBuffer { uint data[]; };
+
+
+
+
 /// Direct Node Member Access Macros
+
+#define rawNode(node,idx)			DataBuffer.data[ node * NODE_SIZE + idx ]
 
 #define voxelMeta(node)				DataBuffer.data[ node * NODE_SIZE]
 #define voxelSurface(node)			DataBuffer.data[ node * NODE_SIZE + 1 ]
@@ -88,14 +112,24 @@ uint swapBit = 1;
 #define tracePosition(node,idx)			DataBuffer.data[ node * NODE_SIZE + 10 + idx ]
 #define traceVelocity(node,idx)			DataBuffer.data[ node * NODE_SIZE + 13 + idx ]
 
+#define taskLast(node)					DataBuffer.data[ node * NODE_SIZE ]
+#define taskNext(node)					DataBuffer.data[ node * NODE_SIZE + 1 ]
+#define taskParent(node)				DataBuffer.data[ node * NODE_SIZE + 2 ]
+#define taskChildCount(node)			DataBuffer.data[ node * NODE_SIZE + 3 ]
+
+#define traceTaskPosition(node,idx)		DataBuffer.data[ node * NODE_SIZE + 4 + idx ]
+#define traceTaskVelocity(node,idx)		DataBuffer.data[ node * NODE_SIZE + 7 + idx ]
+#define traceTaskLightMask(node,idx)	DataBuffer.data[ node * NODE_SIZE + 10 + idx ]
+#define traceTaskLightSample(node,idx)	DataBuffer.data[ node * NODE_SIZE + 13 + idx ]
+
 
 /// Node Loading/Storing
 
 traceNode traceLoad(in uint node){
 	traceNode result;
-    result.lastNode =		traceLast(node);
-	result.nextNode =		traceLast(node);
-    result.hostNode =		traceHostNode(node);
+    result.last =			traceLast(node);
+	result.next =			traceLast(node);
+    result.host =			traceHostNode(node);
     result.stackHead =		traceStackHead(node);
     result.stackCount =		traceStackCount(node);
     result.overlapHead = 	traceOverlapHead(node);
@@ -114,9 +148,9 @@ traceNode traceLoad(in uint node){
 
 
 void traceStore(in uint node, in traceNode trace){
-    traceLast(node) =				trace.lastNode;
-	traceNext(node) =				trace.nextNode;
-    traceHostNode(node) =			trace.hostNode;
+    traceLast(node) =				trace.last;
+	traceNext(node) =				trace.next;
+    traceHostNode(node) =			trace.host;
     traceStackHead(node) =			trace.stackHead;
     traceStackCount(node) =			trace.stackCount;
     traceOverlapHead(node) =		trace.overlapHead;
@@ -131,6 +165,8 @@ void traceStore(in uint node, in traceNode trace){
     traceVelocity(node,1) =			floatBitsToUint(trace.velocity.y);
     traceVelocity(node,2) =			floatBitsToUint(trace.velocity.z);
 }
+
+
 
 
 /// Resource Value Indexing Functions
@@ -234,10 +270,14 @@ void rotateHeaps(){
 /// Task Management Functions
 
 uint grabTask(){
+	if(taskQCounts_loc[0] | taskQCounts_loc[1] == 0){
+		return NOT_THERE;
+	}
 	uint bigger = uint(lessThan(taskQCounts_loc[0],taskQCounts_loc[1]);
 	uint result = taskQHeads_loc[bigger];
 	taskQHeads_loc[bigger] = voxelChild(result,0);
 	taskQCounts_loc[bigger]--;
+	return result;
 }
 
 void postTask( in uint node ){
@@ -247,7 +287,7 @@ void postTask( in uint node ){
 	taskQCounts_loc[smaller]++;
 }
 
-void levelHeaps( in uint len ){
+void levelTasks( in uint len ){
 	uint bigger = uint(lessThan(taskQCounts_loc[0],taskQCounts_loc[1]);
 	uint smaller = 1-bigger;
 	uint diff = abs(taskQCounts_loc[0]-taskQCounts_loc[1]);
@@ -308,7 +348,7 @@ void pushStackUint(inout uint top, inout uint count, in uint val){
 	uint result = top;
     if( modPt == 0 ){
 		result = allocNode();
-		DataBuffer[NODE_SIZE*result] = top;
+		DataBuffer.data[NODE_SIZE*result] = top;
 		top = result;
     }
     DataBuffer[NODE_SIZE*top + 1 + modPt] = val;
@@ -319,83 +359,54 @@ void popStackUint(inout uint top, inout uint count){
 	uint modPt = count % (NODE_SIZE - 1);
 	uint result = top;
     if( modPt == 1 ){
-		result = DataBuffer[NODE_SIZE*top];
+		result = DataBuffer.data[NODE_SIZE*top];
 		freeNode(top);
 		top = result;
     }
     count--;
 }
 
-uint peekStackUint(in uint top, in uint count){
-	uint modPt = count % (NODE_SIZE - 1);
-	return DataBuffer[NODE_SIZE*top + 1 + modPt];
-}
+// So we can read and write to the stack top cleanly
+#define stackTopUint(top,count) DataBuffer[ NODE_SIZE * top + 1 + ( count % ( NODE_SIZE - 1 ) ) ]
 
-
-
-
-
-/// Trace Management Code
-
-float distToHit(	in uint posMask, in uvec3 intPos,
-					in vec4 position, in vec4 velocity, in vec4 surface){
-	if(length(surface.xyz)!=0){
-		float velDir = dot(surface.xyz,velocity.xyz);
-		float posDir = dot(surface.xyz,position.xyz);
+void destroyStackUint(inout uint top, inout uint count){
+	uint iter = top;
+	uint next;
+	while(iter != NOT_THERE){
+		next = DataBuffer.data[NODE_SIZE*iter];
+		freeNode(iter);
+		iter = next;
 	}
-}
-
-uint marchRay( 	in uint trace, inout vec2 bestSteps, inout uvec2 bestTraces,
-				inout vec3 colorMask, inout vec3 lightSample){
-
-	traceNode data = loadTrace(trace);
-
-    data.position.xyz = data.position.xyz + data.velocity.xyz * bestSteps.x;
-	data.distanceLeft = data.distanceLeft - bestSteps.x;
-	if(data.distanceLeft < HIT_DISTANCE)
-
-    if(trace == bestTraces.x){
-        data.distanceLeft = distToHit();
-        if(data.distanceLeft > bestSteps.y){
-            bestSteps.y = data.distanceLeft;
-            bestTraces.y = trace;
-            if(data.distanceLeft > bestSteps.x){
-                bestSteps.xy = vec2(data.distanceLeft,bestSteps.x);
-                bestTraces.xy = uvec2(trace,bestTraces.x);
-            }
-        }
-    }
-
-	storeTrace(trace,data);
-    return data.nextNode;
+	top = NOT_THERE;
+	count = 0;
 }
 
 
+/// Voxel State Traversal Functions
 
-/// Other Stuff
 
-uint childSeek(	in uint currentNode, in uint posMask,
-				in uvec3 current, in uvec3 target	){
+
+
+uint childSeek(	in uint voxel, in uint posMask,
+				in uvec3 intPosition, in uvec3 targetPosition ){
 	uint idx = 0;
-
-    if( ( target.x & posMask ) > ( current.x & posMask ) ){
+    if( ( targetPosition.x & posMask ) > ( intPosition.x & posMask ) ){
 		idx |= 1;
     }
-    if( ( target.y & posMask ) > ( current.y & posMask ) ){
+    if( ( targetPosition.y & posMask ) > ( intPosition.y & posMask ) ){
 		idx |= 2;
     }
-    if( ( target.z & posMask ) > ( current.z & posMask ) ){
+    if( ( targetPosition.z & posMask ) > ( intPosition.z & posMask ) ){
 		idx |= 4;
     }
-    return DataBuffer[childIdx(currentNode,idx)];
+    return voxelChild(voxel,idx);
 }
 
 vec4 getLocalCoordinates(in vec4 currentCoords, in mat4 childTransform){
 	return childTransform * currentCoords;
 }
 
-
-
+/// Other Stuff
 
 void initYggCompute(){
 	id = gl_GlobalInvocationID();

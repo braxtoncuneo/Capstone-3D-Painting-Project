@@ -1,57 +1,329 @@
-
 //These should be set by the interchange to dimensions appropriate to the GPU
 #define X_SIZE 8
 #define Y_SIZE 8
 
-#define DEPTH_LIMIT
+#define MEMORY_SWAP_FREQ 8
+#define TASK_SWAP_FREQ	4
 
-// This should be replaced with the contents of CommonCode.comp
-#include "CommonCode.comp"
+#define DEPTH_LIMIT 8
+
+layout(std430, binding = 5) buffer TraceLayoutBuffer { uvec2 data[]; };
+restrict writeonly image2D outputImage;
 
 uniform mat4 viewMatrix;
 uniform uint pixWidth;
 uniform uint pixHeight;
 uniform uint depthLimit;
-uint task;
+uniform vec3 horizonColor;
+uint pixNo;
+uint traceTask;
+uint trace;
 
 
-uint makeTrace(uint parent){
-	uint trace = allocNode();
-	DataBuffer[metaIdx(trace)] = parent;
+// This should be replaced with the contents of CommonCode.comp
+#include "CommonCode.comp"
+
+
+/// Trace Management
+
+/* Fills the Trace Layout Buffer with a series of coordinates which tile the
+** grid space of the output image along a row-major, column-minor sequence.
+** If the output image is not a perfect square with a power-of-two side length,
+** the gridspace is decomposed into squares with a power-of-two side length
+** and individually tiled.
+*/
+void spoolScanlineLayout(){
+
+    for(uint pos = id; pos < pixNo; pos += THREAD_COUNT){
+        TraceLayoutBuffer.data[pos] = uvec2(pos%THREAD_COUNT,pos/THREAD_COUNT);
+    }
+
 }
 
-void pushTrace(){
 
+/* Fills the Trace Layout Buffer with a series of coordinates which tile the
+** grid space of the output image along a hilbert curve. If the output image is
+** not a perfect square with a power-of-two side length, the gridspace is
+** decomposed into squares with a power-of-two side length and individually
+** tiled.
+*/
+void spoolHilbertTraceLayout(){
 
+    uvec2 botLeft;
+    uvec2 topRight;
+    uvec2 coord;
+    uint trMin;
+    bool done;
+
+    /// Decomposing the screen space into squares
+    for(uint pos = id; pos < pixNo; pos += THREAD_COUNT){
+		done = false;
+		botLeft = uvec2(0,0);
+		topRight = uvec2(pixWidth,pixHeight);
+		coord = uvec2(pos%THREAD_COUNT,pos/THREAD_COUNT);
+		while(!done){
+			trMin = int(log2(float(min(topRight)));
+			botLeft +=	trMin *
+						uvec2(greaterThan((coord - botLeft),uvec2(trMin,trMin));
+		}
+    }
 
 }
 
-uint popTrace(){
 
 
+/* Fills out a traceNode with the data for the initial state of the root state
+** indicated by the input traceTask Node.
+*/
+traceNode traceTaskToTrace(in traceTaskNode task){
+
+	traceNode result;
+	result.last = NOT_THERE;
+	result.next = NOT_THERE;
+    result.host = BlockBuffer[0].root;
+    result.stackHead = NOT_THERE;
+    result.stackCount = 0;
+    result.overlapHead = NOT_THERE;
+    result.state = 0;
+    result.distanceLeft = traceCheck(task.position,task.velocity);
+    result.position = task.position;
+    result.velocity = task.velocity;
 
 }
 
-void iterateTrace(inout trace){
+
+/*
+** Returns the time required to enter the voxel. If the trace is
+** already in the voxel, returns 0.0. If the trace will not ever enter the
+** block, given the position and velocity, the returned value is negative.
+** This is used at the beginning of trace lines through specific blocks.
+*/
+float traceCheck( in vec3 position, in vec3 velocity ){
+	float result;
+	vec3 enter = (vec3(-1.0,-1.0,-1.0) - position) / velocity;
+	vec3 exit =  (vec3(1.0,1.0,1.0) - position) / velocity;
+	vec2 range = vec2(	max(enter.x,max(enter.y,enter.z)),
+						min(exit.x,min(exit.y,exit.z)));
+	if(lessThanEqual(range.x,range.y) && lessThanEqual(0.0,range.y)){
+        result = max(0.0,0.0-range.x);
+	}
+	else{
+		result = -1.0;
+	}
+	return result;
+}
+
+/*
+** Returns the index of the next child node area to be intersected by the trace.
+** If the trace is to exit the voxel before intersecting with another child
+** node, it returns eight. Additionally, the variable time returns the time
+** to the next child voxel, if applicable.
+*/
+uint childHit( 	out float time, in uint currentChild,
+				in vec3 position, in vec3 velocity){
+	uint result = 8;
+	vec3 crossPoint = (vec3(0.0,0.0,0.0) - position) / velocity;
+	bvec3 crossStats =	greaterThan(crossPoint,vec3(0.0,0.0,0.0)) &&
+						greaterThanEqual(crossPoint,crossPoint.yzx) &&
+						greaterThanEqual(crossPoint,crossPoint.zxy);
+	if(any(crossStats)){
+		time = min(crossPoint.x,min(crossPoint.y,crossPoint.z));
+		uint crossBits = 	uint(crossStats.x) +
+							(uint(crossStats.y) << 1)+
+							(uint(crossStats.z) << 2);
+		result = currentChild ^ crossBits;
+	}
+	return result;
+}
+
+/*
+** Returns whether or not
+*/
+bool surfaceHit(	out float time, in uint posMask, in uvec3 intPos,
+					in vec3 position, in vec3 velocity, in vec4 surface){
+	bool result = false;
+	if(length(surface.xyz)!=0){
+		float velDir = dot(surface.xyz,velocity);
+		float posDir = dot(surface.xyz,position);
+	}
+	return result;
+}
+
+/*
+**
+*/
+traceNode initTraceBundle( in uint traceTask ){
+	traceNode root = allocNode();
+	traceTask.rootTrace = root;
+    tracePosition(trace) = traceTaskPosition(traceTask);
+    traceVelocity(trace) = traceTaskVelocity(traceTask);
+}
 
 
+
+void cleanUpTraceBranch( in uint traceBranchRoot, in traceNode data ){
+
+	uint mapStackHead = NOT_THERE;
+	uint mapStackCount = 0;
+
+	uint rootNext;
+	uint rootLast;
+	if( data.Next != NOT_THERE ){
+		traceLast(data.Next) = data.Last;
+	}
+	if( data.Last != NOT_THERE ){
+		traceNext(data.Last) = data.Next;
+	}
+
+	uint iter = traceOverlapHead(traceBranchRoot);
+	if(iter != NOT_THERE){
+		pushStackUint(mapStackHead,mapStackCount,iter);
+	}
+	uint next;
+	uint overlap;
+
+	while(mapStackCount != 0){
+		next = traceNext(iter);
+		overlap = traceOverlapHead(iter);
+		if( overlap != NOT_THERE ){
+			traceOverlapHead(iter) = traceNext(overlap);
+			pushStackUint(mapStackHead,mapStackCount,overlap);
+			iter = overlap;
+		}
+		else if( next != NOT_THERE ){
+			destroyStackUint(traceStackHead(iter),traceStackCount(iter));
+			freeNode(iter);
+			stackTopUint(mapStackHead,mapStackCount) = next;
+			iter = next;
+		}
+		else{
+			destroyStackUint(traceStackHead(iter),traceStackCount(iter));
+			freeNode(iter);
+			popStackUint(deleteHead,deleteCount);
+			iter = stackTopUint(mapStackHead,mapStackCount);
+		}
+	}
 
 }
 
+
+
+
+
+void onHit(uvec4 incident, uvec4 abcident, vec3 velocity, vec3 normal){
+
+	/// Inject the "On Hit" code here *Super Important*
+	/* We might be able to expose this stuff to the user later
+	** For now, this will either include the basic or full forward tracer code.
+	*/
+
+}
+
+void onMarch(float distMarched, uvec4 material){
+
+	/// Inject the "On March" code here *Super Important*
+	/* We might be able to expose this stuff to the user later
+	** For now, this will either include the basic or full forward tracer code.
+	*/
+
+}
+
+
+void marchTrace(inout uint trace, inout vec2 bestTimes, inout uvec2 bestTraces,
+				inout vec3 colorMask, inout vec3 lightSample){
+
+
+	traceNode data = loadTrace(trace);
+
+	switch(data.state){
+		case 0:
+
+		break;
+		case 1:
+
+		break;
+		case 2:
+
+		break;
+		case 3:
+			freeNode(trace);
+			trace = NOT_THERE;
+		break;
+	}
+
+    data.position.xyz = data.position.xyz + data.velocity.xyz * bestSteps.x;
+	data.timeLeft = data.distanceLeft - bestTimes.x;
+	onMarch()
+	if(data.distanceLeft < HIT_DISTANCE){
+		onHit();
+	}
+
+    if(trace == bestTraces.x){
+        data.timeLeft = distToHit();
+        if(data.timeLeft < bestTimes.y){
+            bestTimes.y = data.timeLeft;
+            bestTraces.y = trace;
+            if(data.timeLeft < bestSteps.x){
+                bestTimes.xy = vec2(data.timeLeft,bestTimes.x);
+                bestTraces.xy = uvec2(trace,bestTraces.x);
+            }
+        }
+    }
+
+	if(data.stackCount == 0){
+		cleanUpTraceBranch;
+	}
+	else{
+		storeTrace(trace,data);
+	}
+	trace = trace.Next
+}
 
 
 /// Task Management Code
 
-
-
-
-
-
 layout(local_size_x = X_SIZE, local_size_y = Y_SIZE) in;
 void main(){
+
+	vec2 bestSteps;
+	uvec2 bestTraces;
+	vec3 colorMask = vec3(1.0,1.0,1.0);
+	vec3 lightSample = vec3(0.0,0.0,0.0);
+	traceNode traceData;
+	traceTaskNode taskData;
+	pixNo = pixHeight * pixWidth;
+
+	/// Initialize the Thread State and Root Task
 	initYggCompute();
+	if(id == 0){
+		TaskBuffer[ROOT_TASK] = grabTask(); // Establish the root task
+		traceTaskParent(ROOT_TASK) = NOT_THERE;
+		traceTaskChildCount(ROOT_TASK) = 0;
+	}
+	memoryBarrierBuffer();
 
+	/// Spool Trace Layout
+	memoryBarrierBuffer();
 
+	/// Perform the Traces
+	traceTask = NOT_THERE;
+	trace = NOT_THERE;
+	while( traceTaskChildCount(ROOT_TASK) != 0 ){
+		if(trace | NOT_THERE == NOT_THERE){
+			traceTask = grabTask();
+			if(traceTask | NOT_THERE != NOT_THERE){
+				taskData = traceTaskLoad(traceTask);
+				traceData = traceTaskToTrace(taskData);
+				trace = allocNode();
+				traceStore(trace,traceData);
+			}
+		}
+		for(uint swapStep = 0; swapStep < TASK_SWAP_FREQ; swapStep++){
+			if(trace != NOT_THERE){
+				marchTrace(trace,bestSteps,bestTraces,colorMask,lightSample);
+			}
+		}
+	}
 
 }
 
