@@ -132,10 +132,10 @@ layout(std430, binding = 4) buffer ExchangeBuffer { uint data[]; };
 #define tracePosition(node,idx)			DataBuffer.data[ node * NODE_SIZE + 10 + idx ]
 #define traceVelocity(node,idx)			DataBuffer.data[ node * NODE_SIZE + 13 + idx ]
 
-#define taskLast(node)					DataBuffer.data[ node * NODE_SIZE ]
-#define taskNext(node)					DataBuffer.data[ node * NODE_SIZE + 1 ]
-#define taskParent(node)				DataBuffer.data[ node * NODE_SIZE + 2 ]
-#define taskChildCount(node)			DataBuffer.data[ node * NODE_SIZE + 3 ]
+
+#define taskNext(node)					DataBuffer.data[ node * NODE_SIZE ]
+#define taskParent(node)				DataBuffer.data[ node * NODE_SIZE + 1 ]
+#define taskChildCount(node)			DataBuffer.data[ node * NODE_SIZE + 2 ]
 
 #define traceTaskPosition(node,idx)		DataBuffer.data[ node * NODE_SIZE + 4 + idx ]
 #define traceTaskVelocity(node,idx)		DataBuffer.data[ node * NODE_SIZE + 7 + idx ]
@@ -283,14 +283,14 @@ void levelHeaps( in uint len ){
 	// Traverse down the list diff-1 times
 	for(uint i = 0; i < len; i++){
 		if(i < diff - 1){
-			iter = voxelChild(iter,0);
+			iter = rawNode(iter,0);
 		}
 	}
 	// Perform a swap between list heads only if there are nodes to be swapped
 	if(diff > 0){
 		holder = heapHeads_loc[bigger];
-		heapHeads_loc[bigger] = voxelChild(iter,0);
-		voxelChild(iter,0) = heapHeads_loc[smaller];
+		heapHeads_loc[bigger] = rawNode(iter,0);
+		rawNode(iter,0) = heapHeads_loc[smaller];
         heapHeads_loc[smaller] = holder;
 		heapCounts_loc[smaller] += diff;
 		heapCounts_loc[bigger] += diff;
@@ -299,7 +299,7 @@ void levelHeaps( in uint len ){
 
 /*
 ** Pushes the head and count of the given heap to their corresponding location
-** in global memory.
+** in the heap buffer.
 */
 void pushHeap(in uint idx){
 	HeapBuffer.data[heapHeadIdx(idx)] = heapHeads_loc[idx];
@@ -308,7 +308,7 @@ void pushHeap(in uint idx){
 
 /*
 ** Pulls the head and count of the given heap to their corresponding location
-** in global memory.
+** in the heap buffer.
 */
 void pullHeap(in uint idx){
 	heapHeads_loc[idx] = HeapBuffer.data[heapHeadIdx(idx)];
@@ -320,7 +320,9 @@ void pullHeap(in uint idx){
 ** as well as swapping lists back and forth from global memory to local memory.
 */
 void rotateHeaps(){
+	// Prep heap data in heap buffer for swapping
 	pushHeap(0);
+	pushHeap(1);
 
 	/*
 	** Calculate the bit that will be flipped to find this thread's swapping
@@ -355,39 +357,53 @@ void rotateHeaps(){
 
 /// Task Management Functions
 
+// Returns the index of a free node from the largest local task list
 uint grabTask(){
-	if(taskQCounts_loc[0] | taskQCounts_loc[1] == 0){
-		return NOT_THERE;
-	}
+	// Get the index of the head of the bigger list and set result to its value
 	uint bigger = uint(lessThan(taskQCounts_loc[0],taskQCounts_loc[1]);
 	uint result = taskQHeads_loc[bigger];
-	taskQHeads_loc[bigger] = voxelChild(result,0);
-	taskQCounts_loc[bigger]--;
+	// If the result is non-null, its listed 'next' address is set as the head
+	if(result != NOT_THERE){
+		taskQHeads_loc[bigger] = taskNext(result,0);
+		taskQCounts_loc[bigger]--;
+	}
 	return result;
 }
 
+
+// Adds the node at the given address to the smallest local task list
 void postTask( in uint node ){
 	uint smaller = uint(greaterThan(taskQCounts_loc[0],taskQCounts_loc[1]);
-	voxelChild(node,0) = taskQHeads_loc[smaller];
+	taskNext(node,0) = taskQHeads_loc[smaller];
 	taskQHeads_loc[smaller] = node;
-	taskQCounts_loc[smaller]++;
+	taskCounts_loc[smaller]++;
 }
 
+
+/*
+** Removes up to len nodes from the larger local task list and adds it to
+** the front of the smaller local task list.
+*/
 void levelTasks( in uint len ){
+	// Find which lists are bigger than which
 	uint bigger = uint(lessThan(taskQCounts_loc[0],taskQCounts_loc[1]);
 	uint smaller = 1-bigger;
+	// Calculate the difference in size
 	uint diff = abs(taskQCounts_loc[0]-taskQCounts_loc[1]);
+	// Set an iterator to the head of the larger list
 	uint iter = taskQHeads_loc[bigger];
 	uint holder;
+	// Traverse down the list diff-1 times
 	for(uint i = 0; i < len; i++){
 		if(i < diff - 1){
-			iter = voxelChild(iter,0);
+			iter = taskNext(iter);
 		}
 	}
+	// Perform a swap between list heads only if there are nodes to be swapped
 	if(diff > 0){
 		holder = taskQHeads_loc[bigger];
-		taskQHeads_loc[bigger] = voxelChild(iter,0);
-		voxelChild(iter,0) = taskQHeads_loc[smaller];
+		taskQHeads_loc[bigger] = taskNext(iter);
+		taskNext(iter) = taskQHeads_loc[smaller];
         taskQHeads_loc[smaller] = holder;
 		taskQCounts_loc[smaller] += diff;
 		taskQCounts_loc[bigger] += diff;
@@ -395,33 +411,61 @@ void levelTasks( in uint len ){
 }
 
 
+
+/*
+** Pushes the head and count of the given heap to their corresponding location
+** in the task buffer.
+*/
 void pushTaskQ(in uint idx){
 	TaskBuffer.data[taskQHeadIdx(idx)] = taskQHeads_loc[idx];
 	TaskBuffer.data[taskQCountIdx(idx)] = taskQCounts_loc[idx];
 }
 
+/*
+** Pulls the head and count of the given heap to their corresponding location
+** in the task buffer.
+*/
 void pullTaskQ(in uint idx){
 	taskQHeads_loc[idx] = TaskBuffer.data[taskQHeadIdx(idx)];
 	taskQCounts_loc[idx] = TaskBuffer.data[taskQCountIdx(idx)];
 }
 
+/*
+** Rotates the memory heaps for the thread, shuffling data in global memory
+** as well as swapping lists back and forth from global memory to local memory.
+*/
 void rotateTaskQs(){
+
+	// Prep task data in the task buffer for swapping
 	pushTaskQ(0);
+	pushTaskQ(1);
+
+	/*
+	** Calculate the bit that will be flipped to find this thread's swapping
+	** partner.
+	*/
 	uint swpIdx = id ^ swapBit;
-    taskQHeads_loc[0] = atomicExchange(
+
+	// Swaps the index of our first local list with our partner's swap list
+    taskQIdxs_loc[0] = atomicExchange(
 						TaskBuffer.data[taskQIdxIdx(swpIdx)],
 						taskQIdxs_loc[0]
 					);
-	taskQHeads_loc[0] = atomicExchange(
-						TaskQBuffer.data[taskQIdxIdx[id]],
-						taskQIdxs_loc[0]
+	// Swaps the index of our first local list with that of our global swap list
+	taskQIdxs_loc[1] = atomicExchange(
+						TaskBuffer.data[taskQIdxIdx(id)],
+						taskQIdxs_loc[1]
 					);
+	// Swaps the order of our two local lists
 	uint temp = taskQIdxs_loc[0];
 	taskQIdxs_loc[0] = taskQIdxs_loc[1];
 	taskQIdxs_loc[1] = temp;
-	id = (id<<1);
-	id = (id >= THREAD_COUNT) ? 1 : id;
+
+	// Sets the swapBit for the next swap execution
+	swapBit = (swapBit >= THREAD_COUNT) ? 1 : (swapBit<<1);
+	// Pulls the heads and counts of the new local lists
     pullTaskQ(0);
+    pullTaskQ(1);
 }
 
 
@@ -429,23 +473,39 @@ void rotateTaskQs(){
 
 /// Unsigned Int Stack
 
+/*
+** Given the head node of the stack and the number of elements currently in
+** the stack, it allocates a new node if necessary and stores val in the head
+** node.
+*/
 void pushStackUint(inout uint top, inout uint count, in uint val){
+	// This finds where in a head node's data field the value should be stored
 	uint modPt = count % (NODE_SIZE - 1);
 	uint result = top;
+	// If the count rolls into a new node, it is allocated and made the head
     if( modPt == 0 ){
 		result = allocNode();
-		DataBuffer.data[NODE_SIZE*result] = top;
+		rawNode(result,0) = top;
 		top = result;
     }
+    // Stores the data
     DataBuffer[NODE_SIZE*top + 1 + modPt] = val;
     count++;
 }
 
+
+/*
+** Given the head node of the stack and the number of elements currently in
+** the stack, removes the top value, changing count and top if necessary and
+** freeing nodes as necessary.
+*/
 void popStackUint(inout uint top, inout uint count){
+	// This finds where in a head node's data field the value should be stored
 	uint modPt = count % (NODE_SIZE - 1);
 	uint result = top;
+	// If the count rolls out of the current head node, it is made the new head
     if( modPt == 1 ){
-		result = DataBuffer.data[NODE_SIZE*top];
+		result = rawNode(top,0);
 		freeNode(top);
 		top = result;
     }
@@ -455,11 +515,12 @@ void popStackUint(inout uint top, inout uint count){
 // So we can read and write to the stack top cleanly
 #define stackTopUint(top,count) DataBuffer[ NODE_SIZE * top + 1 + ( count % ( NODE_SIZE - 1 ) ) ]
 
+// Traverses down the linked list making up the stack, freeing nodes as it goes
 void destroyStackUint(inout uint top, inout uint count){
 	uint iter = top;
 	uint next;
 	while(iter != NOT_THERE){
-		next = DataBuffer.data[NODE_SIZE*iter];
+		next = rawNode(iter,0);
 		freeNode(iter);
 		iter = next;
 	}
@@ -471,20 +532,34 @@ void destroyStackUint(inout uint top, inout uint count){
 
 /// Uvec3 Stack
 
+/*
+** Given the head node of the stack and the number of elements currently in
+** the stack, it allocates a new node if necessary and stores val in the head
+** node.
+*/
 void pushStackUvec3(inout uint top, inout uint count, in uvec3 val){
+	// Find which triplet of fields in a head node val should be stored
+	// (keep in mind, 16-1=15, which is divisible by 3), so no space is wasted
 	uint modPt = (count * 3) % (NODE_SIZE - 1);
 	uint result = top;
+	// Allocate a new node and make it the head of the list, if necessary
     if( modPt == 0 ){
 		result = allocNode();
 		DataBuffer.data[NODE_SIZE*result] = top;
 		top = result;
     }
+    // load in the new data
     DataBuffer[NODE_SIZE*top + 1 + modPt] = val.x;
     DataBuffer[NODE_SIZE*top + 1 + 1 + modPt] = val.y;
     DataBuffer[NODE_SIZE*top + 1 + 2 + modPt] = val.z;
     count++;
 }
 
+/*
+** Given the head node of the stack and the number of elements currently in
+** the stack, removes the top value, changing count and top if necessary and
+** freeing nodes as necessary.
+*/
 void popStackUvec3(inout uint top, inout uint count){
 	uint modPt = (count * 3) % (NODE_SIZE - 1);
 	uint result = top;
@@ -496,6 +571,7 @@ void popStackUvec3(inout uint top, inout uint count){
     count--;
 }
 
+// Returns the uvec3 at the top of the stack
 uvec3 readTopUvec3(inout uint top, inout uint count){
 	uint idx = NODE_SIZE * top + 1 + ( (count * 3) % ( NODE_SIZE - 1 ) );
 	return uvec3( 	DataBuffer[ idx ],
@@ -504,6 +580,7 @@ uvec3 readTopUvec3(inout uint top, inout uint count){
 				);
 }
 
+// Overwrites the given uvec3 to the top of the stack
 void writeTopUvec3(inout uint top, inout uint count, uvec3 data){
 	uint idx = NODE_SIZE * top + 1 + ( (count * 3) % ( NODE_SIZE - 1 ) );
 	DataBuffer[ idx ] = data.x;
@@ -511,6 +588,7 @@ void writeTopUvec3(inout uint top, inout uint count, uvec3 data){
 	DataBuffer[ idx + 2 ] = data.z;
 }
 
+// Traverses down the linked list making up the stack, freeing nodes as it goes
 void destroyStackUvec3(inout uint top, inout uint count){
 	uint iter = top;
 	uint next;
@@ -547,11 +625,6 @@ bool childSeek(	inout uint voxel, inout vec3 position ){
 		return true;
 	}
     return false;
-}
-
-
-vec4 getLocalCoordinates(in vec4 currentCoords, in mat4 childTransform){
-	return childTransform * currentCoords;
 }
 
 /// Program resource initialization/cleanup

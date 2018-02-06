@@ -7,9 +7,17 @@
 uniform uint rotateNo;
 uniform uint levelsPerRotate;
 
-vec4 Color1;
-vec4 Color2;
-vec4 Sliders;
+uint	SelectedBlock;
+uint	FocusBlock;
+mat4	StartTransform;
+mat4	EndTransform;
+float	StartWeight;
+float	EndWeight;
+uint	DepthLimit
+
+vec4	Color1;
+vec4	Color2;
+vec4	Sliders;
 
 layout(local_size_x = X_SIZE) in;
 void main(){
