@@ -1,6 +1,5 @@
 //These should be set by the interchange to dimensions appropriate to the GPU
-#define X_SIZE 8
-#define Y_SIZE 8
+#define X_SIZE 64
 
 #define MEMORY_SWAP_FREQ 8
 #define TASK_SWAP_FREQ	4
@@ -219,7 +218,7 @@ void onHit(uvec4 incident, uvec4 abcident, vec3 velocity, vec3 normal){
 
 }
 
-void onMarch(float distMarched, uvec4 material){
+void onMarch(vec4 mask, vec4 sample, float timeMarched, uvec4 material){
 
 	/// Inject the "On March" code here *Super Important*
 	/* We might be able to expose this stuff to the user later
@@ -228,34 +227,24 @@ void onMarch(float distMarched, uvec4 material){
 
 }
 
-
-void marchTrace(inout uint trace, inout vec2 bestTimes, inout uvec2 bestTraces,
+/* marchTrace is the powerhouse of the ray tracer. With each execution, it
+** takes the current trace branch and marches the root forward by the amount of
+** time left until the next hit occurs (somewhere in the trace tree). Along the
+** way, the next best hit time is also calculated so that, once the hit has
+**
+*/
+bool marchTrace(inout uint trace, inout vec2 bestTimes, inout uvec2 bestTraces,
 				inout vec3 colorMask, inout vec3 lightSample){
 
 
 	traceNode data = loadTrace(trace);
 
-	switch(data.state){
-		case 0:
-
-		break;
-		case 1:
-
-		break;
-		case 2:
-
-		break;
-		case 3:
-			freeNode(trace);
-			trace = NOT_THERE;
-		break;
-	}
-
-    data.position.xyz = data.position.xyz + data.velocity.xyz * bestSteps.x;
-	data.timeLeft = data.distanceLeft - bestTimes.x;
-	onMarch()
-	if(data.distanceLeft < HIT_DISTANCE){
-		onHit();
+	// Advance trace by the current best time
+    data.position.xyz = data.position.xyz + data.velocity.xyz * bestTimes.x;
+	data.timeLeft = data.TimeLeft - bestTimes.x;
+	onMarch(colorMask,lightSample,bestTimes.x,data.attributes);
+	if(data.TimeLeft < HIT_DISTANCE){
+		onHit( data.attributes,data.velocity,d);
 	}
 
     if(trace == bestTraces.x){
@@ -269,26 +258,36 @@ void marchTrace(inout uint trace, inout vec2 bestTimes, inout uvec2 bestTraces,
             }
         }
     }
+    else{
 
+    }
+
+	/* If the traversal stack of the trace is empty, it is done and should be
+	** cleaned up. Otherwise, the data for the trace is stored back into the
+	** the trace tree.
+	*/
 	if(data.stackCount == 0){
 		cleanUpTraceBranch;
 	}
 	else{
 		storeTrace(trace,data);
 	}
+
+	// Set the trace tree iterator to the next appropriate node.
 	trace = trace.Next
 }
 
 
 /// Task Management Code
 
-layout(local_size_x = X_SIZE, local_size_y = Y_SIZE) in;
+layout(local_size_x = X_SIZE) in;
 void main(){
 
 	vec2 bestSteps;
 	uvec2 bestTraces;
 	vec3 colorMask = vec3(1.0,1.0,1.0);
 	vec3 lightSample = vec3(0.0,0.0,0.0);
+	uint traceRoot;
 	traceNode traceData;
 	traceTaskNode taskData;
 	pixNo = pixHeight * pixWidth;
@@ -303,26 +302,39 @@ void main(){
 	memoryBarrierBuffer();
 
 	/// Spool Trace Layout
-	memoryBarrierBuffer();
 
-	/// Perform the Traces
+	/*
+	** This is not included for testing. While important for cache optimization,
+	** it complicates matters of debugging.
+	*/
+
+
+
 	traceTask = NOT_THERE;
 	trace = NOT_THERE;
+
+	/// Perform traces until the root task is out of children
 	while( traceTaskChildCount(ROOT_TASK) != 0 ){
-		if(trace | NOT_THERE == NOT_THERE){
+
+		/// Grab a new task from the task queue, if possible
+		if(trace == NOT_THERE){
 			traceTask = grabTask();
-			if(traceTask | NOT_THERE != NOT_THERE){
+			if(traceTask != NOT_THERE){
 				taskData = traceTaskLoad(traceTask);
 				traceData = traceTaskToTrace(taskData);
-				trace = allocNode();
-				traceStore(trace,traceData);
+				traceRoot = allocNode();
+				traceStore(traceRoot,traceData);
 			}
 		}
+
+		/// Only check for new tasks once every TASK_SWAP_FREQ tree traversals
 		for(uint swapStep = 0; swapStep < TASK_SWAP_FREQ; swapStep++){
-			if(trace != NOT_THERE){
+			trace = traceRoot;
+			while(trace != NOT_THERE){
 				marchTrace(trace,bestSteps,bestTraces,colorMask,lightSample);
 			}
 		}
+
 	}
 
 }
