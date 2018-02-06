@@ -99,12 +99,14 @@ traceNode traceTaskToTrace(in traceTaskNode task){
 */
 float traceCheck( in vec3 position, in vec3 velocity ){
 	float result;
-	vec3 enter = (vec3(-1.0,-1.0,-1.0) - position) / velocity;
-	vec3 exit =  (vec3(1.0,1.0,1.0) - position) / velocity;
+	vec3 negativeSide = (vec3(-1.0,-1.0,-1.0) - position) / velocity;
+	vec3 positiveSide =  (vec3(1.0,1.0,1.0) - position) / velocity;
+	vec3 enter = min(negativeSide,positiveSide);
+	vec3 exit = max(negativeSide,positiveSide);
 	vec2 range = vec2(	max(enter.x,max(enter.y,enter.z)),
 						min(exit.x,min(exit.y,exit.z)));
 	if(lessThanEqual(range.x,range.y) && lessThanEqual(0.0,range.y)){
-        result = max(0.0,0.0-range.x);
+        result = max(0.0,0.0,range.x);
 	}
 	else{
 		result = -1.0;
@@ -211,8 +213,9 @@ void cleanUpTraceBranch( in uint traceBranchRoot, in traceNode data ){
 
 void onHit(uvec4 incident, uvec4 abcident, vec3 velocity, vec3 normal){
 
-	/// Inject the "On Hit" code here *Super Important*
-	/* We might be able to expose this stuff to the user later
+	/// Inject the "On Hit" code here. *Super Important*
+	/*
+	** We might be able to expose this stuff to the user later
 	** For now, this will either include the basic or full forward tracer code.
 	*/
 
@@ -220,14 +223,16 @@ void onHit(uvec4 incident, uvec4 abcident, vec3 velocity, vec3 normal){
 
 void onMarch(vec4 mask, vec4 sample, float timeMarched, uvec4 material){
 
-	/// Inject the "On March" code here *Super Important*
-	/* We might be able to expose this stuff to the user later
+	/// Inject the "On March" code here. *Super Important*
+	/*
+	** We might be able to expose this stuff to the user later
 	** For now, this will either include the basic or full forward tracer code.
 	*/
 
 }
 
-/* marchTrace is the powerhouse of the ray tracer. With each execution, it
+/*
+** marchTrace is the powerhouse of the ray tracer. With each execution, it
 ** takes the current trace branch and marches the root forward by the amount of
 ** time left until the next hit occurs (somewhere in the trace tree). Along the
 ** way, the next best hit time is also calculated so that, once the hit has
@@ -291,14 +296,16 @@ void main(){
 	traceNode traceData;
 	traceTaskNode taskData;
 	pixNo = pixHeight * pixWidth;
+	uint root_task;
 
 	/// Initialize the Thread State and Root Task
 	initYggCompute();
 	if(id == 0){
-		TaskBuffer[ROOT_TASK] = grabTask(); // Establish the root task
+		TaskBuffer.data[ROOT_TASK] = grabTask(); // Establish the root task
 		traceTaskParent(ROOT_TASK) = NOT_THERE;
 		traceTaskChildCount(ROOT_TASK) = 0;
 	}
+	root_task = TaskBuffer[ROOT_TASK];
 	memoryBarrierBuffer();
 
 	/// Spool Trace Layout
@@ -314,7 +321,7 @@ void main(){
 	trace = NOT_THERE;
 
 	/// Perform traces until the root task is out of children
-	while( traceTaskChildCount(ROOT_TASK) != 0 ){
+	while( traceTaskChildCount(root_task) != 0 ){
 
 		/// Grab a new task from the task queue, if possible
 		if(trace == NOT_THERE){

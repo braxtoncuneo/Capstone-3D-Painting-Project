@@ -53,10 +53,9 @@ struct traceNode{
 };
 
 struct traceTaskNode{
-	uint last;// 0
-	uint next;// 1
-    uint parent;// 2
-    uint childCount;// 3
+	uint next;// 0
+    uint parent;// 1
+    uint childCount;// 2
     vec3 position;// 4-6
     vec3 velocity;// 7-9
     vec3 lightMask;// 10-12
@@ -64,10 +63,12 @@ struct traceTaskNode{
 };
 
 struct basicToolTaskNode{
-	uint last;// 0
-	uint next;// 1
-	uint parent;// 2
-	uint childCount;// 3
+	uint next;// 0
+	uint parent;// 1
+	uint childCount;// 2
+	uint state; // 3
+    uint hostNode; // 4
+    vec3 position; // 5-7
 };
 
 struct block{
@@ -142,6 +143,10 @@ layout(std430, binding = 4) buffer ExchangeBuffer { uint data[]; };
 #define traceTaskLightMask(node,idx)	DataBuffer.data[ node * NODE_SIZE + 10 + idx ]
 #define traceTaskLightSample(node,idx)	DataBuffer.data[ node * NODE_SIZE + 13 + idx ]
 
+#define basicToolTaskState(node)		DataBuffer.data[ node * NODE_SIZE + 3 ]
+#define basicToolTaskHost(node)			DataBuffer.data[ node * NODE_SIZE + 4 ]
+#define basicToolPosition(node,idx)		DataBuffer.data[ node * NODE_SIZE + 5 + idx ]
+
 
 /// Node Loading/Storing
 
@@ -150,7 +155,7 @@ layout(std430, binding = 4) buffer ExchangeBuffer { uint data[]; };
 traceNode traceLoad(in uint node){
 	traceNode result;
     result.last =			traceLast(node);
-	result.next =			traceLast(node);
+	result.next =			traceNext(node);
     result.host =			traceHostNode(node);
     result.stackHead =		traceStackHead(node);
     result.stackCount =		traceStackCount(node);
@@ -170,7 +175,6 @@ traceNode traceLoad(in uint node){
 
 // This stores a trace node from local registers to the data buffer
 void traceStore(in uint node, in traceNode trace){
-    traceLast(node) =				trace.last;
 	traceNext(node) =				trace.next;
     traceHostNode(node) =			trace.host;
     traceStackHead(node) =			trace.stackHead;
@@ -188,6 +192,28 @@ void traceStore(in uint node, in traceNode trace){
     traceVelocity(node,2) =			floatBitsToUint(trace.velocity.z);
 }
 
+basicToolTaskNode basicToolTaskLoad(in uint node){
+	basicToolTaskNode result;
+	result.next			= taskNext(node);
+	result.parent		= taskParent(node);
+	result.childCount	= taskChildCount(node);
+	result.state		= basicToolTaskState(node);
+	result.hostNode		= basicToolTaskHostNode(node);
+	result.position = 	vec3(	uintBitsToFloat(basicToolPosition(node,0)),
+								uintBitsToFloat(basicToolPosition(node,1)),
+								uintBitsToFloat(basicToolPosition(node,2)) );
+}
+
+void basicToolTaskStore(in uint node, in basicToolTaskNode data){
+	taskNext(node)				= data.next;
+	taskParent(node)			= data.parent;
+	taskChildCount(node)		= data.childCount;
+	basicToolTaskState(node)	= data.state;
+	basicToolTaskHostNode(node)	= data.hostNode;
+	basicToolPosition(node,0) 	= floatBitsToUint(data.position.x);
+    basicToolPosition(node,1) 	= floatBitsToUint(data.position.y);
+    basicToolPosition(node,2) 	= floatBitsToUint(data.position.z);
+}
 
 
 
