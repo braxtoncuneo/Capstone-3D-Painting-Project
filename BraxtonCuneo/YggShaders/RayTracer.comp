@@ -46,6 +46,7 @@ void spoolScanlineLayout(){
 ** decomposed into squares with a power-of-two side length and individually
 ** tiled.
 */
+/// THIS FUNCTION IS NOT FINISHED
 void spoolHilbertTraceLayout(){
 
     uvec2 botLeft;
@@ -99,16 +100,35 @@ traceNode traceTaskToTrace(in traceTaskNode task){
 */
 float traceCheck( in vec3 position, in vec3 velocity ){
 	float result;
+	/*
+	** Find what time differences are required to hit each of the positive
+	** and negative sides of the unit cube
+	*/
 	vec3 negativeSide = (vec3(-1.0,-1.0,-1.0) - position) / velocity;
 	vec3 positiveSide =  (vec3(1.0,1.0,1.0) - position) / velocity;
+
+	/*
+	** Whichever side (positive or negative) with the lower intersect time must,
+	** by definition, be the side entered through by the trace. Here, we sort
+	** times such that the enter and exit times for each dimension are separated
+	** into the enter and exit vectors;
+	*/
 	vec3 enter = min(negativeSide,positiveSide);
 	vec3 exit = max(negativeSide,positiveSide);
+
+	/*
+	** In order to be inside the box, the trace must have hit all of the 'enter'
+	** points before any of the 'exit' points. The range vector establishes the
+	** true entrance and exit times for the trace.
+	*/
 	vec2 range = vec2(	max(enter.x,max(enter.y,enter.z)),
 						min(exit.x,min(exit.y,exit.z)));
+	// If the trace is already in the unit cube, the returned value is 0.0
 	if(lessThanEqual(range.x,range.y) && lessThanEqual(0.0,range.y)){
-        result = max(0.0,0.0,range.x);
+        result = max(0.0,range.x);
 	}
 	else{
+		// If no intersection is possible, a negative value is returned
 		result = -1.0;
 	}
 	return result;
@@ -122,11 +142,23 @@ float traceCheck( in vec3 position, in vec3 velocity ){
 */
 uint childHit( 	out float time, in uint currentChild,
 				in vec3 position, in vec3 velocity){
+	// Result starts off as the childless result
 	uint result = 8;
+	// Calculates each dimensional intercept of the trace in the unit cube
 	vec3 crossPoint = (vec3(0.0,0.0,0.0) - position) / velocity;
-	bvec3 crossStats =	greaterThan(crossPoint,vec3(0.0,0.0,0.0)) &&
+	/*
+	** Result for a dimension is true only if a cross across its intercept
+	** occurs before or simultaneous to all other intercepts and time left is
+	** greater than 0.0
+	*/
+	bvec3 crossStats =	greaterThan(vec3(crossPoint,0.0,0.0,0.0)) &&
 						greaterThanEqual(crossPoint,crossPoint.yzx) &&
 						greaterThanEqual(crossPoint,crossPoint.zxy);
+
+	/*
+	** If there is any valid crossing, the child being crossed into is the one
+	** with the bits corresponding to the minimal valid crossing(s)
+	*/
 	if(any(crossStats)){
 		time = min(crossPoint.x,min(crossPoint.y,crossPoint.z));
 		uint crossBits = 	uint(crossStats.x) +
@@ -138,7 +170,8 @@ uint childHit( 	out float time, in uint currentChild,
 }
 
 /*
-** Returns whether or not
+** Returns whether or not the surface is hit. If so, time is changed to match
+** the time to the surface hit.
 */
 bool surfaceHit(	out float time, in uint posMask, in uvec3 intPos,
 					in vec3 position, in vec3 velocity, in vec4 surface){
@@ -150,23 +183,24 @@ bool surfaceHit(	out float time, in uint posMask, in uvec3 intPos,
 	return result;
 }
 
+
+
 /*
-**
+** This function is in charge of freeing all of the resources associated with
+** a trace branch an all of its child traces. While somewhat of a bottleneck
+** to the ray tracer, it is the cost of having good transparency and being able
+** to escape the computation required of multiple, unsynced traces.
 */
-traceNode initTraceBundle( in uint traceTask ){
-	traceNode root = allocNode();
-	traceTask.rootTrace = root;
-    tracePosition(trace) = traceTaskPosition(traceTask);
-    traceVelocity(trace) = traceTaskVelocity(traceTask);
-}
-
-
-
 void cleanUpTraceBranch( in uint traceBranchRoot, in traceNode data ){
 
+	/*
+	** This stack stores mapped nodes which have "next" nodes that have yet
+	** to be processed.
+	*/
 	uint mapStackHead = NOT_THERE;
 	uint mapStackCount = 0;
 
+	// Remove the root node from the rest of the trace tree
 	uint rootNext;
 	uint rootLast;
 	if( data.Next != NOT_THERE ){
@@ -175,34 +209,60 @@ void cleanUpTraceBranch( in uint traceBranchRoot, in traceNode data ){
 	if( data.Last != NOT_THERE ){
 		traceNext(data.Last) = data.Next;
 	}
+	freeNode(traceBranchRoot);
 
-	uint iter = traceOverlapHead(traceBranchRoot);
+	/*
+	** Push the first overlapping node of the root onto the stack. If there are
+	** no overlapping nodes, the job of cleaning up is done.
+	*/
+	uint iter = data.overlapHead;
 	if(iter != NOT_THERE){
 		pushStackUint(mapStackHead,mapStackCount,iter);
 	}
 	uint next;
 	uint overlap;
 
+	// While there are nodes on the stack, there are nodes to free
 	while(mapStackCount != 0){
+
+		// Store the 'next' and 'overlap' fields of the top node, for future use
 		next = traceNext(iter);
 		overlap = traceOverlapHead(iter);
+
+		/*
+		** If the current trace has a non-null overlap field, place the first
+		** overlap on the top of the stack then set the overlap field of the
+		** original node to the next overlapping trace.
+		*/
 		if( overlap != NOT_THERE ){
 			traceOverlapHead(iter) = traceNext(overlap);
 			pushStackUint(mapStackHead,mapStackCount,overlap);
 			iter = overlap;
 		}
+		/*
+		** If the current trace has no overlapping traces but has a 'next'
+		** trace, the top of the stack is set to the next trace and the
+		** original trace is freed.
+		*/
 		else if( next != NOT_THERE ){
+			// Unwind the trace's stack before it is freed
 			destroyStackUint(traceStackHead(iter),traceStackCount(iter));
 			freeNode(iter);
 			stackTopUint(mapStackHead,mapStackCount) = next;
 			iter = next;
 		}
+		/*
+		** If the current trace has neither overlapping traces nor 'next'
+		** traces, the trace is freed and the top of the mapping stack is popped
+		*/
 		else{
+			// Unwind the trace's stack before it is freed
 			destroyStackUint(traceStackHead(iter),traceStackCount(iter));
 			freeNode(iter);
 			popStackUint(deleteHead,deleteCount);
 			iter = stackTopUint(mapStackHead,mapStackCount);
 		}
+
 	}
 
 }
@@ -210,8 +270,8 @@ void cleanUpTraceBranch( in uint traceBranchRoot, in traceNode data ){
 
 
 
-
-void onHit(uvec4 incident, uvec4 abcident, vec3 velocity, vec3 normal){
+void onHit(	in uvec4 incident, in uvec4 abcident,
+			in vec3 velocity, in vec3 normal){
 
 	/// Inject the "On Hit" code here. *Super Important*
 	/*
@@ -221,7 +281,8 @@ void onHit(uvec4 incident, uvec4 abcident, vec3 velocity, vec3 normal){
 
 }
 
-void onMarch(vec4 mask, vec4 sample, float timeMarched, uvec4 material){
+void onMarch(	inout vec4 mask, inout vec4 sample,
+				in float timeMarched, in uvec4 material){
 
 	/// Inject the "On March" code here. *Super Important*
 	/*
@@ -238,8 +299,10 @@ void onMarch(vec4 mask, vec4 sample, float timeMarched, uvec4 material){
 ** way, the next best hit time is also calculated so that, once the hit has
 **
 */
-bool marchTrace(inout uint trace, inout vec2 bestTimes, inout uvec2 bestTraces,
-				inout vec3 colorMask, inout vec3 lightSample){
+uint marchTrace(inout uint trace,
+				inout vec2 bestTimes, inout uvec2 bestTraces,
+				inout vec3 colorMask, inout vec3 lightSample,
+				inout bool traceTreeHit, inout traceTreeDone){
 
 
 	traceNode data = loadTrace(trace);
@@ -283,6 +346,16 @@ bool marchTrace(inout uint trace, inout vec2 bestTimes, inout uvec2 bestTraces,
 }
 
 
+uint hitTrace(	inout uint trace,
+				inout vec2 bestTimes, inout uvec2 bestTraces,
+				inout vec3 colorMask, inout vec3 lightSample,
+				inout bool traceTreeHit, inout traceTreeDone){
+
+
+
+}
+
+
 /// Task Management Code
 
 layout(local_size_x = X_SIZE) in;
@@ -297,8 +370,10 @@ void main(){
 	traceTaskNode taskData;
 	pixNo = pixHeight * pixWidth;
 	uint root_task;
+	bool traceTreeHit;
+	bool traceTreeDone = false;
 
-	/// Initialize the Thread State and Root Task
+	// Initialize the Thread State and Root Task
 	initYggCompute();
 	if(id == 0){
 		TaskBuffer.data[ROOT_TASK] = grabTask(); // Establish the root task
@@ -308,7 +383,7 @@ void main(){
 	root_task = TaskBuffer[ROOT_TASK];
 	memoryBarrierBuffer();
 
-	/// Spool Trace Layout
+	// Spool Trace Layout
 
 	/*
 	** This is not included for testing. While important for cache optimization,
@@ -319,11 +394,14 @@ void main(){
 
 	traceTask = NOT_THERE;
 	trace = NOT_THERE;
-
-	/// Perform traces until the root task is out of children
+	// Perform traces until the root task is out of children
 	while( traceTaskChildCount(root_task) != 0 ){
 
-		/// Grab a new task from the task queue, if possible
+		// Grab a new task from the task queue, if needed and possible
+		if(traceTreeDone){
+			cleanUpTraceBranch(trace);
+			trace = NOT_THERE;
+		}
 		if(trace == NOT_THERE){
 			traceTask = grabTask();
 			if(traceTask != NOT_THERE){
@@ -331,15 +409,21 @@ void main(){
 				traceData = traceTaskToTrace(taskData);
 				traceRoot = allocNode();
 				traceStore(traceRoot,traceData);
+				traceTreeState = 0;
 			}
 		}
 
-		/// Only check for new tasks once every TASK_SWAP_FREQ tree traversals
+		// Only check for new tasks after every TASK_SWAP_FREQ hit calculations
 		for(uint swapStep = 0; swapStep < TASK_SWAP_FREQ; swapStep++){
 			trace = traceRoot;
-			while(trace != NOT_THERE){
-				marchTrace(trace,bestSteps,bestTraces,colorMask,lightSample);
+			// Only process hits after every HIT_PROC_FREQ march traversals
+			for(uint hitStep = 0; hitStep < HIT_PROC_FREQ; swapStep++){
+
+				while( (trace != NOT_THERE) && !done ){
+					marchTrace(trace,bestSteps,bestTraces,colorMask,lightSample);
+				}
 			}
+
 		}
 
 	}
