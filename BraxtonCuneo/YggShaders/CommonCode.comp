@@ -42,9 +42,9 @@ struct traceNode{
     uint last;// 0
     uint next;// 1
     uint host;// 2
-    uint hitStackHead;// 3
-    uint hitStackCount;// 4
-    uint matStackHead;// 5
+    uint stateStackTop;// 3
+    uint stateStackCount;// 4
+    uint matStackTop;// 5
     uint matStackCount;// 6
     uint overlapHead;// 7
     float timeLeft;// 8
@@ -126,9 +126,9 @@ layout(std430, binding = 4) buffer ExchangeBuffer { uint data[]; };
 #define traceLast(node)					DataBuffer.data[ node * NODE_SIZE ]
 #define traceNext(node)					DataBuffer.data[ node * NODE_SIZE + 1 ]
 #define traceHostNode(node)				DataBuffer.data[ node * NODE_SIZE + 2 ]
-#define traceHitStackHead(node)			DataBuffer.data[ node * NODE_SIZE + 3 ]
-#define traceHitStackCount(node)		DataBuffer.data[ node * NODE_SIZE + 4 ]
-#define traceMatStackHead(node)			DataBuffer.data[ node * NODE_SIZE + 5 ]
+#define traceStateStackTop(node)		DataBuffer.data[ node * NODE_SIZE + 3 ]
+#define traceStateStackCount(node)		DataBuffer.data[ node * NODE_SIZE + 4 ]
+#define traceMatStackTop(node)			DataBuffer.data[ node * NODE_SIZE + 5 ]
 #define traceMatStackCount(node)		DataBuffer.data[ node * NODE_SIZE + 6 ]
 #define traceOverlapHead(node)			DataBuffer.data[ node * NODE_SIZE + 7 ]
 #define traceTimeLeft(node)				DataBuffer.data[ node * NODE_SIZE + 8 ]
@@ -157,15 +157,15 @@ layout(std430, binding = 4) buffer ExchangeBuffer { uint data[]; };
 // This loads a trace node from the data buffer to local registers
 traceNode traceLoad(in uint node){
 	traceNode result;
-    result.last =			traceLast(node);
-	result.next =			traceNext(node);
-    result.host =			traceHostNode(node);
-    result.hitStackHead =		traceHitStackHead(node);
-    result.hitStackCount =		traceHitStackCount(node);
-    result.matStackHead =		traceMatStackHead(node);
+    result.last =				traceLast(node);
+	result.next =				traceNext(node);
+    result.host =				traceHostNode(node);
+    result.stateStackTop =		traceStateStackHead(node);
+    result.stateStackCount =	traceStateStackCount(node);
+    result.matStackTop =		traceMatStackHead(node);
     result.matStackCount =		traceMatStackCount(node);
-    result.overlapHead = 	traceOverlapHead(node);
-    result.timeLeft =	uintBitsToFloat(traceTimeLeft(node));
+    result.overlapHead = 		traceOverlapHead(node);
+    result.timeLeft =			uintBitsToFloat(traceTimeLeft(node));
     result.intPosition = 	uvec3(	traceIntegerPosition(node,0),
 									traceIntegerPosition(node,1),
 									traceIntegerPosition(node,2) );
@@ -182,9 +182,9 @@ traceNode traceLoad(in uint node){
 void traceStore(in uint node, in traceNode trace){
 	traceNext(node) =				trace.next;
     traceHostNode(node) =			trace.host;
-    traceHitStackHead(node) =		trace.hitStackHead;
-    traceHitStackCount(node) =		trace.hitStackCount;
-    traceMatStackHead(node) =		trace.matStackHead;
+    traceStateStackTop(node) =		trace.stateStackTop;
+    traceStateStackCount(node) =	trace.stateStackCount;
+    traceMatStackTop(node) =		trace.matStackTop;
     traceMatStackCount(node) =		trace.matStackCount;
     traceOverlapHead(node) =		trace.overlapHead;
     traceTimeLeft(node) =			floatBitsToUint(trace.distanceLeft);

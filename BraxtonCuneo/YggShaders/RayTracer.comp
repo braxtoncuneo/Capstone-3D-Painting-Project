@@ -15,16 +15,16 @@
 	#define STATE_CHILD			0x20000000
 	#define STATE_SURFACE		0x30000000
 	#define STATE_EXIT			0x40000000
-#define STATE_TARGET_MASK	0x0F000000
-	#define STATE_TGT_X			0x01000000
-	#define STATE_TGT_Y			0x02000000
-	#define STATE_TGT_Z			0x04000000
-	#define STATE_TGT_OUT		0x08000000
+#define STATE_TARGET_MASK	0x000000F0
+	#define STATE_TGT_X			0x00000010
+	#define STATE_TGT_Y			0x00000020
+	#define STATE_TGT_Z			0x00000040
+	#define STATE_TGT_OUT		0x00000080
 #define	STATE_LOCALE_MASK	0x00F00000
-	#define STATE_LOC_X			0x00100000
-	#define STATE_LOC_Y			0x00200000
-	#define STATE_LOC_Z			0x00400000
-	#define STATE_LOC_OUT		0x00800000
+	#define STATE_LOC_X			0x00000001
+	#define STATE_LOC_Y			0x00000002
+	#define STATE_LOC_Z			0x00000004
+	#define STATE_LOC_OUT		0x00000008
 
 
 layout(std430, binding = 5) buffer TraceLayoutBuffer { uvec2 data[]; };
@@ -284,7 +284,7 @@ void cleanUpTraceBranch( in uint traceBranchRoot, in traceNode data ){
 		*/
 		else if( next != NOT_THERE ){
 			// Unwind the trace's stack before it is freed
-			destroyStackUvec3(traceHitStackHead(iter),traceHitStackCount(iter));
+			destroyStackUvec3(traceStateStackHead(iter),traceStateStackCount(iter));
 			destroyStackUint(traceMatStackHead(iter),traceMatStackCount(iter));
 			freeNode(iter);
 			stackTopUint(mapStackHead,mapStackCount) = next;
@@ -296,7 +296,7 @@ void cleanUpTraceBranch( in uint traceBranchRoot, in traceNode data ){
 		*/
 		else{
 			// Unwind the trace's stack before it is freed
-			destroyStackUvec3(traceHitStackHead(iter),traceStackCount(iter));
+			destroyStackUvec3(traceStateStackHead(iter),traceStateStackCount(iter));
 			destroyStackUint(traceMatStackHead(iter),traceMatStackCount(iter));
 			freeNode(iter);
 			popStackUint(deleteHead,deleteCount);
@@ -405,22 +405,99 @@ void cleanSweep(inout uint cleanStackTop, inout uint cleanStackCount,
 }
 
 void hitSweep(	inout uint hitStackTop, inout uint hitStackCount,
-				in uint traceNode){
-	uint hostVoxel;
-	uint matVoxel;
-	uint state;
+				inout uint cleanStackTop, inout uint cleanStackCount){
+
+	uint oldVoxel;
+	uint newVoxel;
 	uint hitType;
+	uint locale;
 	uint hitTarget;
+	uvec3 stateTop;
 	vec3 normal;
+	uint currentTrace;
+	traceNode data;
 
+	// Keep processing hits until there are no more
 	while(hitStackCount > 0){
-		hostVoxel = traceHostNode(current);
-		matVoxel = stackTopUint(matStackTop,hitStackCount);
 
-		state = traceState(current);
-		hitType = STATE_TYPE_MASK & state;
-		hitTarget = STATE_TARGET_MASK & state;
+		// Get the hit currently being processed and remove it from the stack
+		currentTrace = stackTopUint(hitStackTop,hitStackCount);
+		popStackUint(hitStackTop,hitStackCount);
 
+		// Load trace data and get the type of hit
+		data = traceLoad(currentTrace);
+		oldVoxel = data.host;
+		hitType = data.state & STATE_TYPE_MASK;
+
+		/*
+		** While the hit currently being processed is an exit from the current
+		** voxel space, exit out to the parent voxel space. If the root voxel
+		** has been exited out of, then that means the trace is done and hence
+		** should be cleaned up.
+		*/
+		while( (hitType == STATE_EXIT) && (data.timeLeft < HIT_DISTANCE) ){
+			if(data.stateStackCount == 0){
+				pushStackUint(cleanStackTop,cleanStackCount,currentTrace);
+				newVoxel = NOT_THERE;
+				break;
+			}
+			else{
+				// Get the state of the trace one level up
+				stateTop = readTopUvec3(data.stateStackTop,data.stateStackCount);
+				popStackUvec3(data.stateStackTop,data.stateStackCount);
+
+				// If the current host voxel is the top of the mat stack, remove it
+				if(stackTopUint(data.matStackTop,data.matStackCount)==data.host){
+					popStackUint(data.matStackTop,data.matStackCount);
+				}
+
+				// Update host-specific data
+				data.host = stateTop.x;
+				data.state = stateTop.y;
+				hitType = data.state & STATE_TYPE_MASK;
+				locale = data.state & STATE_LOCALE_MASK;
+				data.velocity /= 2.0;
+                data.position += vec3(greaterThan(	locale.xxx^uvec3(1,2,4),
+													(0).xxx					));
+				data.timeLeft = uintBitsToFloat(stateTop.z);
+			}
+		}
+
+		/*
+		** While the hit currently being processed is an exit from the current
+		** voxel space, exit out to the parent voxel space. If the root voxel
+		** has been exited out of, then that means the trace is done and hence
+		** should be cleaned up.
+		*/
+		while(	(hitType&STATE_ENTER&STATE_CHILD !=0 ) &&
+				(data.timeLeft < HIT_DISTANCE) ){
+			if(data.stateStackCount == depthLimit){
+				break;
+			}
+			else{
+				// Get the state of the trace one level up
+				stateTop = ????;
+				pushStackUvec3(data.stateStackTop,data.stateStackCount,stateTop);
+
+				// If the current host voxel is the top of the mat stack, remove it
+				if(stackTopUint(data.matStackTop,data.matStackCount)==data.host){
+					popStackUint(data.matStackTop,data.matStackCount);
+				}
+
+				// Update host-specific data
+				data.host = stateTop.x;
+				data.state = stateTop.y;
+				hitType = data.state & STATE_TYPE_MASK;
+				locale = data.state & STATE_LOCALE_MASK;
+				data.velocity /= 2.0;
+                data.position += vec3(greaterThan(	locale.xxx^uvec3(1,2,4),
+													(0).xxx					));
+				data.timeLeft = uintBitsToFloat(stateTop.z);
+			}
+		}
+
+
+		// Get the normal of the hit surface
 		if( hitType == HIT_SURFACE ){
             normal = (unpackSnorm4x8(traceSurface(currentVoxel))).xyz;
 		}
@@ -430,16 +507,24 @@ void hitSweep(	inout uint hitStackTop, inout uint hitStackCount,
 											tracePosition(current,2)	));
 		}
 
-		onHit(	vec4(	voxelAttribute(currentVoxel,0),
-						voxelAttribute(currentVoxel,1),
-						voxelAttribute(currentVoxel,2),
-						voxelAttribute(currentVoxel,3)	),
-				vec4(								),
+		// Pass the appropriate data to the onHitFunction
+		onHit(	vec4(	voxelAttribute(oldVoxel,0),
+						voxelAttribute(oldVoxel,1),
+						voxelAttribute(oldVoxel,2),
+						voxelAttribute(oldVoxel,3)	),
+
+				vec4(	voxelAttribute(newVoxel,0),
+						voxelAttribute(newVoxel,1),
+						voxelAttribute(newVoxel,2),
+						voxelAttribute(newVoxel,3)	),
+
 				vec3(	traceVelocity(current,0),
 						traceVelocity(current,1),
 						traceVelocity(current,2)		),
+
 				normal
 			);
+
     }
 
 }
@@ -512,14 +597,14 @@ void main(){
 				marchTrace(trace,bestSteps,bestTraces,colorMask,lightSample);
 			}
 			// Process pending hit operations
-			hitSweep(hitStackTop,hitStackCount);
+			hitSweep(hitStackTop,hitStackCount,cleanStackTop,cleanStackCount);
 			/*
 			** If the color mask has hit the alpha threshold, the entire trace
 			** tree is cleaned up.
 			*/
 			if(max(colorMask) < alphaThresh){
-				destroyStackUint(hitStackTop,hitStackCount);
-				pushStackUint(hiStackTop,hitStackCount,traceRoot)
+				destroyStackUint(cleanStackTop,cleanStackCount);
+				pushStackUint(cleanStackTop,cleanStackCount,traceRoot)
 			}
 			// Process pending cleanup operations
 			cleanSweep(cleanStackTop,cleanStackCount,traceRoot);
