@@ -1,10 +1,31 @@
-//These should be set by the interchange to dimensions appropriate to the GPU
-#define X_SIZE 64
+// These should be set by the interchange to dimensions appropriate to the GPU
+#define X_SIZE				64
 
-#define MEMORY_SWAP_FREQ 8
-#define TASK_SWAP_FREQ	4
+// These should be set as
+#define MEMORY_SWAP_FREQ	8
+#define TASK_SWAP_FREQ		4
+#define HIT_PROC_FREQ		4
 
-#define DEPTH_LIMIT 8
+#define DEPTH_LIMIT			8
+
+#define HIT_DISTANCE		( 1.0 / float( 1 << 22 ) )
+
+#define STATE_TYPE_MASK		0xF0000000
+	#define STATE_ENTER			0x10000000
+	#define STATE_CHILD			0x20000000
+	#define STATE_SURFACE		0x30000000
+	#define STATE_EXIT			0x40000000
+#define STATE_TARGET_MASK	0x0F000000
+	#define STATE_TGT_X			0x01000000
+	#define STATE_TGT_Y			0x02000000
+	#define STATE_TGT_Z			0x04000000
+	#define STATE_TGT_OUT		0x08000000
+#define	STATE_LOCALE_MASK	0x00F00000
+	#define STATE_LOC_X			0x00100000
+	#define STATE_LOC_Y			0x00200000
+	#define STATE_LOC_Z			0x00400000
+	#define STATE_LOC_OUT		0x00800000
+
 
 layout(std430, binding = 5) buffer TraceLayoutBuffer { uvec2 data[]; };
 restrict writeonly image2D outputImage;
@@ -14,6 +35,7 @@ uniform uint pixWidth;
 uniform uint pixHeight;
 uniform uint depthLimit;
 uniform vec3 horizonColor;
+uniform float alphaThresh;
 uint pixNo;
 uint traceTask;
 uint trace;
@@ -169,6 +191,18 @@ uint childHit( 	out float time, in uint currentChild,
 	return result;
 }
 
+
+
+// Returns the normal of eligible non-surface hit boundaries
+vec3 getChildHitNormal(in vec3 position){
+	vec3 centerVec = vec3(0.5,0.5,0.5);
+	vec3 boundVec = vec3(1.0,1.0,1.0);
+	vec3 hitVec	= vec3(HIT_DISTANCE,HIT_DISTANCE,HIT_DISTANCE);
+	vec3 hitPos = mod(position,boundVec)-centerVec;
+	return normalize(sign(hitPos)*vec3(lessThanEqual(abs(hitPos),hitVec)));
+}
+
+
 /*
 ** Returns whether or not the surface is hit. If so, time is changed to match
 ** the time to the surface hit.
@@ -201,13 +235,17 @@ void cleanUpTraceBranch( in uint traceBranchRoot, in traceNode data ){
 	uint mapStackCount = 0;
 
 	// Remove the root node from the rest of the trace tree
-	uint rootNext;
-	uint rootLast;
 	if( data.Next != NOT_THERE ){
 		traceLast(data.Next) = data.Last;
 	}
 	if( data.Last != NOT_THERE ){
-		traceNext(data.Last) = data.Next;
+		// If the trace is not the next of its last, it is the overlap
+		if(traceNext(data.Last) != traceBranchRoot){
+			traceOverlapHead(data.Last) = data.Next;
+		}
+		else{
+			traceNext(data.Last) = data.Next;
+		}
 	}
 	freeNode(traceBranchRoot);
 
@@ -246,7 +284,8 @@ void cleanUpTraceBranch( in uint traceBranchRoot, in traceNode data ){
 		*/
 		else if( next != NOT_THERE ){
 			// Unwind the trace's stack before it is freed
-			destroyStackUint(traceStackHead(iter),traceStackCount(iter));
+			destroyStackUvec3(traceHitStackHead(iter),traceHitStackCount(iter));
+			destroyStackUint(traceMatStackHead(iter),traceMatStackCount(iter));
 			freeNode(iter);
 			stackTopUint(mapStackHead,mapStackCount) = next;
 			iter = next;
@@ -257,7 +296,8 @@ void cleanUpTraceBranch( in uint traceBranchRoot, in traceNode data ){
 		*/
 		else{
 			// Unwind the trace's stack before it is freed
-			destroyStackUint(traceStackHead(iter),traceStackCount(iter));
+			destroyStackUvec3(traceHitStackHead(iter),traceStackCount(iter));
+			destroyStackUint(traceMatStackHead(iter),traceMatStackCount(iter));
 			freeNode(iter);
 			popStackUint(deleteHead,deleteCount);
 			iter = stackTopUint(mapStackHead,mapStackCount);
@@ -295,63 +335,112 @@ void onMarch(	inout vec4 mask, inout vec4 sample,
 /*
 ** marchTrace is the powerhouse of the ray tracer. With each execution, it
 ** takes the current trace branch and marches the root forward by the amount of
-** time left until the next hit occurs (somewhere in the trace tree). Along the
-** way, the next best hit time is also calculated so that, once the hit has
+** time left until the next hit occurs (somewhere in the trace tree).
 **
 */
 uint marchTrace(inout uint trace,
-				inout vec2 bestTimes, inout uvec2 bestTraces,
+				inout float currentStep, inout float soonestNextHit,
 				inout vec3 colorMask, inout vec3 lightSample,
-				inout bool traceTreeHit, inout traceTreeDone){
+				inout uint hitStackTop, inout uint hitStackCount,
+				inout uint cleanStackTop, inout uint cleanStackCount){
 
 
+	// Load in our trace data from the data buffer.
 	traceNode data = loadTrace(trace);
 
-	// Advance trace by the current best time
-    data.position.xyz = data.position.xyz + data.velocity.xyz * bestTimes.x;
-	data.timeLeft = data.TimeLeft - bestTimes.x;
-	onMarch(colorMask,lightSample,bestTimes.x,data.attributes);
-	if(data.TimeLeft < HIT_DISTANCE){
-		onHit( data.attributes,data.velocity,d);
-	}
-
-    if(trace == bestTraces.x){
-        data.timeLeft = distToHit();
-        if(data.timeLeft < bestTimes.y){
-            bestTimes.y = data.timeLeft;
-            bestTraces.y = trace;
-            if(data.timeLeft < bestSteps.x){
-                bestTimes.xy = vec2(data.timeLeft,bestTimes.x);
-                bestTraces.xy = uvec2(trace,bestTraces.x);
-            }
-        }
-    }
-    else{
-
-    }
-
-	/* If the traversal stack of the trace is empty, it is done and should be
-	** cleaned up. Otherwise, the data for the trace is stored back into the
-	** the trace tree.
+	/*
+	** Advance trace by the currentStep, update the trace's hit countdown,
+	** and perform onMarch calculations
 	*/
-	if(data.stackCount == 0){
-		cleanUpTraceBranch;
+    data.position.xyz = data.position.xyz + data.velocity.xyz * bestTimes.x;
+	data.timeLeft = data.TimeLeft - currentStep;
+	onMarch(colorMask,lightSample,currentStep,data.attributes);
+
+	/*
+	** If the amount of time left is within the hit threshold, it is added to
+	** the hit stack for later processing. Otherwise, the timeLeft value
+	** represents a hit in a future pass, and hence must be incorporated into
+	** the soonestNextHit calculation.
+	*/
+	if(data.TimeLeft < HIT_DISTANCE){
+		pushStackUint(hitStackTop,hitStackCount,trace);
 	}
 	else{
-		storeTrace(trace,data);
+		soonestNextHit = min(soonestNextHit,data.timeLeft);
 	}
 
+	// Store trace data for future use.
+	storeTrace(trace,data);
+
 	// Set the trace tree iterator to the next appropriate node.
-	trace = trace.Next
+	if(trace.overlapHead != NOT_THERE){
+		trace = trace.overlapHead;
+	}
+	else{
+		trace = trace.Next;
+	}
+
 }
 
 
-uint hitTrace(	inout uint trace,
-				inout vec2 bestTimes, inout uvec2 bestTraces,
-				inout vec3 colorMask, inout vec3 lightSample,
-				inout bool traceTreeHit, inout traceTreeDone){
+/*
+** Iterates down the cleaning stack, cleaning up each trace in the structure.
+** Should one of the traces be the root of this thread's current trace tree,
+** we set the variable holding this root trace to NOT_THERE, indicating the
+** current trace tree is finished.
+*/
+void cleanSweep(inout uint cleanStackTop, inout uint cleanStackCount,
+				inout uint rootTrace){
 
+	uint current;
+    while(cleanStackCount > 0){
+		current = stackTopUint(cleanStackTop,cleanStackCount);
+		cleanUpTraceBranch(current);
+		popStackUint(cleanStackTop,cleanStackCount);
+		if(current == rootTrace){
+			rootTrace = NOT_THERE;
+		}
+    }
 
+}
+
+void hitSweep(	inout uint hitStackTop, inout uint hitStackCount,
+				in uint traceNode){
+	uint hostVoxel;
+	uint matVoxel;
+	uint state;
+	uint hitType;
+	uint hitTarget;
+	vec3 normal;
+
+	while(hitStackCount > 0){
+		hostVoxel = traceHostNode(current);
+		matVoxel = stackTopUint(matStackTop,hitStackCount);
+
+		state = traceState(current);
+		hitType = STATE_TYPE_MASK & state;
+		hitTarget = STATE_TARGET_MASK & state;
+
+		if( hitType == HIT_SURFACE ){
+            normal = (unpackSnorm4x8(traceSurface(currentVoxel))).xyz;
+		}
+		else{
+			normal = getChildHitNormal(vec3(tracePosition(current,0),
+											tracePosition(current,1),
+											tracePosition(current,2)	));
+		}
+
+		onHit(	vec4(	voxelAttribute(currentVoxel,0),
+						voxelAttribute(currentVoxel,1),
+						voxelAttribute(currentVoxel,2),
+						voxelAttribute(currentVoxel,3)	),
+				vec4(								),
+				vec3(	traceVelocity(current,0),
+						traceVelocity(current,1),
+						traceVelocity(current,2)		),
+				normal
+			);
+    }
 
 }
 
@@ -361,8 +450,8 @@ uint hitTrace(	inout uint trace,
 layout(local_size_x = X_SIZE) in;
 void main(){
 
-	vec2 bestSteps;
-	uvec2 bestTraces;
+	float currentStep;
+	float soonestNextHit;
 	vec3 colorMask = vec3(1.0,1.0,1.0);
 	vec3 lightSample = vec3(0.0,0.0,0.0);
 	uint traceRoot;
@@ -372,6 +461,11 @@ void main(){
 	uint root_task;
 	bool traceTreeHit;
 	bool traceTreeDone = false;
+
+	uint hitStackTop = NOT_THERE;
+	uint hitStackCount = 0;
+	uint cleanStackTop = NOT_THERE;
+	uint cleanStackCount = 0;
 
 	// Initialize the Thread State and Root Task
 	initYggCompute();
@@ -384,12 +478,7 @@ void main(){
 	memoryBarrierBuffer();
 
 	// Spool Trace Layout
-
-	/*
-	** This is not included for testing. While important for cache optimization,
-	** it complicates matters of debugging.
-	*/
-
+	spoolScanlineLayout();
 
 
 	traceTask = NOT_THERE;
@@ -397,13 +486,15 @@ void main(){
 	// Perform traces until the root task is out of children
 	while( traceTaskChildCount(root_task) != 0 ){
 
-		// Grab a new task from the task queue, if needed and possible
+		// If this thread just finished up a trace, clean it up
 		if(traceTreeDone){
 			cleanUpTraceBranch(trace);
 			trace = NOT_THERE;
 		}
+		// Grab a new task from the task queue, if needed and possible
 		if(trace == NOT_THERE){
 			traceTask = grabTask();
+			// Only set up trace if the grabbed task address is valid
 			if(traceTask != NOT_THERE){
 				taskData = traceTaskLoad(traceTask);
 				traceData = traceTaskToTrace(taskData);
@@ -416,13 +507,22 @@ void main(){
 		// Only check for new tasks after every TASK_SWAP_FREQ hit calculations
 		for(uint swapStep = 0; swapStep < TASK_SWAP_FREQ; swapStep++){
 			trace = traceRoot;
-			// Only process hits after every HIT_PROC_FREQ march traversals
-			for(uint hitStep = 0; hitStep < HIT_PROC_FREQ; swapStep++){
-
-				while( (trace != NOT_THERE) && !done ){
-					marchTrace(trace,bestSteps,bestTraces,colorMask,lightSample);
-				}
+			while( trace != NOT_THERE ){
+				// Execute march operations down the trace tree
+				marchTrace(trace,bestSteps,bestTraces,colorMask,lightSample);
 			}
+			// Process pending hit operations
+			hitSweep(hitStackTop,hitStackCount);
+			/*
+			** If the color mask has hit the alpha threshold, the entire trace
+			** tree is cleaned up.
+			*/
+			if(max(colorMask) < alphaThresh){
+				destroyStackUint(hitStackTop,hitStackCount);
+				pushStackUint(hiStackTop,hitStackCount,traceRoot)
+			}
+			// Process pending cleanup operations
+			cleanSweep(cleanStackTop,cleanStackCount,traceRoot);
 
 		}
 
