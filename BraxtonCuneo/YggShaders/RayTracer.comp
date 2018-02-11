@@ -20,11 +20,12 @@
 	#define STATE_TGT_Y			0x00000020
 	#define STATE_TGT_Z			0x00000040
 	#define STATE_TGT_OUT		0x00000080
-#define	STATE_LOCALE_MASK	0x00F00000
+#define	STATE_LOCALE_MASK	0x0000000F
 	#define STATE_LOC_X			0x00000001
 	#define STATE_LOC_Y			0x00000002
 	#define STATE_LOC_Z			0x00000004
 	#define STATE_LOC_OUT		0x00000008
+#define STATE_MAT_STORED	0x00000100
 
 
 layout(std430, binding = 5) buffer TraceLayoutBuffer { uvec2 data[]; };
@@ -34,7 +35,7 @@ uniform mat4 viewMatrix;
 uniform uint pixWidth;
 uniform uint pixHeight;
 uniform uint depthLimit;
-uniform vec3 horizonColor;
+uniform uvec4 horizonMat;
 uniform float alphaThresh;
 uint pixNo;
 uint traceTask;
@@ -404,127 +405,278 @@ void cleanSweep(inout uint cleanStackTop, inout uint cleanStackCount,
 
 }
 
-void hitSweep(	inout uint hitStackTop, inout uint hitStackCount,
-				inout uint cleanStackTop, inout uint cleanStackCount){
+// Stores the index current host node of the trace at the top of its mat stack
+void storeOldVoxel(inout traceNode data, in uint host){
+	if(data.state & STATE_MAT_STORED == 0){
+		data.state |= STATE_MAT_STORED;
+		pushStackTop(data.matStackTop,data.matStackCount,host);
+	}
+}
 
-	uint oldVoxel;
-	uint newVoxel;
+/*
+** Finds the topmost trace index with a corresponding hit type equal to testVal
+** and places the index into currentTrace and the data into data. Additionally,
+** all processed trace indexes, regardless of qualifying, are placed into the
+** filter stack. If no valid trace is found, NOT_THERE is returned.
+*/
+void filter(	inout uint hitStackTop, inout uint hitStackCount,
+				inout uint filterStackTop, inout uint filterStackCount,
+				inout uint currentTrace, inout traceNode data, in uint testVal){
 	uint hitType;
-	uint locale;
+	// Place non-exiting hits into the filter stack
+	while(hitStackCount > 0){
+		currentTrace = stackTopUint(hitStackTop,hitStackCount);
+		popStackUint(hitStackTop,hitStackCount);
+		// Load trace data and get the type of hit
+		data = traceLoad(currentTrace);
+		hitType = data.state & STATE_TYPE_MASK;
+		pushStackUint(filterStackTop,filterStackCount,currentTrace);
+		if(hitType != testVal){
+			continue;
+		}
+		else{
+			break;
+		}
+	}
+	if(hitStackCount == 0){
+		currentTrace = NOT_THERE;
+	}
+}
+
+// Returns the state of a trace after an enter hit event
+void enterState(inout traceNode data){
+
+	storeOldVoxel(data,NOT_THERE);
+	uint state = data.state;
+	uint loc = (data.state & STATE_TARGET_MASK) >> 4;
+	state = state & (~(STATE_LOCALE_MASK | STATE_TARGET_MASK));
+	state = state | loc;
+	uint tgt = childHit(data.timeleft, loc, data.position, data.velocity);
+	state = state | (tgt << 4);
+
+}
+
+// Returns the state of a trace after an exit hit event
+void exitState(inout traceNode data){
+
+	// Get the state of the trace one level up
+	uvec3 stateTop = readTopUvec3(data.stateStackTop,data.stateStackCount);
+	uint locale = data.state & STATE_LOCALE_MASK;
+
+	popStackUvec3(data.stateStackTop,data.stateStackCount);
+
+	// If the current host voxel is the top of the mat stack, remove it
+	if(stackTopUint(data.matStackTop,data.matStackCount)==data.host){
+		popStackUint(data.matStackTop,data.matStackCount);
+	}
+	// Update host-specific data
+	data.host = stateTop.x;
+	data.state = stateTop.y;
+	data.velocity /= 2.0;
+	data.position = data.position / 2.0 - (0.5).xxx +
+					vec3(greaterThan(	locale.xxx^uvec3(1,2,4),
+										(0).xxx					));
+	data.timeLeft = uintBitsToFloat(stateTop.z);
+
+}
+
+// Returns the state of a trace after a child hit event
+void childState(inout traceNode data){
+
+
+
+}
+
+// Returns the state of a trace after a surface hit event
+void surfaceState(inout traceNode data){
+
+
+
+}
+
+
+void enterSweep(	inout uint hitStackTop, inout uint hitStackCount,
+					inout uint cleanStackTop, inout uint cleanStackCount){
+	uint currentTrace;
+	traceNode data;
+	uint filterStackTop = NOT_THERE;
+	uint filterStackCount = 0;
+	// Keep processing hits until there are no more
+	while(hitStackCount > 0){
+		// Get the topmost entering trace
+		filter(	hitStackTop,hitStackCount,filterStackTop,filterStackCount,
+				currentTrace, data, STATE_ENTER);
+		//Sets up the trace for a potential child hit after entrance
+		if( currentTrace != NOT_THERE ){
+			// If the current host voxel is the top of the mat stack, remove it
+			enterState(data);
+		}
+    }
+    // Place the filtered hits back into the hit stack for future processes
+    hitStackTop = filterStackTop;
+    hitStackCount = filterStackCount;
+}
+
+
+void exitSweep(	inout uint hitStackTop, inout uint hitStackCount,
+				inout uint cleanStackTop, inout uint cleanStackCount){
+	uint hitType;
 	uint hitTarget;
 	uvec3 stateTop;
 	vec3 normal;
 	uint currentTrace;
 	traceNode data;
-
 	// Keep processing hits until there are no more
 	while(hitStackCount > 0){
+		// Get the topmost entering trace
+		filter(	hitStackTop,hitStackCount,filterStackTop,filterStackCount,
+				currentTrace, data, STATE_EXIT);
+		/*
+		** While the hit currently being processed is an exit from the current
+		** voxel space, exit out to the parent voxel space. If the root voxel
+		** has been exited out of, then that means the trace is done and hence
+		** should be cleaned up.
+		*/
+		if(currentTrace != NOT_THERE){
+			hitType = data.state & STATE_TYPE_MASK;
+			while( (hitType == STATE_EXIT) && (data.timeLeft < HIT_DISTANCE) ){
+				if(data.stateStackCount == 0){
+					pushStackUint(cleanStackTop,cleanStackCount,currentTrace);
+					break;
+				}
+				else{
+					exitState(data);
+					hitType = data.state & STATE_TYPE_MASK;
+				}
+			}
+		}
+		traceStore(currentTrace,data);
+    }
+    // Place the filtered hits back into the hit stack for future processes
+    hitStackTop = filterStackTop;
+    hitStackCount = filterStackCount;
+}
 
+
+void childSweep(	inout uint hitStackTop, inout uint hitStackCount,
+					inout uint cleanStackTop, inout uint cleanStackCount){
+	uint hitType;
+	uint hitTarget;
+	uvec3 stateTop;
+	vec3 normal;
+	uint currentTrace;
+	traceNode data;
+	// Keep processing hits until there are no more
+	while(hitStackCount > 0){
+		// Get the topmost entering trace
+		filter(	hitStackTop,hitStackCount,filterStackTop,filterStackCount,
+				currentTrace, data, STATE_CHILD);
+		/*
+		** While the hit currently being processed is traveling between
+		** the boundaries between child voxels or into child voxels, update
+		** the trace's data appropriately. If the depth limit has been hit,
+		** halt further traversal.
+		*/
+		if(currentTrace != NOT_THERE){
+			hitType = data.state & STATE_TYPE_MASK;
+			while( (hitType == STATE_CHILD) && (data.timeLeft < HIT_DISTANCE) ){
+				if(data.stateStackCount == 0){
+					pushStackUint(cleanStackTop,cleanStackCount,currentTrace);
+					break;
+				}
+				else{
+					childState(data);
+					hitType = data.state & STATE_TYPE_MASK;
+				}
+			}
+		}
+		traceStore(currentTrace,data);
+	}
+	// Place the filtered hits back into the hit stack for future processes
+	hitStackTop = filterStackTop;
+	hitStackCount = filterStackCount;
+}
+
+
+void surfaceSweep(	inout uint hitStackTop, inout uint hitStackCount,
+					inout uint cleanStackTop, inout uint cleanStackCount){
+	uint currentTrace;
+	traceNode data;
+	uint filterStackTop = NOT_THERE;
+	uint filterStackCount = 0;
+	// Keep processing hits until there are no more
+	while(hitStackCount > 0){
+		// Get the topmost entering trace
+		filter(	hitStackTop,hitStackCount,filterStackTop,filterStackCount,
+				currentTrace, data, STATE_SURFACE);
+		//Sets up the trace for a potential child hit after entrance
+		if( currentTrace != NOT_THERE ){
+			surfaceState(data);
+		}
+    }
+    // Place the filtered hits back into the hit stack for future processes
+    hitStackTop = filterStackTop;
+    hitStackCount = filterStackCount;
+}
+
+
+void hitSweep(	inout uint hitStackTop, inout uint hitStackCount){
+	uint oldVoxel;
+	uint newVoxel;
+	uvec4 oldMat;
+	uvec4 newMat;
+	uint hitType;
+	uint hitTarget;
+	uvec3 stateTop;
+	vec3 normal;
+	uint currentTrace;
+	traceNode data;
+	// Keep processing hits until there are no more
+	while(hitStackCount > 0){
 		// Get the hit currently being processed and remove it from the stack
 		currentTrace = stackTopUint(hitStackTop,hitStackCount);
 		popStackUint(hitStackTop,hitStackCount);
-
-		// Load trace data and get the type of hit
 		data = traceLoad(currentTrace);
-		oldVoxel = data.host;
+
+		// Get the indexes of the voxels enc
+		oldVoxel = stackTopUint(trace.matStackTop,trace.matStackCount);
+		popStackUint(trace.matStackTop,trace.matStackCount);
+		newVoxel = stackTopUint(trace.matStackTop,trace.matStackCount);
+
+		if(oldVoxel == NOT_THERE){
+			oldMat = horizonMat;
+		}
+		else{
+			oldMat = vec4(	voxelAttribute(oldVoxel,0),
+							voxelAttribute(oldVoxel,1),
+							voxelAttribute(oldVoxel,2),
+							voxelAttribute(oldVoxel,3)	);
+		}
+
+		if(newVoxel == NOT_THERE){
+			newMat = horizonMat;
+		}
+		else{
+			newMat = vec4(	voxelAttribute(newVoxel,0),
+							voxelAttribute(newVoxel,1),
+							voxelAttribute(newVoxel,2),
+							voxelAttribute(newVoxel,3)	);
+		}
+
 		hitType = data.state & STATE_TYPE_MASK;
-
-		/*
-		** While the hit currently being processed is an exit from the current
-		** voxel space, exit out to the parent voxel space. If the root voxel
-		** has been exited out of, then that means the trace is done and hence
-		** should be cleaned up.
-		*/
-		while( (hitType == STATE_EXIT) && (data.timeLeft < HIT_DISTANCE) ){
-			if(data.stateStackCount == 0){
-				pushStackUint(cleanStackTop,cleanStackCount,currentTrace);
-				newVoxel = NOT_THERE;
-				break;
-			}
-			else{
-				// Get the state of the trace one level up
-				stateTop = readTopUvec3(data.stateStackTop,data.stateStackCount);
-				popStackUvec3(data.stateStackTop,data.stateStackCount);
-
-				// If the current host voxel is the top of the mat stack, remove it
-				if(stackTopUint(data.matStackTop,data.matStackCount)==data.host){
-					popStackUint(data.matStackTop,data.matStackCount);
-				}
-
-				// Update host-specific data
-				data.host = stateTop.x;
-				data.state = stateTop.y;
-				hitType = data.state & STATE_TYPE_MASK;
-				locale = data.state & STATE_LOCALE_MASK;
-				data.velocity /= 2.0;
-                data.position += vec3(greaterThan(	locale.xxx^uvec3(1,2,4),
-													(0).xxx					));
-				data.timeLeft = uintBitsToFloat(stateTop.z);
-			}
-		}
-
-		/*
-		** While the hit currently being processed is an exit from the current
-		** voxel space, exit out to the parent voxel space. If the root voxel
-		** has been exited out of, then that means the trace is done and hence
-		** should be cleaned up.
-		*/
-		while(	(hitType&STATE_ENTER&STATE_CHILD !=0 ) &&
-				(data.timeLeft < HIT_DISTANCE) ){
-			if(data.stateStackCount == depthLimit){
-				break;
-			}
-			else{
-				// Get the state of the trace one level up
-				stateTop = ????;
-				pushStackUvec3(data.stateStackTop,data.stateStackCount,stateTop);
-
-				// If the current host voxel is the top of the mat stack, remove it
-				if(stackTopUint(data.matStackTop,data.matStackCount)==data.host){
-					popStackUint(data.matStackTop,data.matStackCount);
-				}
-
-				// Update host-specific data
-				data.host = stateTop.x;
-				data.state = stateTop.y;
-				hitType = data.state & STATE_TYPE_MASK;
-				locale = data.state & STATE_LOCALE_MASK;
-				data.velocity /= 2.0;
-                data.position += vec3(greaterThan(	locale.xxx^uvec3(1,2,4),
-													(0).xxx					));
-				data.timeLeft = uintBitsToFloat(stateTop.z);
-			}
-		}
-
+		data.state = data.state & ( ~ STATE_MAT_STORED );
 
 		// Get the normal of the hit surface
 		if( hitType == HIT_SURFACE ){
-            normal = (unpackSnorm4x8(traceSurface(currentVoxel))).xyz;
+            normal = (unpackSnorm4x8(traceSurface(data.host))).xyz;
 		}
 		else{
-			normal = getChildHitNormal(vec3(tracePosition(current,0),
-											tracePosition(current,1),
-											tracePosition(current,2)	));
+			normal = getChildHitNormal(data.position);
 		}
 
 		// Pass the appropriate data to the onHitFunction
-		onHit(	vec4(	voxelAttribute(oldVoxel,0),
-						voxelAttribute(oldVoxel,1),
-						voxelAttribute(oldVoxel,2),
-						voxelAttribute(oldVoxel,3)	),
-
-				vec4(	voxelAttribute(newVoxel,0),
-						voxelAttribute(newVoxel,1),
-						voxelAttribute(newVoxel,2),
-						voxelAttribute(newVoxel,3)	),
-
-				vec3(	traceVelocity(current,0),
-						traceVelocity(current,1),
-						traceVelocity(current,2)		),
-
-				normal
-			);
-
+		onHit( oldMat, newMat, data.velocity, normal );
+		traceStore(currentTrace,data);
     }
 
 }
@@ -597,7 +749,11 @@ void main(){
 				marchTrace(trace,bestSteps,bestTraces,colorMask,lightSample);
 			}
 			// Process pending hit operations
-			hitSweep(hitStackTop,hitStackCount,cleanStackTop,cleanStackCount);
+			enterSweep(hitStackTop,hitStackCount,cleanStackTop,cleanStackCount);
+			exitSweep(hitStackTop,hitStackCount,cleanStackTop,cleanStackCount);
+			childSweep(hitStackTop,hitStackCount,cleanStackTop,cleanStackCount);
+			surfaceSweep(hitStackTop,hitStackCount,cleanStackTop,cleanStackCount);
+			hitSweep(hitStackTop,hitStackCount);
 			/*
 			** If the color mask has hit the alpha threshold, the entire trace
 			** tree is cleaned up.

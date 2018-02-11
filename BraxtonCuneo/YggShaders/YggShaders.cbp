@@ -38,6 +38,7 @@
 		</Linker>
 		<Unit filename="BasicToolTemplate.comp" />
 		<Unit filename="CommonCode.comp" />
+		<Unit filename="Initializer.comp" />
 		<Unit filename="MemoryManager.comp" />
 		<Unit filename="RayTracer.comp" />
 		<Unit filename="TreeManager.comp" />

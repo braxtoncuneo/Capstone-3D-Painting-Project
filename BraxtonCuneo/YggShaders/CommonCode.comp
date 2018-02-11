@@ -103,9 +103,9 @@ layout(std430, binding = 0) buffer DataBuffer { uint data[]; };
 
 layout(std430, binding = 1) buffer BlockBuffer { block data[]; };
 
-layout(std430, binding = 2) buffer HeapBuffer { uint data[]; };
+layout(std430, binding = 2) buffer HeapBuffer { uint data[ROOT_TASK]; };
 
-layout(std430, binding = 3) buffer TaskBuffer { uint data[]; };
+layout(std430, binding = 3) buffer TaskBuffer { uint data[ROOT_TASK+1]; };
 
 layout(std430, binding = 4) buffer ExchangeBuffer { uint data[]; };
 
@@ -667,22 +667,28 @@ void initYggCompute(){
 	// Get our thread id
 	id = gl_GlobalInvocationID();
 
+	// Remove any
+	for(uint i = 0; i < RSRC_PER; i++){
+		TaskBuffer.data[taskHeadIdx(id * RSRC_PER + i)] = NOT_THERE;
+		TaskBuffer.data[taskCountIdx(id * RSRC_PER + i)] = 0;
+	}
+
 	/*
 	** Assign the first and second heap and task list of the id-th available
 	** triplet of heap and task lists.
 	*/
-	heapIdxs_loc[0] = id * RSRC_SIZE * RSRC_PER;
-	heapIdxs_loc[1] = id * RSRC_SIZE * RSRC_PER + RSRC_SIZE;
-	taskQIdxs_loc[0] = id * RSRC_SIZE * RSRC_PER;
-	taskQIdxs_loc[1] = id * RSRC_SIZE * RSRC_PER + RSRC_SIZE;
+	heapIdxs_loc[0] = id * RSRC_PER;
+	heapIdxs_loc[1] = id * RSRC_PER + RSRC_SIZE;
+	taskQIdxs_loc[0] = id * RSRC_PER;
+	taskQIdxs_loc[1] = id * RSRC_PER + RSRC_SIZE;
 
 	/*
 	** Assign the third heap and task list of the id-th available triplet of
 	** heap and task lists to be available in the id-th element of the
 	** swapping section of their respective buffer .
 	*/
-	HeapBuffer.data[taskQIdxIdx(id)] = id * RSRC_SIZE * RSRC_PER + RSRC_SIZE * 2;
-	TaskBuffer.data[taskQIdxIdx(id)] = id * RSRC_SIZE * RSRC_PER + RSRC_SIZE * 2;
+	HeapBuffer.data[taskQIdxIdx(id)] = id * RSRC_PER + 2;
+	TaskBuffer.data[taskQIdxIdx(id)] = id * RSRC_PER + 2;
 
 	// Get the heads of each of our non-swapping lists
 	pullHeap(0);
