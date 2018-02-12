@@ -8,8 +8,19 @@
 
 #define DEPTH_LIMIT			8
 
+/*
+** The hit distance is something reasonably close to the minimum value
+** representable assuming an exponent of zero. This gives some reasonable
+** assurance that precision loss will not result in weirdness when dealing with
+** large variances in scale.
+*/
 #define HIT_DISTANCE		( 1.0 / float( 1 << 22 ) )
 
+/*
+** All of these masks and flag bits are used by the ray tracer to encode key
+** information about the state of a trace (past, present, and future) in a
+** trace's "state" member.
+*/
 #define STATE_TYPE_MASK		0xF0000000
 	#define STATE_ENTER			0x10000000
 	#define STATE_CHILD			0x20000000
@@ -25,7 +36,9 @@
 	#define STATE_LOC_Y			0x00000002
 	#define STATE_LOC_Z			0x00000004
 	#define STATE_LOC_OUT		0x00000008
-#define STATE_MAT_STORED	0x00000100
+#define STATE_OLD_STORED	0x00000100
+#define STATE_HIT_SURFACE	0x00000200
+#define STATE_INSIDE_SURF	0x00000400
 
 
 layout(std430, binding = 5) buffer TraceLayoutBuffer { uvec2 data[]; };
@@ -157,24 +170,20 @@ float traceCheck( in vec3 position, in vec3 velocity ){
 	return result;
 }
 
-/*
-** Returns the index of the next child node area to be intersected by the trace.
-** If the trace is to exit the voxel before intersecting with another child
-** node, it returns eight. Additionally, the variable time returns the time
-** to the next child voxel, if applicable.
-*/
-uint childHit( 	out float time, in uint currentChild,
-				in vec3 position, in vec3 velocity){
+
+void childHit( inout traceNode data ){
 	// Result starts off as the childless result
-	uint result = 8;
+	uint target = 8;
+	uint locale = dot(step(0.0,position),vec3(1.0,2.0,4.0));
+	float time;
 	// Calculates each dimensional intercept of the trace in the unit cube
-	vec3 crossPoint = (vec3(0.0,0.0,0.0) - position) / velocity;
+	vec3 crossPoint = (vec3(0.0,0.0,0.0) - data.position) / data.velocity;
 	/*
 	** Result for a dimension is true only if a cross across its intercept
 	** occurs before or simultaneous to all other intercepts and time left is
 	** greater than 0.0
 	*/
-	bvec3 crossStats =	greaterThan(vec3(crossPoint,0.0,0.0,0.0)) &&
+	bvec3 crossStats =	greaterThan(vec3(crossPoint,(0.0).xxx)) &&
 						greaterThanEqual(crossPoint,crossPoint.yzx) &&
 						greaterThanEqual(crossPoint,crossPoint.zxy);
 
@@ -187,35 +196,56 @@ uint childHit( 	out float time, in uint currentChild,
 		uint crossBits = 	uint(crossStats.x) +
 							(uint(crossStats.y) << 1)+
 							(uint(crossStats.z) << 2);
-		result = currentChild ^ crossBits;
+		target = locale ^ crossBits;
 	}
-	return result;
+
+	uint state = data.state;
+	uint loc = locale;
+	state = state & (~(STATE_LOCALE_MASK | STATE_TARGET_MASK | STATE_TYPE_MASK));
+	state = state | loc | (target << 4);
+	if( target == 8 ){
+		state = state | STATE_EXIT;
+	}
+	else{
+		state = state | STATE_CHILD;
+	}
+	data.timeLeft = time;
+	data.state = state;
+
 }
 
+
+
+
+void surfaceHit( inout traceNode data ){
+	float time;
+	uint state = data.state;
+	bool hits = false;
+	if(length(surface.xyz)!=0){
+		float velDir = dot(data.surface.xyz,data.velocity);
+		float posDir = dot(data.surface.xyz,data.position);
+		time = (0-posDir)/velDir;
+        if(time > 0){
+			hits = true;
+        }
+        state = state & (~STATE_TYPE_MASK);
+        state = state | STATE_SURFACE;
+	}
+	if(hits && time < timeLeft){
+		data.timeLeft = time;
+		data.state = state;
+	}
+
+}
 
 
 // Returns the normal of eligible non-surface hit boundaries
-vec3 getChildHitNormal(in vec3 position){
-	vec3 centerVec = vec3(0.5,0.5,0.5);
-	vec3 boundVec = vec3(1.0,1.0,1.0);
-	vec3 hitVec	= vec3(HIT_DISTANCE,HIT_DISTANCE,HIT_DISTANCE);
+vec3 getChildHitNormal( in vec3 position ){
+	vec3 centerVec = (0.5).xxx;
+	vec3 boundVec = (1.0).xxx;
+	vec3 hitVec	= (HIT_DISTANCE).xxx;
 	vec3 hitPos = mod(position,boundVec)-centerVec;
 	return normalize(sign(hitPos)*vec3(lessThanEqual(abs(hitPos),hitVec)));
-}
-
-
-/*
-** Returns whether or not the surface is hit. If so, time is changed to match
-** the time to the surface hit.
-*/
-bool surfaceHit(	out float time, in uint posMask, in uvec3 intPos,
-					in vec3 position, in vec3 velocity, in vec4 surface){
-	bool result = false;
-	if(length(surface.xyz)!=0){
-		float velDir = dot(surface.xyz,velocity);
-		float posDir = dot(surface.xyz,position);
-	}
-	return result;
 }
 
 
@@ -364,6 +394,8 @@ uint marchTrace(inout uint trace,
 	** the soonestNextHit calculation.
 	*/
 	if(data.TimeLeft < HIT_DISTANCE){
+		// Make sure the same surface won't be re-hit;
+		data.position.xyz = data.position.xyz + data.velocity.xyz * HIT_DISTANCE * 2;
 		pushStackUint(hitStackTop,hitStackCount,trace);
 	}
 	else{
@@ -405,12 +437,41 @@ void cleanSweep(inout uint cleanStackTop, inout uint cleanStackCount,
 
 }
 
-// Stores the index current host node of the trace at the top of its mat stack
-void storeOldVoxel(inout traceNode data, in uint host){
-	if(data.state & STATE_MAT_STORED == 0){
-		data.state |= STATE_MAT_STORED;
-		pushStackTop(data.matStackTop,data.matStackCount,host);
+// Stores a copy of the top voxel on top of the mat stack, if one hasn't already
+void storeOldVoxel(inout traceNode data){
+	uint vox;
+	if(data.state & STATE_OLD_STORED == 0){
+		vox = stackTopUint(data.matStackTop,data.matStackCount);
+		data.state |= STATE_OLD_STORED;
+		pushStackTop(data.matStackTop,data.matStackCount,vox);
 	}
+}
+
+/*
+** Writes the given voxel index under the old voxel in the mat stack.
+*/
+void setNewVoxel(inout traceNode data, in uint vox){
+	stackTopUint(data.matStackTop,data.matStackCount) = vox;
+}
+
+
+void pushNewVoxel(inout traceNode data){
+	uint top = stackTopUint(data.matStackTop,data.matStackCount);
+	popStackTop(data.matStackTop,data.matStackCount);
+	uint old = stackTopUint(data.matStackTop,data.matStackCount);
+	stackTopUint(data.matStackTop,data.matStackCount) = top;
+	pushStackTop(data.matStackTop,data.matStackCount,old);
+	pushStackTop(data.matStackTop,data.matStackCount,data.host);
+}
+
+
+void popNewVoxel(inout traceNode data){
+	popStackTop(data.matStackTop,data.matStackCount);
+	uint old = stackTopUint(data.matStackTop,data.matStackCount,vox);
+	popStackTop(data.matStackTop,data.matStackCount);
+	uint vox = stackTopUint(data.matStackTop,data.matStackCount);
+	stackTopUint(data.matStackTop,data.matStackCount) = old;
+	pushStackTop(data.matStackTop,data.matStackCount,vox);
 }
 
 /*
@@ -446,28 +507,24 @@ void filter(	inout uint hitStackTop, inout uint hitStackCount,
 // Returns the state of a trace after an enter hit event
 void enterState(inout traceNode data){
 
-	storeOldVoxel(data,NOT_THERE);
-	uint state = data.state;
-	uint loc = (data.state & STATE_TARGET_MASK) >> 4;
-	state = state & (~(STATE_LOCALE_MASK | STATE_TARGET_MASK));
-	state = state | loc;
-	uint tgt = childHit(data.timeleft, loc, data.position, data.velocity);
-	state = state | (tgt << 4);
+	storeOldVoxel(data);
+	childHit(data);
+	surfaceHit(data);
 
 }
 
 // Returns the state of a trace after an exit hit event
 void exitState(inout traceNode data){
 
+	storeOldVoxel(data);
 	// Get the state of the trace one level up
 	uvec3 stateTop = readTopUvec3(data.stateStackTop,data.stateStackCount);
-	uint locale = data.state & STATE_LOCALE_MASK;
-
 	popStackUvec3(data.stateStackTop,data.stateStackCount);
+	uint locale = data.state & STATE_LOCALE_MASK;
 
 	// If the current host voxel is the top of the mat stack, remove it
 	if(stackTopUint(data.matStackTop,data.matStackCount)==data.host){
-		popStackUint(data.matStackTop,data.matStackCount);
+		popNewVoxel(data);
 	}
 	// Update host-specific data
 	data.host = stateTop.x;
@@ -483,15 +540,35 @@ void exitState(inout traceNode data){
 // Returns the state of a trace after a child hit event
 void childState(inout traceNode data){
 
-
+	storeOldVoxel(data);
+	childHit(data);
+	uint newChild = data.child[data.state & STATE_LOCALE_MASK];
+	vec3 state;
+	if(newChild & NOT_THERE != NOT_THERE){
+        state.x = data.host;
+        state.y = data.state;
+        state.z = floatBitsToUint(data.timeLeft);
+        pushStackVec3(data.stateStackTop,data.stateStackCount,state);
+		data.host = newChild;
+		data.velocity *= 2.0;
+		data.position = mod(data.position,1.0) * (2.0).xxx - (1.0).xxx;
+	}
 
 }
 
 // Returns the state of a trace after a surface hit event
 void surfaceState(inout traceNode data){
-
-
-
+	storeOldVoxel(data);
+	data.state = data.state | STATE_SURFACE_HIT;
+	if(data.state & STATE_INSIDE_SURF){
+		popNewVoxel(data);
+		data.state = data.state & (~ STATE_INSIDE_SURF);
+	}
+	else{
+		pushNewVoxel(data);
+		data.state = data.state | STATE_INSIDE_SURF;
+	}
+	childHit(data);
 }
 
 
@@ -639,9 +716,10 @@ void hitSweep(	inout uint hitStackTop, inout uint hitStackCount){
 		data = traceLoad(currentTrace);
 
 		// Get the indexes of the voxels enc
-		oldVoxel = stackTopUint(trace.matStackTop,trace.matStackCount);
-		popStackUint(trace.matStackTop,trace.matStackCount);
 		newVoxel = stackTopUint(trace.matStackTop,trace.matStackCount);
+		popStackUint(trace.matStackTop,trace.matStackCount);
+		oldVoxel = stackTopUint(trace.matStackTop,trace.matStackCount);
+		stackTopUint(trace.matStackTop,trace.matStackCount) = newVoxel;
 
 		if(oldVoxel == NOT_THERE){
 			oldMat = horizonMat;
@@ -664,11 +742,12 @@ void hitSweep(	inout uint hitStackTop, inout uint hitStackCount){
 		}
 
 		hitType = data.state & STATE_TYPE_MASK;
-		data.state = data.state & ( ~ STATE_MAT_STORED );
+		data.state = data.state & ( ~STATE_OLD_STORED);
 
 		// Get the normal of the hit surface
-		if( hitType == HIT_SURFACE ){
+		if( data.state & STATE_HIT_SURFACE != 0 ){
             normal = (unpackSnorm4x8(traceSurface(data.host))).xyz;
+            data.state = data.state & (~ STATE_HIT_SURFACE);
 		}
 		else{
 			normal = getChildHitNormal(data.position);
