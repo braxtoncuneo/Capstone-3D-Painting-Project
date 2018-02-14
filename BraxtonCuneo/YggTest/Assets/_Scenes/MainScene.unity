@@ -88,6 +88,7 @@ LightmapSettings:
     m_PVRFilteringAtrousPositionSigmaDirect: 0.5
     m_PVRFilteringAtrousPositionSigmaIndirect: 2
     m_PVRFilteringAtrousPositionSigmaAO: 1
+    m_ShowResolutionOverlay: 1
   m_LightingDataAsset: {fileID: 0}
   m_UseShadowmask: 1
 --- !u!196 &4
@@ -177,6 +178,54 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
+--- !u!1 &59395029
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 59395031}
+  - component: {fileID: 59395030}
+  m_Layer: 0
+  m_Name: Yggdrasil
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &59395030
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 59395029}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 33709b47fd0e37c428f6f3db039d729e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  totalGPURAM: 0
+  groupSize: 0
+  startingDataSize: 0.6
+  initializer: {fileID: 0}
+  rayTracer: {fileID: 7200000, guid: cac6424894b85fb4cbd9de5fd496aba8, type: 3}
+  treeManager: {fileID: 0}
+  memoryManager: {fileID: 0}
+  tools: []
+--- !u!4 &59395031
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 59395029}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 3248.6206, y: 441.42065, z: 1107.9478}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 5
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &135951217
 GameObject:
   m_ObjectHideFlags: 0
@@ -273,6 +322,47 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dcbc754997ea1b74b99bf54b022cfc62, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!1 &506600154
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 506600156}
+  - component: {fileID: 506600155}
+  m_Layer: 0
+  m_Name: YggCamera
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &506600155
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 506600154}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 143b73e60734cf147866cfe993749cec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ygg: {fileID: 59395030}
+--- !u!4 &506600156
+Transform:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 506600154}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 3248.6206, y: 441.42065, z: 1107.9478}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 4
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1413155820
 GameObject:
   m_ObjectHideFlags: 0
@@ -303,14 +393,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 38aef06bd3290d340a39e2cc52ee73f3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  console: {fileID: 0}
-  treeManager: {fileID: 0}
-  memoryManager: {fileID: 0}
-  currentTool: {fileID: 0}
-  totalGPURAM: 0
-  dataBufferUsage: 0
-  extraneousNodes: 0
-  demandedNodes: 0
 --- !u!23 &1413155823
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -469,6 +551,7 @@ Camera:
   m_TargetEye: 3
   m_HDR: 1
   m_AllowMSAA: 1
+  m_AllowDynamicResolution: 0
   m_ForceIntoRT: 0
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
