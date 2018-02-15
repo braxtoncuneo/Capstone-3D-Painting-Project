@@ -58,10 +58,12 @@
      <Compile Include="Assets\_Scripts\Tool.cs" />
      <Compile Include="Assets\_Scripts\YggCam.cs" />
      <Compile Include="Assets\_Scripts\YggManager.cs" />
+     <None Include="Assets\_Shaders\Initializer.compute" />
      <None Include="Assets\_Shaders\HLSLTracer.compute" />
      <None Include="Assets\_Shaders\MemoryManager.compute" />
      <None Include="Assets\_Shaders\HLSLCommon.compute" />
      <None Include="Assets\_Shaders\RayTracer.compute" />
+     <None Include="Assets\_Shaders\Diagnostic.compute" />
      <None Include="Assets\_Shaders\TreeManager.compute" />
  <Reference Include="UnityEngine.UI">
  <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/GUISystem/UnityEngine.UI.dll</HintPath>

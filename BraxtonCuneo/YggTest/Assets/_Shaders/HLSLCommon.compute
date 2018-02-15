@@ -352,12 +352,21 @@ inline void traceTaskStore(in uint node, in traceTaskNode data){
 
 /// Resource Value Indexing Functions
 
+
+inline uint rsrcHeadIdx(in uint idx){
+	return RSRC_SIZE * idx;
+}
+
+inline uint rsrcCountIdx(in uint idx){
+	return RSRC_SIZE * idx + 1;
+}
+
 /*
 ** Returns the index in the heap buffer where the head of the thread's
 ** idx-th heap list is stored.
 */
 inline uint heapHeadIdx(in uint idx){
-	return heapIdxs_loc[idx]*RSRC_SIZE;
+	return rsrcHeadIdx(heapIdxs_loc[idx]);
 }
 
 /*
@@ -365,7 +374,7 @@ inline uint heapHeadIdx(in uint idx){
 ** idx-th heap count is stored.
 */
 inline uint heapCountIdx(in uint idx){
-	return heapIdxs_loc[idx]*RSRC_SIZE + 1;
+	return rsrcCountIdx(heapIdxs_loc[idx]);
 }
 
 /*
@@ -381,7 +390,7 @@ inline uint heapIdxIdx(in uint idx){
 ** idx-th task list is stored.
 */
 inline uint taskQHeadIdx(in uint idx){
-	return taskQIdxs_loc[idx]*RSRC_SIZE;
+	return rsrcHeadIdx(taskQIdxs_loc[idx]);
 }
 
 /*
@@ -389,7 +398,7 @@ inline uint taskQHeadIdx(in uint idx){
 ** idx-th task count is stored.
 */
 inline uint taskQCountIdx(in uint idx){
-	return taskQIdxs_loc[idx]*RSRC_SIZE + 1;
+	return rsrcCountIdx(taskQIdxs_loc[idx]);
 }
 
 /*
@@ -792,14 +801,13 @@ inline bool childSeek(	inout uint voxel, inout vec3 position ){
 
 /// Program resource initialization/cleanup
 
-
 inline void initYggCompute(){
 	// Get our thread id
 
 	// Remove any
 	for(uint i = 0; i < RSRC_PER; i++){
-		TaskBuffer[id * RSRC_PER + i] = NOT_THERE;
-		TaskBuffer[id * RSRC_PER + i] = 0;
+		TaskBuffer[rsrcHeadIdx(id * RSRC_PER + i)] = NOT_THERE;
+		TaskBuffer[rsrcCountIdx(id * RSRC_PER + i)] = 0;
 	}
 
 	/*
@@ -807,9 +815,9 @@ inline void initYggCompute(){
 	** triplet of heap and task lists.
 	*/
 	heapIdxs_loc[0] = id * RSRC_PER;
-	heapIdxs_loc[1] = id * RSRC_PER + RSRC_SIZE;
+	heapIdxs_loc[1] = id * RSRC_PER + 1;
 	taskQIdxs_loc[0] = id * RSRC_PER;
-	taskQIdxs_loc[1] = id * RSRC_PER + RSRC_SIZE;
+	taskQIdxs_loc[1] = id * RSRC_PER + 1;
 
 	/*
 	** Assign the third heap and task list of the id-th available triplet of

@@ -205,13 +205,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 33709b47fd0e37c428f6f3db039d729e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  totalGPURAM: 0
-  groupSize: 0
-  startingDataSize: 0.6
-  initializer: {fileID: 0}
-  rayTracer: {fileID: 7200000, guid: cac6424894b85fb4cbd9de5fd496aba8, type: 3}
+  initializer: {fileID: 7200000, guid: de5f9f3011c016a468ec3967fe1d4797, type: 3}
+  diagnostic: {fileID: 7200000, guid: 56ca291b4df10b446891ac1268286743, type: 3}
+  rayTracer: {fileID: 7200000, guid: 0256bc60f2ad33f4cb11c0c3d8da4836, type: 3}
   treeManager: {fileID: 0}
-  memoryManager: {fileID: 0}
+  memoryManager: {fileID: 7200000, guid: 438475714410d8147b0e27b21d298a93, type: 3}
   tools: []
 --- !u!4 &59395031
 Transform:

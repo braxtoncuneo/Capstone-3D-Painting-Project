@@ -1,0 +1,85 @@
+﻿
+#define CONVERT
+
+#ifdef CONVERT
+	#define vec2	float2
+	#define vec3	float3
+	#define vec4	float4
+	#define uvec2	uint2
+	#define uvec3	uint3
+	#define uvec4	uint4
+	#define ivec2	int2
+	#define ivec3	int3
+	#define ivec4	int4
+	#define bvec2	bool2
+	#define bvec3	bool3
+	#define bvec4	bool4
+	#define mat4	float4x4
+#endif
+
+
+
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel main
+
+// This should be replaced with the contents of CommonCode.comp
+#include "HLSLCommon.compute"
+
+
+// This should be divisible by THREAD_COUNT * 3
+int _dataBufferSize;
+static const uint dataBufferSize = asuint(_dataBufferSize);
+
+
+/*
+** The initializer takes the entire contents of the data buffer and distributes
+** the nodes over the heaps in the heap buffer. Additionally, this program
+** clears the task buffer.
+*/
+[numthreads(GROUP_SIZE,1,1)]
+void main (uint3 _id : SV_DispatchThreadID){
+	id = _id.x;
+
+	uint nodesPer = (dataBufferSize / ( THREAD_COUNT * RSRC_PER ));
+	uint start;
+	uint end;
+	uint idx;
+	for(uint i = 0; i < RSRC_PER; i++){
+		// Connect the links making up the i-th heap of the thread
+		start =  nodesPer * (id * RSRC_PER + i);
+		end = start + nodesPer;
+		for(idx = start; idx < (end - 1); idx++){
+			rawNode(idx,0) = idx+1;
+		}
+		rawNode(idx,0) = NOT_THERE;
+
+		// Assign the head of the linked list to the i-th heap head element
+		HeapBuffer[rsrcHeadIdx(id * RSRC_PER + i)] = start;
+		HeapBuffer[rsrcCountIdx(id * RSRC_PER + i)] = nodesPer;
+
+		// Clear the task buffers
+		TaskBuffer[rsrcHeadIdx(id * RSRC_PER + i)] = NOT_THERE;
+		TaskBuffer[rsrcCountIdx(id * RSRC_PER + i)] = 0;
+
+		/*
+		** Assign the first and second heap and task list of the id-th available
+		** triplet of heap and task lists.
+		*/
+		heapIdxs_loc[0] = id * RSRC_PER;
+		heapIdxs_loc[1] = id * RSRC_PER + 1;
+		taskQIdxs_loc[0] = id * RSRC_PER;
+		taskQIdxs_loc[1] = id * RSRC_PER + 1;
+
+		/*
+		** Assign the third heap and task list of the id-th available triplet of
+		** heap and task lists to be available in the id-th element of the
+		** swapping section of their respective buffer .
+		*/
+		HeapBuffer[taskQIdxIdx(id)] = id * RSRC_PER + 2;
+		TaskBuffer[taskQIdxIdx(id)] = id * RSRC_PER + 2;
+	}
+}
+
+
+
+

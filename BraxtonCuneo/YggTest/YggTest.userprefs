@@ -1,17 +1,20 @@
 ﻿<Properties StartupItem="Assembly-CSharp.csproj">
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="Unity.Instance.Unity Editor" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\_Shaders\HLSLCommon.compute">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\_Scripts\YggManager.cs">
     <Files>
-      <File FileName="Assets\_Shaders\RayTracer.compute" Line="1" Column="1" />
-      <File FileName="Assets\_Scripts\RootBlock.cs" Line="1" Column="1" />
-      <File FileName="Assets\_Scripts\YggManager.cs" Line="1" Column="1" />
-      <File FileName="Assets\_Shaders\MemoryManager.compute" Line="35" Column="2" />
-      <File FileName="Assets\_Shaders\HLSLTracer.compute" Line="19" Column="7" />
-      <File FileName="Assets\_Shaders\HLSLCommon.compute" Line="441" Column="14" />
+      <File FileName="Assets\_Shaders\MemoryManager.compute" Line="1" Column="1" />
+      <File FileName="Assets\_Shaders\HLSLTracer.compute" Line="1" Column="1" />
+      <File FileName="Assets\_Shaders\HLSLCommon.compute" Line="1" Column="1" />
+      <File FileName="Assets\_Shaders\Initializer.compute" Line="1" Column="1" />
+      <File FileName="Assets\_Shaders\Diagnostic.compute" Line="1" Column="1" />
+      <File FileName="Assets\_Scripts\YggManager.cs" Line="71" Column="30" />
+      <File FileName="Assets\_Scripts\YggCam.cs" Line="1" Column="1" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
-    <BreakpointStore />
+    <BreakpointStore>
+      <Breakpoint file="C:\Users\Braxton\Documents\GitHub\Capstone-3D-Painting-Project\BraxtonCuneo\YggTest\Assets\_Scripts\YggManager.cs" line="72" column="1" />
+    </BreakpointStore>
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
   <MonoDevelop.Ide.DebuggingService.PinnedWatches />
 </Properties>

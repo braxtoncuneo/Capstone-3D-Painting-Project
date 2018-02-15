@@ -33,7 +33,9 @@ public class YggCam : MonoBehaviour {
 	}
 	
 	// Update is called once per frame
+	
 	void Update () {
+		/*
 		List<int> intHorizon = new List<int>();
 		for(int i = 0; i< 4; i++){
 			intHorizon.Add(unchecked((int)(horizonMat[i])));
@@ -44,8 +46,9 @@ public class YggCam : MonoBehaviour {
 		Tracer.SetInts ("horizonMat", intHorizon.ToArray());
 		Tracer.SetFloat ("alphaThresh", alphaThresh);
 		Tracer.SetTexture (0, "outputImage", outputImage);
-		Tracer.Dispatch (0, ygg.groupSize, 1, 1);
+		Tracer.Dispatch (0, ygg.theGroupSize, 1, 1);
 		Graphics.DrawTexture (new Rect (0,0,pixWidth,pixHeight), outputImage);
+		*/
 	}
 
 }
