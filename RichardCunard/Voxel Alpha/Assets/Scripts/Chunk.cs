@@ -231,13 +231,13 @@ public class Chunk : MonoBehaviour
         tempTri.Add(polyCount * 4); 
         tempTri.Add(polyCount * 4 + 2); 
         tempTri.Add(polyCount * 4 + 3); 
-        
-        tempUV.Add(new Vector2(textureOffset * color.x + textureOffset, textureOffset * color.y));
-        tempUV.Add(new Vector2(textureOffset * color.x + textureOffset, textureOffset * color.y + textureOffset));
-        tempUV.Add(new Vector2(textureOffset * color.x, textureOffset * color.y + textureOffset));
-        tempUV.Add(new Vector2(textureOffset * color.x, textureOffset * color.y));
 
-        polyCount++; // Add this line
+        tempUV.Add(new Vector2(textureOffset * texturePos.x + textureOffset, textureOffset * texturePos.y));
+        tempUV.Add(new Vector2(textureOffset * texturePos.x + textureOffset, textureOffset * texturePos.y + textureOffset));
+        tempUV.Add(new Vector2(textureOffset * texturePos.x, textureOffset * texturePos.y + textureOffset));
+        tempUV.Add(new Vector2(textureOffset * texturePos.x, textureOffset * texturePos.y));
+
+        polyCount++;
     }
 
     void UpdateMesh()
