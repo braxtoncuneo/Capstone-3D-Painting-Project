@@ -9,7 +9,6 @@ public class World : MonoBehaviour
     public int worldX = 16;
     public int worldY = 16;
     public int worldZ = 16;
-
     public GameObject chunk;
     public Chunk[,,] chunks;
     public int chunkSize = 16;
@@ -72,12 +71,8 @@ public class World : MonoBehaviour
     {
         for (int y = 0; y < chunks.GetLength(1); y++)
         {
-            //Create a temporary Gameobject for the new chunk instead of using chunks[x,y,z]
-            GameObject newChunk = Instantiate(chunk, new Vector3(x * chunkSize - 0.5f,
-                y * chunkSize + 0.5f, z * chunkSize - 0.5f), new Quaternion(0, 0, 0, 0)) as GameObject;
-
-            //Now instead of using a temporary variable for the script assign it
-            //to chunks[x,y,z] and use it instead of the old \"newChunkScript\" 
+            //instantiates chunks as game objects for easy spawning and despawning
+            GameObject newChunk = Instantiate(chunk, new Vector3(x * chunkSize - 0.5f, y * chunkSize + 0.5f, z * chunkSize - 0.5f), new Quaternion(0, 0, 0, 0)) as GameObject; 
             chunks[x, y, z] = newChunk.GetComponent("Chunk") as Chunk;
             chunks[x, y, z].worldReference = gameObject;
             chunks[x, y, z].chunkSize = chunkSize;

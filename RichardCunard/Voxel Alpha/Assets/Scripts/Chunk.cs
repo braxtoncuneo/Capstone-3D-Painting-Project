@@ -51,26 +51,26 @@ public class Chunk : MonoBehaviour
         tempVerts.Add(new Vector3(x + 1, y, z));
         tempVerts.Add(new Vector3(x, y, z));
 
-        Vector2 texturePos = new Vector2(0, 0);
+        Vector2 color = new Vector2(0, 0);
 
         if (Block(x, y, z) == 1)
         {
-            texturePos = blue;
+            color = blue;
         }
         else if (Block(x, y, z) == 2)
         {
-            texturePos = green;
+            color = green;
         }
         else if (Block(x, y, z) == 3)
         {
-            texturePos = red;
+            color = red;
         }
         else if (Block(x, y, z) == 4)
         {
-            texturePos = yellow;
+            color = yellow;
         }
 
-        Cube(texturePos);
+        Cube(color);
     }
 
     void CubeFront(int x, int y, int z, int block)
@@ -80,26 +80,26 @@ public class Chunk : MonoBehaviour
         tempVerts.Add(new Vector3(x, y, z + 1));
         tempVerts.Add(new Vector3(x, y - 1, z + 1));
 
-        Vector2 texturePos = new Vector2(0, 0);
+        Vector2 color = new Vector2(0, 0);
 
         if (Block(x, y, z) == 1)
         {
-            texturePos = blue;
+            color = blue;
         }
         else if (Block(x, y, z) == 2)
         {
-            texturePos = green;
+            color = green;
         }
         else if (Block(x, y, z) == 3)
         {
-            texturePos = red;
+            color = red;
         }
         else if (Block(x, y, z) == 4)
         {
-            texturePos = yellow;
+            color = yellow;
         }
 
-        Cube(texturePos);
+        Cube(color);
 
     }
 
@@ -110,26 +110,26 @@ public class Chunk : MonoBehaviour
         tempVerts.Add(new Vector3(x + 1, y, z + 1));
         tempVerts.Add(new Vector3(x + 1, y - 1, z + 1));
 
-        Vector2 texturePos = new Vector2(0, 0);
+        Vector2 color = new Vector2(0, 0);
 
         if (Block(x, y, z) == 1)
         {
-            texturePos = blue;
+            color = blue;
         }
         else if (Block(x, y, z) == 2)
         {
-            texturePos = green;
+            color = green;
         }
         else if (Block(x, y, z) == 3)
         {
-            texturePos = red;
+            color = red;
         }
         else if (Block(x, y, z) == 4)
         {
-            texturePos = yellow;
+            color = yellow;
         }
 
-        Cube(texturePos);
+        Cube(color);
 
     }
 
@@ -140,26 +140,26 @@ public class Chunk : MonoBehaviour
         tempVerts.Add(new Vector3(x + 1, y, z));
         tempVerts.Add(new Vector3(x + 1, y - 1, z));
 
-        Vector2 texturePos = new Vector2(0, 0);
+        Vector2 color = new Vector2(0, 0);
 
         if (Block(x, y, z) == 1)
         {
-            texturePos = blue;
+            color = blue;
         }
         else if (Block(x, y, z) == 2)
         {
-            texturePos = green;
+            color = green;
         }
         else if (Block(x, y, z) == 3)
         {
-            texturePos = red;
+            color = red;
         }
         else if (Block(x, y, z) == 4)
         {
-            texturePos = yellow;
+            color = yellow;
         }
 
-        Cube(texturePos);
+        Cube(color);
 
     }
 
@@ -170,26 +170,26 @@ public class Chunk : MonoBehaviour
         tempVerts.Add(new Vector3(x, y, z));
         tempVerts.Add(new Vector3(x, y - 1, z));
 
-        Vector2 texturePos = new Vector2(0, 0);
+        Vector2 color = new Vector2(0, 0);
 
         if (Block(x, y, z) == 1)
         {
-            texturePos = blue;
+            color = blue;
         }
         else if (Block(x, y, z) == 2)
         {
-            texturePos = green;
+            color = green;
         }
         else if (Block(x, y, z) == 3)
         {
-            texturePos = red;
+            color = red;
         }
         else if (Block(x, y, z) == 4)
         {
-            texturePos = yellow;
+            color = yellow;
         }
 
-        Cube(texturePos);
+        Cube(color);
 
     }
 
@@ -200,30 +200,30 @@ public class Chunk : MonoBehaviour
         tempVerts.Add(new Vector3(x + 1, y - 1, z + 1));
         tempVerts.Add(new Vector3(x, y - 1, z + 1));
 
-        Vector2 texturePos = new Vector2(0, 0);
+        Vector2 color = new Vector2(0, 0);
 
         if (Block(x, y, z) == 1)
         {
-            texturePos = blue;
+            color = blue;
         }
         else if (Block(x, y, z) == 2)
         {
-            texturePos = green;
+            color = green;
         }
         else if (Block(x, y, z) == 2)
         {
-            texturePos = red;
+            color = red;
         }
         else if (Block(x, y, z) == 2)
         {
-            texturePos = yellow;
+            color = yellow;
         }
 
-        Cube(texturePos);
+        Cube(color);
 
     }
 
-    void Cube(Vector2 texturePos)
+    void Cube(Vector2 color)
     {
         tempTri.Add(polyCount * 4); 
         tempTri.Add(polyCount * 4 + 1); 
@@ -231,12 +231,11 @@ public class Chunk : MonoBehaviour
         tempTri.Add(polyCount * 4); 
         tempTri.Add(polyCount * 4 + 2); 
         tempTri.Add(polyCount * 4 + 3); 
-
-        for (int i = 0; i < 4; i++)
-        tempUV.Add(new Vector2(textureOffset * texturePos.x + textureOffset, textureOffset * texturePos.y));
-        tempUV.Add(new Vector2(textureOffset * texturePos.x + textureOffset, textureOffset * texturePos.y + textureOffset));
-        tempUV.Add(new Vector2(textureOffset * texturePos.x, textureOffset * texturePos.y + textureOffset));
-        tempUV.Add(new Vector2(textureOffset * texturePos.x, textureOffset * texturePos.y));
+        
+        tempUV.Add(new Vector2(textureOffset * color.x + textureOffset, textureOffset * color.y));
+        tempUV.Add(new Vector2(textureOffset * color.x + textureOffset, textureOffset * color.y + textureOffset));
+        tempUV.Add(new Vector2(textureOffset * color.x, textureOffset * color.y + textureOffset));
+        tempUV.Add(new Vector2(textureOffset * color.x, textureOffset * color.y));
 
         polyCount++; // Add this line
     }
