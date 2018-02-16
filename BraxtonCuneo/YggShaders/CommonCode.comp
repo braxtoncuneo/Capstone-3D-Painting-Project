@@ -2,7 +2,7 @@
 #define HEADER_SIZE		4
 #define ATT_NUM			4
 #define CHILD_NUM		8
-#define THREAD_COUNT	4096
+#define THREAD_COUNT	1024
 #define RSRC_PER		3
 #define RSRC_SIZE		2
 #define RSRC_IDX_OFFSET THREAD_COUNT * RSRC_PER * RSRC_SIZE

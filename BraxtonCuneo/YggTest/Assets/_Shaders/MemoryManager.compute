@@ -1,17 +1,54 @@
 ﻿
+#define CONVERT
+
+#ifdef CONVERT
+	#define vec2	float2
+	#define vec3	float3
+	#define vec4	float4
+	#define uvec2	uint2
+	#define uvec3	uint3
+	#define uvec4	uint4
+	#define ivec2	int2
+	#define ivec3	int3
+	#define ivec4	int4
+	#define bvec2	bool2
+	#define bvec3	bool3
+	#define bvec4	bool4
+	#define mat4	float4x4
+#endif
 
 // Each #kernel tells which function to compile; you can have many kernels
-#pragma kernel CSMain
+#pragma kernel main
 
-// Create a RenderTexture with enableRandomWrite flag and set it
-// with cs.SetTexture
-RWTexture2D<float4> Result;
 
-[numthreads(8,8,1)]
-void CSMain (uint3 id : SV_DispatchThreadID)
-{
-	// TODO: insert actual code here!
+//These should be set by the interchange to dimensions appropriate to the GPU
+#define X_SIZE 64
 
-	Result[id.xy] = float4(id.x & id.y, (id.x & 15)/15.0, (id.y & 15)/15.0, 0.0);
+// This should be replaced with the contents of CommonCode.comp
+#include "HLSLCommon.compute"
+
+int _rotateNo;
+int _levelsPerRotate;
+static const uint rotateNo = asuint(_rotateNo);
+static const uint levelsPerRotate = asuint(_levelsPerRotate);
+
+ 
+/*
+** The simplest of the shaders in Yggdrasil, the Memory Manager simply repeats
+** a number of calls to levelHeaps and rotate heaps, hopefully leveling memory.
+*/
+[numthreads(GROUP_SIZE,1,1)]
+void main (uint3 _id : SV_DispatchThreadID){
+	id = _id.x;
+
+    initYggCompute();
+	for(uint i = 0; i < rotateNo; i++){
+		levelHeaps(levelsPerRotate);
+		rotateHeaps();
+	}
+    exitYggCompute();
+
 }
+
+
 
