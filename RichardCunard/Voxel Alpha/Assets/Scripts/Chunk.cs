@@ -232,7 +232,6 @@ public class Chunk : MonoBehaviour
         tempTri.Add(polyCount * 4 + 2); 
         tempTri.Add(polyCount * 4 + 3); 
 
-        for (int i = 0; i < 4; i++)
         tempUV.Add(new Vector2(textureOffset * texturePos.x + textureOffset, textureOffset * texturePos.y));
         tempUV.Add(new Vector2(textureOffset * texturePos.x + textureOffset, textureOffset * texturePos.y + textureOffset));
         tempUV.Add(new Vector2(textureOffset * texturePos.x, textureOffset * texturePos.y + textureOffset));
