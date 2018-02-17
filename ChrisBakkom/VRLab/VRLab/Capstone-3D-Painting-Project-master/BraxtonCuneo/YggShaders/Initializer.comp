@@ -1,0 +1,63 @@
+//These should be set by the interchange to dimensions appropriate to the GPU
+#define X_SIZE 64
+
+// This should be replaced with the contents of CommonCode.comp
+#include "CommonCode.comp"
+
+
+// This should be divisible by THREAD_COUNT * 3
+uniform uint dataBufferSize;
+
+
+/*
+** The initializer takes the entire contents of the data buffer and distributes
+** the nodes over the heaps in the heap buffer. Additionally, this program
+** clears the task buffer.
+*/
+layout(local_size_x = X_SIZE) in;
+void main(){
+	// Get our thread id
+	id = gl_GlobalInvocationID();
+
+	uint nodesPer = (dataBufferSize / ( THREAD_COUNT * RSRC_PER ));
+	uint start;
+	uint end;
+	uint idx;
+	for(uint i = 0; i < RSRC_PER; i++){
+		// Connect the links making up the i-th heap of the thread
+		start =  nodesPer * (id * RSRC_PER + i);
+		end = start + nodesPer;
+		for(idx = start; idx++; idx < end - 1){
+			rawNode(idx,0) = idx+1;
+		}
+		rawNode(idx,0) = NOT_THERE;
+
+		// Assign the head of the linked list to the i-th heap head element
+		HeapBuffer.data[heapHeadIdx(id * RSRC_PER + i)] = start;
+		HeapBuffer.data[heapCountIdx(id * RSRC_PER + i)] = nodesPer;
+
+		// Clear the task buffers
+		TaskBuffer.data[taskHeadIdx(id * RSRC_PER + i)] = NOT_THERE;
+		TaskBuffer.data[taskCountIdx(id * RSRC_PER + i)] = 0;
+
+		/*
+		** Assign the first and second heap and task list of the id-th available
+		** triplet of heap and task lists.
+		*/
+		heapIdxs_loc[0] = id * RSRC_PER;
+		heapIdxs_loc[1] = id * RSRC_PER + RSRC_SIZE;
+		taskQIdxs_loc[0] = id * RSRC_PER;
+		taskQIdxs_loc[1] = id * RSRC_PER + RSRC_SIZE;
+
+		/*
+		** Assign the third heap and task list of the id-th available triplet of
+		** heap and task lists to be available in the id-th element of the
+		** swapping section of their respective buffer .
+		*/
+		HeapBuffer.data[taskQIdxIdx(id)] = id * RSRC_PER + RSRC_SIZE * 2;
+		TaskBuffer.data[taskQIdxIdx(id)] = id * RSRC_PER + RSRC_SIZE * 2;
+	}
+}
+
+
+

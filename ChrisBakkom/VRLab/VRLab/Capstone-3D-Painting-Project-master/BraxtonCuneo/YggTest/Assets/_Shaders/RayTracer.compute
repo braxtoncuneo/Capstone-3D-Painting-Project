@@ -1,0 +1,1623 @@
+﻿
+
+Shader "RayTracer"{
+
+	SubShader{
+
+		Pass{
+
+GLSLPROGRAM
+
+//#pragma kernel main
+
+#version 430 compatability
+
+// These should be set by the interchange to dimensions appropriate to the GPU
+#define X_SIZE				64
+
+// These should be set as
+#define MEMORY_SWAP_FREQ	8
+#define TASK_SWAP_FREQ		4
+#define HIT_PROC_FREQ		4
+
+#define DEPTH_LIMIT			8
+
+/*
+** The hit distance is something reasonably close to the minimum value
+** representable assuming an exponent of zero. This gives some reasonable
+** assurance that precision loss will not result in weirdness when dealing with
+** large variances in scale.
+*/
+#define HIT_DISTANCE		( 1.0 / float( 1 << 22 ) )
+
+/*
+** All of these masks and flag bits are used by the ray tracer to encode key
+** information about the state of a trace (past, present, and future) in a
+** trace's "state" member.
+*/
+#define STATE_TYPE_MASK		0xF0000000
+	#define STATE_ENTER			0x10000000
+	#define STATE_CHILD			0x20000000
+	#define STATE_SURFACE		0x30000000
+	#define STATE_EXIT			0x40000000
+#define STATE_TARGET_MASK	0x000000F0
+	#define STATE_TGT_X			0x00000010
+	#define STATE_TGT_Y			0x00000020
+	#define STATE_TGT_Z			0x00000040
+	#define STATE_TGT_OUT		0x00000080
+#define	STATE_LOCALE_MASK	0x0000000F
+	#define STATE_LOC_X			0x00000001
+	#define STATE_LOC_Y			0x00000002
+	#define STATE_LOC_Z			0x00000004
+	#define STATE_LOC_OUT		0x00000008
+#define STATE_OLD_STORED	0x00000100
+#define STATE_HIT_SURFACE	0x00000200
+#define STATE_INSIDE_SURF	0x00000400
+
+
+RWBuffer test;
+layout(std430, binding = 5) buffer TraceLayoutBuffer { uvec2 data[]; };
+
+restrict writeonly image2D outputImage;
+
+uniform mat4 viewMatrix;
+uniform uint pixWidth;
+uniform uint pixHeight;
+uniform uint depthLimit;
+uniform uvec4 horizonMat;
+uniform float alphaThresh;
+uint pixNo;
+uint traceTask;
+uint trace;
+
+
+#define NODE_SIZE		16
+#define HEADER_SIZE		4
+#define ATT_NUM			4
+#define CHILD_NUM		8
+#define THREAD_COUNT	4096
+#define RSRC_PER		3
+#define RSRC_SIZE		2
+#define RSRC_IDX_OFFSET THREAD_COUNT * RSRC_PER * RSRC_SIZE
+#define ROOT_TASK		RSRC_IDX_OFFSET + THREAD_COUNT * RSRC_PER
+#define HIT_DISTANCE 	1.0 / 256.0
+
+
+#define NOT_THERE	0x7FFFFFFF
+#define CACHED		0x80000000
+
+#define NODE_PLAIN_COLOR	0x00000000
+#define NODE_TEXTURE_MAP	0x00000001
+
+
+
+
+/*
+** Global values and struct defs for managing common resources
+**
+** Struct types with the word "Node" correspond to the contents of nodes
+**
+** Line comments are the 32-bit fields in which the corresponding member
+** exists when stored in a node in the DataBuffer
+**
+*/
+
+struct voxelNode{
+    uint meta;// 0
+    uint surface;// 1
+    uint light;// 2
+    uint overlap;// 3
+    uvec4 attributes;// 4-7
+    uint child[8];// 8-15
+};
+
+struct traceNode{
+    uint last;// 0
+    uint next;// 1
+    uint host;// 2
+    uint stateStackTop;// 3
+    uint stateStackCount;// 4
+    uint matStackTop;// 5
+    uint matStackCount;// 6
+    uint overlapHead;// 7
+    float timeLeft;// 8
+    uint state;	// 9
+    vec3 position;// 10-12
+    vec3 velocity;// 13-15
+};
+
+struct traceTaskNode{
+	uint next;// 0
+    uint parent;// 1
+    uint childCount;// 2
+    vec3 position;// 4-6
+    vec3 velocity;// 7-9
+    vec3 lightMask;// 10-12
+    vec3 lightSample;// 13-15
+};
+
+struct basicToolTaskNode{
+	uint next;// 0
+	uint parent;// 1
+	uint childCount;// 2
+	uint state; // 3
+    uint hostNode; // 4
+    vec3 position; // 5-7
+};
+
+struct block{
+    uint parent;
+    uint referenceCount;
+    uint type;
+    uint root;
+	mat4 transformation;
+};
+
+// Used for keeping track of task and heap resources
+uint heapIdxs_loc[2];
+uint heapCounts_loc[2];
+uint heapHeads_loc[2];
+
+uint taskQIdxs_loc[2];
+uint taskQCounts_loc[2];
+uint taskQHeads_loc[2];
+
+// Used to identify which thread is executing code
+uint id;
+
+// Used to identify which thread resources are being swapped with
+uint swapBit;
+
+
+
+/// Yggdrasil Buffer Definitions
+
+layout(std430, binding = 0) buffer DataBuffer { uint data[]; };
+
+layout(std430, binding = 1) buffer BlockBuffer { block data[]; };
+
+layout(std430, binding = 2) buffer HeapBuffer { uint data[ROOT_TASK]; };
+
+layout(std430, binding = 3) buffer TaskBuffer { uint data[ROOT_TASK+1]; };
+
+layout(std430, binding = 4) buffer ExchangeBuffer { uint data[]; };
+
+
+
+
+/// Direct Node Member Access Macros
+
+#define rawNode(node,idx)			DataBuffer.data[ node * NODE_SIZE + idx ]
+
+#define voxelMeta(node)				DataBuffer.data[ node * NODE_SIZE]
+#define voxelSurface(node)			DataBuffer.data[ node * NODE_SIZE + 1 ]
+#define voxelLight(node)			DataBuffer.data[ node * NODE_SIZE + 2 ]
+#define voxelOverlap(node)			DataBuffer.data[ node * NODE_SIZE + 3 ]
+#define voxelAttribute(node,idx)	DataBuffer.data[ node * NODE_SIZE + 4 + idx ]
+#define voxelChild(node,idx)		DataBuffer.data[ node * NODE_SIZE + 8 + idx ]
+
+#define traceLast(node)					DataBuffer.data[ node * NODE_SIZE ]
+#define traceNext(node)					DataBuffer.data[ node * NODE_SIZE + 1 ]
+#define traceHostNode(node)				DataBuffer.data[ node * NODE_SIZE + 2 ]
+#define traceStateStackTop(node)		DataBuffer.data[ node * NODE_SIZE + 3 ]
+#define traceStateStackCount(node)		DataBuffer.data[ node * NODE_SIZE + 4 ]
+#define traceMatStackTop(node)			DataBuffer.data[ node * NODE_SIZE + 5 ]
+#define traceMatStackCount(node)		DataBuffer.data[ node * NODE_SIZE + 6 ]
+#define traceOverlapHead(node)			DataBuffer.data[ node * NODE_SIZE + 7 ]
+#define traceTimeLeft(node)				DataBuffer.data[ node * NODE_SIZE + 8 ]
+#define traceState(node)				DataBuffer.data[ node * NODE_SIZE + 9 ]
+#define tracePosition(node,idx)			DataBuffer.data[ node * NODE_SIZE + 10 + idx ]
+#define traceVelocity(node,idx)			DataBuffer.data[ node * NODE_SIZE + 13 + idx ]
+
+
+#define taskNext(node)					DataBuffer.data[ node * NODE_SIZE ]
+#define taskParent(node)				DataBuffer.data[ node * NODE_SIZE + 1 ]
+#define taskChildCount(node)			DataBuffer.data[ node * NODE_SIZE + 2 ]
+
+#define traceTaskPosition(node,idx)		DataBuffer.data[ node * NODE_SIZE + 4 + idx ]
+#define traceTaskVelocity(node,idx)		DataBuffer.data[ node * NODE_SIZE + 7 + idx ]
+#define traceTaskLightMask(node,idx)	DataBuffer.data[ node * NODE_SIZE + 10 + idx ]
+#define traceTaskLightSample(node,idx)	DataBuffer.data[ node * NODE_SIZE + 13 + idx ]
+
+#define basicToolTaskState(node)		DataBuffer.data[ node * NODE_SIZE + 3 ]
+#define basicToolTaskHost(node)			DataBuffer.data[ node * NODE_SIZE + 4 ]
+#define basicToolPosition(node,idx)		DataBuffer.data[ node * NODE_SIZE + 5 + idx ]
+
+
+/// Node Loading/Storing
+
+
+
+voxelNode voxelLoad(in uint node){
+	voxelNode result;
+	result.meta = voxelMeta(node);
+	result.surface = voxelSurface(node);
+	result.light = voxelLight(node);
+	result.overlap = voxelOverlap(node);
+	result.attribute = 	uvec4(
+							voxelAttribute(node,0),
+							voxelAttribute(node,1),
+							voxelAttribute(node,2),
+							voxelAttribute(node,3)
+						);
+	for(int i = 0; i < 8; i++){
+		result.child[i] = voxelChild(node,i);
+	}
+}
+
+
+void voxelStore(in uint node, in voxelNode data){
+	voxelMeta(node) = result.meta;
+	voxelSurface(node) = result.surface;
+	voxelLight(node) = result.light;
+	voxelOverlap(node) = result.overlap;
+	voxelAttribute(node,0) = result.attribute.x;
+	voxelAttribute(node,1) = result.attribute.y;
+	voxelAttribute(node,2) = result.attribute.z;
+	voxelAttribute(node,3) = result.attribute.w;
+	for(int i = 0; i < 8; i++){
+		voxelChild(node,i) = result.child[i];
+	}
+}
+
+
+// This loads a trace node from the data buffer to local registers
+traceNode traceLoad(in uint node){
+	traceNode result;
+    result.last =				traceLast(node);
+	result.next =				traceNext(node);
+    result.host =				traceHostNode(node);
+    result.stateStackTop =		traceStateStackHead(node);
+    result.stateStackCount =	traceStateStackCount(node);
+    result.matStackTop =		traceMatStackHead(node);
+    result.matStackCount =		traceMatStackCount(node);
+    result.overlapHead = 		traceOverlapHead(node);
+    result.timeLeft =			uintBitsToFloat(traceTimeLeft(node));
+    result.intPosition = 	uvec3(	traceIntegerPosition(node,0),
+									traceIntegerPosition(node,1),
+									traceIntegerPosition(node,2) );
+    result.position = 	vec3(	uintBitsToFloat(tracePosition(node,0)),
+								uintBitsToFloat(tracePosition(node,1)),
+								uintBitsToFloat(tracePosition(node,2)) );
+    result.velocity = 	vec3(	uintBitsToFloat(traceVelocity(node,0)),
+								uintBitsToFloat(traceVelocity(node,1)),
+								uintBitsToFloat(traceVelocity(node,2)) );
+    return result;
+}
+
+// This stores a trace node from local registers to the data buffer
+void traceStore(in uint node, in traceNode trace){
+	traceNext(node) =				trace.next;
+    traceHostNode(node) =			trace.host;
+    traceStateStackTop(node) =		trace.stateStackTop;
+    traceStateStackCount(node) =	trace.stateStackCount;
+    traceMatStackTop(node) =		trace.matStackTop;
+    traceMatStackCount(node) =		trace.matStackCount;
+    traceOverlapHead(node) =		trace.overlapHead;
+    traceTimeLeft(node) =			floatBitsToUint(trace.distanceLeft);
+    traceIntegerPosition(node,0) =	trace.intPosition.x;
+    traceIntegerPosition(node,1) =	trace.intPosition.y;
+    traceIntegerPosition(node,2) =	trace.intPosition.z;
+    tracePosition(node,0) =			floatBitsToUint(trace.position.x);
+    tracePosition(node,1) =			floatBitsToUint(trace.position.y);
+    tracePosition(node,2) =			floatBitsToUint(trace.position.z);
+    traceVelocity(node,0) =			floatBitsToUint(trace.velocity.x);
+    traceVelocity(node,1) =			floatBitsToUint(trace.velocity.y);
+    traceVelocity(node,2) =			floatBitsToUint(trace.velocity.z);
+}
+
+basicToolTaskNode basicToolTaskLoad(in uint node){
+	basicToolTaskNode result;
+	result.next			= taskNext(node);
+	result.parent		= taskParent(node);
+	result.childCount	= taskChildCount(node);
+	result.state		= basicToolTaskState(node);
+	result.hostNode		= basicToolTaskHostNode(node);
+	result.position = 	vec3(	uintBitsToFloat(basicToolPosition(node,0)),
+								uintBitsToFloat(basicToolPosition(node,1)),
+								uintBitsToFloat(basicToolPosition(node,2)) );
+}
+
+void basicToolTaskStore(in uint node, in basicToolTaskNode data){
+	taskNext(node)				= data.next;
+	taskParent(node)			= data.parent;
+	taskChildCount(node)		= data.childCount;
+	basicToolTaskState(node)	= data.state;
+	basicToolTaskHostNode(node)	= data.hostNode;
+	basicToolPosition(node,0) 	= floatBitsToUint(data.position.x);
+    basicToolPosition(node,1) 	= floatBitsToUint(data.position.y);
+    basicToolPosition(node,2) 	= floatBitsToUint(data.position.z);
+}
+
+
+
+/// Resource Value Indexing Functions
+
+/*
+** Returns the index in the heap buffer where the head of the thread's
+** idx-th heap list is stored.
+*/
+uint heapHeadIdx(in uint idx){
+	return heapIdxs_loc[idx]*RSRC_SIZE;
+}
+
+/*
+** Returns the index in the heap buffer where the head of the thread's
+** idx-th heap count is stored.
+*/
+uint heapCountIdx(in uint idx){
+	return heapIdxs_loc[idx]*RSRC_SIZE + 1;
+}
+
+/*
+** Returns the index in the heap buffer where the index of the global heap list
+** of the idx-th thread is stored
+*/
+uint heapIdxIdx(int uint idx){
+	return RSRC_IDX_OFFSET + idx;
+}
+
+/*
+** Returns the index in the task buffer where the head of the thread's
+** idx-th task list is stored.
+*/
+uint taskQHeadIdx(in uint idx){
+	return taskQIdxs_loc[idx]*RSRC_SIZE;
+}
+
+/*
+** Returns the index in the task buffer where the head of the thread's
+** idx-th task count is stored.
+*/
+uint taskQCountIdx(in uint idx){
+	return taskQIdxs_loc[idx]*RSRC_SIZE + 1;
+}
+
+/*
+** Returns the index in the task buffer where the index of the global task list
+** of the idx-th thread is stored
+*/
+uint taskQIdxIdx(int uint idx){
+	return RSRC_IDX_OFFSET + idx;
+}
+
+
+
+
+/// Memory Management Functions
+
+// Returns the index of a free node from the largest local memory list
+uint allocNode(){
+	// Get the index of the head of the bigger list and set result to its value
+	uint bigger = uint(lessThan(heapCounts_loc[0],heapCounts_loc[1]);
+	uint result = heapHeads_loc[bigger];
+	// If the result is non-null, its listed 'next' address is set as the head
+	if(result != NOT_THERE){
+		heapHeads_loc[bigger] = rawNode(result,0);
+		heapCounts_loc[bigger]--;
+	}
+	return result;
+}
+
+// Adds the node at the given address to the smallest local memory list
+void freeNode( in uint node ){
+	uint smaller = uint(greaterThan(heapCounts_loc[0],heapCounts_loc[1]);
+	rawNode(node,0) = heapHeads_loc[smaller];
+	heapHeads_loc[smaller] = node;
+	heapCounts_loc[smaller]++;
+}
+
+/*
+** Removes up to len nodes from the larger local memory list and adds it to
+** the front of the smaller local memory list.
+*/
+void levelHeaps( in uint len ){
+	// Find which lists are bigger than which
+	uint bigger = uint(lessThan(heapCounts_loc[0],heapCounts_loc[1]);
+	uint smaller = 1-bigger;
+	// Calculate the difference in size
+	uint diff = abs(heapCounts_loc[0]-heapCounts_loc[1]);
+	// Set an iterator to the head of the larger list
+	uint iter = heapHeads_loc[bigger];
+	uint holder;
+	// Traverse down the list diff-1 times
+	for(uint i = 0; i < len; i++){
+		if(i < diff - 1){
+			iter = rawNode(iter,0);
+		}
+	}
+	// Perform a swap between list heads only if there are nodes to be swapped
+	if(diff > 0){
+		holder = heapHeads_loc[bigger];
+		heapHeads_loc[bigger] = rawNode(iter,0);
+		rawNode(iter,0) = heapHeads_loc[smaller];
+        heapHeads_loc[smaller] = holder;
+		heapCounts_loc[smaller] += diff;
+		heapCounts_loc[bigger] += diff;
+	}
+}
+
+/*
+** Pushes the head and count of the given heap to their corresponding location
+** in the heap buffer.
+*/
+void pushHeap(in uint idx){
+	HeapBuffer.data[heapHeadIdx(idx)] = heapHeads_loc[idx];
+	HeapBuffer.data[heapCountIdx(idx)] = heapCounts_loc[idx];
+}
+
+/*
+** Pulls the head and count of the given heap to their corresponding location
+** in the heap buffer.
+*/
+void pullHeap(in uint idx){
+	heapHeads_loc[idx] = HeapBuffer.data[heapHeadIdx(idx)];
+	heapCounts_loc[idx] = HeapBuffer.data[heapCountIdx(idx)];
+}
+
+/*
+** Rotates the memory heaps for the thread, shuffling data in global memory
+** as well as swapping lists back and forth from global memory to local memory.
+*/
+void rotateHeaps(){
+	// Prep heap data in heap buffer for swapping
+	pushHeap(0);
+	pushHeap(1);
+
+	/*
+	** Calculate the bit that will be flipped to find this thread's swapping
+	** partner.
+	*/
+	uint swpIdx = id ^ swapBit;
+
+	// Swaps the index of our first local list with our partner's swap list
+    heapIdxs_loc[0] = atomicExchange(
+						HeapBuffer.data[heapIdxIdx(swpIdx)],
+						heapIdxs_loc[0]
+					);
+	// Swaps the index of our first local list with that of our global swap list
+	heapIdxs_loc[1] = atomicExchange(
+						HeapBuffer.data[heapIdxIdx(id)],
+						heapIdxs_loc[1]
+					);
+	// Swaps the order of our two local lists
+	uint temp = heapIdxs_loc[0];
+	heapIdxs_loc[0] = heapIdxs_loc[1];
+	heapIdxs_loc[1] = temp;
+
+	// Sets the swapBit for the next swap execution
+	swapBit = (swapBit >= THREAD_COUNT) ? 1 : (swapBit<<1);
+	// Pulls the heads and counts of the new local lists
+    pullHeap(0);
+    pullHeap(1);
+}
+
+
+
+
+/// Task Management Functions
+
+// Returns the index of a free node from the largest local task list
+uint grabTask(){
+	// Get the index of the head of the bigger list and set result to its value
+	uint bigger = uint(lessThan(taskQCounts_loc[0],taskQCounts_loc[1]);
+	uint result = taskQHeads_loc[bigger];
+	// If the result is non-null, its listed 'next' address is set as the head
+	if(result != NOT_THERE){
+		taskQHeads_loc[bigger] = taskNext(result,0);
+		taskQCounts_loc[bigger]--;
+	}
+	return result;
+}
+
+
+// Adds the node at the given address to the smallest local task list
+void postTask( in uint node ){
+	uint smaller = uint(greaterThan(taskQCounts_loc[0],taskQCounts_loc[1]);
+	taskNext(node,0) = taskQHeads_loc[smaller];
+	taskQHeads_loc[smaller] = node;
+	taskCounts_loc[smaller]++;
+}
+
+
+/*
+** Removes up to len nodes from the larger local task list and adds it to
+** the front of the smaller local task list.
+*/
+void levelTasks( in uint len ){
+	// Find which lists are bigger than which
+	uint bigger = uint(lessThan(taskQCounts_loc[0],taskQCounts_loc[1]);
+	uint smaller = 1-bigger;
+	// Calculate the difference in size
+	uint diff = abs(taskQCounts_loc[0]-taskQCounts_loc[1]);
+	// Set an iterator to the head of the larger list
+	uint iter = taskQHeads_loc[bigger];
+	uint holder;
+	// Traverse down the list diff-1 times
+	for(uint i = 0; i < len; i++){
+		if(i < diff - 1){
+			iter = taskNext(iter);
+		}
+	}
+	// Perform a swap between list heads only if there are nodes to be swapped
+	if(diff > 0){
+		holder = taskQHeads_loc[bigger];
+		taskQHeads_loc[bigger] = taskNext(iter);
+		taskNext(iter) = taskQHeads_loc[smaller];
+        taskQHeads_loc[smaller] = holder;
+		taskQCounts_loc[smaller] += diff;
+		taskQCounts_loc[bigger] += diff;
+	}
+}
+
+
+
+/*
+** Pushes the head and count of the given heap to their corresponding location
+** in the task buffer.
+*/
+void pushTaskQ(in uint idx){
+	TaskBuffer.data[taskQHeadIdx(idx)] = taskQHeads_loc[idx];
+	TaskBuffer.data[taskQCountIdx(idx)] = taskQCounts_loc[idx];
+}
+
+/*
+** Pulls the head and count of the given heap to their corresponding location
+** in the task buffer.
+*/
+void pullTaskQ(in uint idx){
+	taskQHeads_loc[idx] = TaskBuffer.data[taskQHeadIdx(idx)];
+	taskQCounts_loc[idx] = TaskBuffer.data[taskQCountIdx(idx)];
+}
+
+/*
+** Rotates the memory heaps for the thread, shuffling data in global memory
+** as well as swapping lists back and forth from global memory to local memory.
+*/
+void rotateTaskQs(){
+
+	// Prep task data in the task buffer for swapping
+	pushTaskQ(0);
+	pushTaskQ(1);
+
+	/*
+	** Calculate the bit that will be flipped to find this thread's swapping
+	** partner.
+	*/
+	uint swpIdx = id ^ swapBit;
+
+	// Swaps the index of our first local list with our partner's swap list
+    taskQIdxs_loc[0] = atomicExchange(
+						TaskBuffer.data[taskQIdxIdx(swpIdx)],
+						taskQIdxs_loc[0]
+					);
+	// Swaps the index of our first local list with that of our global swap list
+	taskQIdxs_loc[1] = atomicExchange(
+						TaskBuffer.data[taskQIdxIdx(id)],
+						taskQIdxs_loc[1]
+					);
+	// Swaps the order of our two local lists
+	uint temp = taskQIdxs_loc[0];
+	taskQIdxs_loc[0] = taskQIdxs_loc[1];
+	taskQIdxs_loc[1] = temp;
+
+	// Sets the swapBit for the next swap execution
+	swapBit = (swapBit >= THREAD_COUNT) ? 1 : (swapBit<<1);
+	// Pulls the heads and counts of the new local lists
+    pullTaskQ(0);
+    pullTaskQ(1);
+}
+
+
+
+
+/// Unsigned Int Stack
+
+/*
+** Given the head node of the stack and the number of elements currently in
+** the stack, it allocates a new node if necessary and stores val in the head
+** node.
+*/
+void pushStackUint(inout uint top, inout uint count, in uint val){
+	// This finds where in a head node's data field the value should be stored
+	uint modPt = count % (NODE_SIZE - 1);
+	uint result = top;
+	// If the count rolls into a new node, it is allocated and made the head
+    if( modPt == 0 ){
+		result = allocNode();
+		rawNode(result,0) = top;
+		top = result;
+    }
+    // Stores the data
+    DataBuffer[NODE_SIZE*top + 1 + modPt] = val;
+    count++;
+}
+
+
+/*
+** Given the head node of the stack and the number of elements currently in
+** the stack, removes the top value, changing count and top if necessary and
+** freeing nodes as necessary.
+*/
+void popStackUint(inout uint top, inout uint count){
+	// This finds where in a head node's data field the value should be stored
+	uint modPt = count % (NODE_SIZE - 1);
+	uint result = top;
+	// If the count rolls out of the current head node, it is made the new head
+    if( modPt == 1 ){
+		result = rawNode(top,0);
+		freeNode(top);
+		top = result;
+    }
+    count--;
+}
+
+// So we can read and write to the stack top cleanly
+#define stackTopUint(top,count) DataBuffer[ NODE_SIZE * top + 1 + ( count % ( NODE_SIZE - 1 ) ) ]
+
+// Traverses down the linked list making up the stack, freeing nodes as it goes
+void destroyStackUint(inout uint top, inout uint count){
+	uint iter = top;
+	uint next;
+	while(iter != NOT_THERE){
+		next = rawNode(iter,0);
+		freeNode(iter);
+		iter = next;
+	}
+	top = NOT_THERE;
+	count = 0;
+}
+
+
+
+/// Uvec3 Stack
+
+/*
+** Given the head node of the stack and the number of elements currently in
+** the stack, it allocates a new node if necessary and stores val in the head
+** node.
+*/
+void pushStackUvec3(inout uint top, inout uint count, in uvec3 val){
+	// Find which triplet of fields in a head node val should be stored
+	// (keep in mind, 16-1=15, which is divisible by 3), so no space is wasted
+	uint modPt = (count * 3) % (NODE_SIZE - 1);
+	uint result = top;
+	// Allocate a new node and make it the head of the list, if necessary
+    if( modPt == 0 ){
+		result = allocNode();
+		DataBuffer.data[NODE_SIZE*result] = top;
+		top = result;
+    }
+    // load in the new data
+    DataBuffer[NODE_SIZE*top + 1 + modPt] = val.x;
+    DataBuffer[NODE_SIZE*top + 1 + 1 + modPt] = val.y;
+    DataBuffer[NODE_SIZE*top + 1 + 2 + modPt] = val.z;
+    count++;
+}
+
+/*
+** Given the head node of the stack and the number of elements currently in
+** the stack, removes the top value, changing count and top if necessary and
+** freeing nodes as necessary.
+*/
+void popStackUvec3(inout uint top, inout uint count){
+	uint modPt = (count * 3) % (NODE_SIZE - 1);
+	uint result = top;
+    if( modPt == 3 ){
+		result = DataBuffer.data[NODE_SIZE*top];
+		freeNode(top);
+		top = result;
+    }
+    count--;
+}
+
+// Returns the uvec3 at the top of the stack
+uvec3 readTopUvec3(inout uint top, inout uint count){
+	uint idx = NODE_SIZE * top + 1 + ( (count * 3) % ( NODE_SIZE - 1 ) );
+	return uvec3( 	DataBuffer[ idx ],
+					DataBuffer[ idx + 1 ],
+					DataBuffer[ idx + 2 ]
+				);
+}
+
+// Overwrites the given uvec3 to the top of the stack
+void writeTopUvec3(inout uint top, inout uint count, uvec3 data){
+	uint idx = NODE_SIZE * top + 1 + ( (count * 3) % ( NODE_SIZE - 1 ) );
+	DataBuffer[ idx ] = data.x;
+	DataBuffer[ idx + 1 ] = data.y;
+	DataBuffer[ idx + 2 ] = data.z;
+}
+
+// Traverses down the linked list making up the stack, freeing nodes as it goes
+void destroyStackUvec3(inout uint top, inout uint count){
+	uint iter = top;
+	uint next;
+	while(iter != NOT_THERE){
+		next = DataBuffer.data[NODE_SIZE*iter];
+		freeNode(iter);
+		iter = next;
+	}
+	top = NOT_THERE;
+	count = 0;
+}
+
+
+
+/// Voxel State Traversal Functions
+
+
+
+/*
+** Overwrites the given voxel address with the address of its child at the given
+** relative position, unless that child is not in the Voxel State. Likewise, the
+** relative position is changed to match the space of the child voxel, should
+** the child actually exist in the Voxel State. Additionally, this function
+** returns true if a new child was found and false if no child was found.
+*/
+bool childSeek(	inout uint voxel, inout vec3 position ){
+	uint idx = 0;
+	vec3 posStep = step(position,vec3(0.0,0.0,0.0));
+	idx = uint(dot(posStep,vec3(1.0,2.0,4.0)));
+	uint addr = voxelChild(voxel,idx);
+	if(addr | NOT_THERE != NOT_THERE){
+		voxel = addr;
+		position = mod(position,1.0) * 2.0;
+		return true;
+	}
+    return false;
+}
+
+/// Program resource initialization/cleanup
+
+
+void initYggCompute(){
+	// Get our thread id
+	id = gl_GlobalInvocationID();
+
+	// Remove any
+	for(uint i = 0; i < RSRC_PER; i++){
+		TaskBuffer.data[taskHeadIdx(id * RSRC_PER + i)] = NOT_THERE;
+		TaskBuffer.data[taskCountIdx(id * RSRC_PER + i)] = 0;
+	}
+
+	/*
+	** Assign the first and second heap and task list of the id-th available
+	** triplet of heap and task lists.
+	*/
+	heapIdxs_loc[0] = id * RSRC_PER;
+	heapIdxs_loc[1] = id * RSRC_PER + RSRC_SIZE;
+	taskQIdxs_loc[0] = id * RSRC_PER;
+	taskQIdxs_loc[1] = id * RSRC_PER + RSRC_SIZE;
+
+	/*
+	** Assign the third heap and task list of the id-th available triplet of
+	** heap and task lists to be available in the id-th element of the
+	** swapping section of their respective buffer .
+	*/
+	HeapBuffer.data[taskQIdxIdx(id)] = id * RSRC_PER + 2;
+	TaskBuffer.data[taskQIdxIdx(id)] = id * RSRC_PER + 2;
+
+	// Get the heads of each of our non-swapping lists
+	pullHeap(0);
+	pullHeap(1);
+	pullTaskQ(0);
+	pullTaskQ(1);
+	// Set the swapMask to 1 so the first set of swaps will have valid pairings
+	swapMask = 1;
+}
+
+
+void exitYggCompute(){
+	/*
+	** Push the thread's non-swapping heap memory to the heap buffer for
+	** future use.
+	*/
+	pushHeap(0);
+	pushHeap(1);
+	/*
+	** The task buffer's data should not need to be pushed back, as they should
+	** all be empty. If this is not the case, then this is VERY BAD.
+	*/
+}
+
+
+
+
+
+/// Trace Management
+
+/* Fills the Trace Layout Buffer with a series of coordinates which tile the
+** grid space of the output image along a row-major, column-minor sequence.
+** If the output image is not a perfect square with a power-of-two side length,
+** the gridspace is decomposed into squares with a power-of-two side length
+** and individually tiled.
+*/
+void spoolScanlineLayout(){
+
+    for(uint pos = id; pos < pixNo; pos += THREAD_COUNT){
+        TraceLayoutBuffer.data[pos] = uvec2(pos%THREAD_COUNT,pos/THREAD_COUNT);
+    }
+
+}
+
+
+/* Fills the Trace Layout Buffer with a series of coordinates which tile the
+** grid space of the output image along a hilbert curve. If the output image is
+** not a perfect square with a power-of-two side length, the gridspace is
+** decomposed into squares with a power-of-two side length and individually
+** tiled.
+*/
+/// THIS FUNCTION IS NOT FINISHED
+void spoolHilbertTraceLayout(){
+
+    uvec2 botLeft;
+    uvec2 topRight;
+    uvec2 coord;
+    uint trMin;
+    bool done;
+
+    /// Decomposing the screen space into squares
+    for(uint pos = id; pos < pixNo; pos += THREAD_COUNT){
+		done = false;
+		botLeft = uvec2(0,0);
+		topRight = uvec2(pixWidth,pixHeight);
+		coord = uvec2(pos%THREAD_COUNT,pos/THREAD_COUNT);
+		while(!done){
+			trMin = int(log2(float(min(topRight)));
+			botLeft +=	trMin *
+						uvec2(greaterThan((coord - botLeft),uvec2(trMin,trMin));
+		}
+    }
+
+}
+
+
+
+/* Fills out a traceNode with the data for the initial state of the root state
+** indicated by the input traceTask Node.
+*/
+traceNode traceTaskToTrace(in traceTaskNode task){
+
+	traceNode result;
+	result.last = NOT_THERE;
+	result.next = NOT_THERE;
+    result.host = BlockBuffer[0].root;
+    result.stackHead = NOT_THERE;
+    result.stackCount = 0;
+    result.overlapHead = NOT_THERE;
+    result.state = 0;
+    result.distanceLeft = traceCheck(task.position,task.velocity);
+    result.position = task.position;
+    result.velocity = task.velocity;
+
+}
+
+
+/*
+** Returns the time required to enter the voxel. If the trace is
+** already in the voxel, returns 0.0. If the trace will not ever enter the
+** block, given the position and velocity, the returned value is negative.
+** This is used at the beginning of trace lines through specific blocks.
+*/
+float traceCheck( in vec3 position, in vec3 velocity ){
+	float result;
+	/*
+	** Find what time differences are required to hit each of the positive
+	** and negative sides of the unit cube
+	*/
+	vec3 negativeSide = (vec3(-1.0,-1.0,-1.0) - position) / velocity;
+	vec3 positiveSide =  (vec3(1.0,1.0,1.0) - position) / velocity;
+
+	/*
+	** Whichever side (positive or negative) with the lower intersect time must,
+	** by definition, be the side entered through by the trace. Here, we sort
+	** times such that the enter and exit times for each dimension are separated
+	** into the enter and exit vectors;
+	*/
+	vec3 enter = min(negativeSide,positiveSide);
+	vec3 exit = max(negativeSide,positiveSide);
+
+	/*
+	** In order to be inside the box, the trace must have hit all of the 'enter'
+	** points before any of the 'exit' points. The range vector establishes the
+	** true entrance and exit times for the trace.
+	*/
+	vec2 range = vec2(	max(enter.x,max(enter.y,enter.z)),
+						min(exit.x,min(exit.y,exit.z)));
+	// If the trace is already in the unit cube, the returned value is 0.0
+	if(lessThanEqual(range.x,range.y) && lessThanEqual(0.0,range.y)){
+        result = max(0.0,range.x);
+	}
+	else{
+		// If no intersection is possible, a negative value is returned
+		result = -1.0;
+	}
+	return result;
+}
+
+
+void childHit( inout traceNode data ){
+	// Result starts off as the childless result
+	uint target = 8;
+	uint locale = dot(step(0.0,position),vec3(1.0,2.0,4.0));
+	float time;
+	// Calculates each dimensional intercept of the trace in the unit cube
+	vec3 crossPoint = (vec3(0.0,0.0,0.0) - data.position) / data.velocity;
+	/*
+	** Result for a dimension is true only if a cross across its intercept
+	** occurs before or simultaneous to all other intercepts and time left is
+	** greater than 0.0
+	*/
+	bvec3 crossStats =	greaterThan(vec3(crossPoint,(0.0).xxx)) &&
+						greaterThanEqual(crossPoint,crossPoint.yzx) &&
+						greaterThanEqual(crossPoint,crossPoint.zxy);
+
+	/*
+	** If there is any valid crossing, the child being crossed into is the one
+	** with the bits corresponding to the minimal valid crossing(s)
+	*/
+	if(any(crossStats)){
+		time = min(crossPoint.x,min(crossPoint.y,crossPoint.z));
+		uint crossBits = 	uint(crossStats.x) +
+							(uint(crossStats.y) << 1)+
+							(uint(crossStats.z) << 2);
+		target = locale ^ crossBits;
+	}
+
+	uint state = data.state;
+	uint loc = locale;
+	state = state & (~(STATE_LOCALE_MASK | STATE_TARGET_MASK | STATE_TYPE_MASK));
+	state = state | loc | (target << 4);
+	if( target == 8 ){
+		state = state | STATE_EXIT;
+	}
+	else{
+		state = state | STATE_CHILD;
+	}
+	data.timeLeft = time;
+	data.state = state;
+
+}
+
+
+
+
+void surfaceHit( inout traceNode data ){
+	float time;
+	uint state = data.state;
+	bool hits = false;
+	if(length(surface.xyz)!=0){
+		float velDir = dot(data.surface.xyz,data.velocity);
+		float posDir = dot(data.surface.xyz,data.position);
+		time = (0-posDir)/velDir;
+        if(time > 0){
+			hits = true;
+        }
+        state = state & (~STATE_TYPE_MASK);
+        state = state | STATE_SURFACE;
+	}
+	if(hits && time < timeLeft){
+		data.timeLeft = time;
+		data.state = state;
+	}
+
+}
+
+
+// Returns the normal of eligible non-surface hit boundaries
+vec3 getChildHitNormal( in vec3 position ){
+	vec3 centerVec = (0.5).xxx;
+	vec3 boundVec = (1.0).xxx;
+	vec3 hitVec	= (HIT_DISTANCE).xxx;
+	vec3 hitPos = mod(position,boundVec)-centerVec;
+	return normalize(sign(hitPos)*vec3(lessThanEqual(abs(hitPos),hitVec)));
+}
+
+
+
+/*
+** This function is in charge of freeing all of the resources associated with
+** a trace branch an all of its child traces. While somewhat of a bottleneck
+** to the ray tracer, it is the cost of having good transparency and being able
+** to escape the computation required of multiple, unsynced traces.
+*/
+void cleanUpTraceBranch( in uint traceBranchRoot, in traceNode data ){
+
+	/*
+	** This stack stores mapped nodes which have "next" nodes that have yet
+	** to be processed.
+	*/
+	uint mapStackHead = NOT_THERE;
+	uint mapStackCount = 0;
+
+	// Remove the root node from the rest of the trace tree
+	if( data.Next != NOT_THERE ){
+		traceLast(data.Next) = data.Last;
+	}
+	if( data.Last != NOT_THERE ){
+		// If the trace is not the next of its last, it is the overlap
+		if(traceNext(data.Last) != traceBranchRoot){
+			traceOverlapHead(data.Last) = data.Next;
+		}
+		else{
+			traceNext(data.Last) = data.Next;
+		}
+	}
+	freeNode(traceBranchRoot);
+
+	/*
+	** Push the first overlapping node of the root onto the stack. If there are
+	** no overlapping nodes, the job of cleaning up is done.
+	*/
+	uint iter = data.overlapHead;
+	if(iter != NOT_THERE){
+		pushStackUint(mapStackHead,mapStackCount,iter);
+	}
+	uint next;
+	uint overlap;
+
+	// While there are nodes on the stack, there are nodes to free
+	while(mapStackCount != 0){
+
+		// Store the 'next' and 'overlap' fields of the top node, for future use
+		next = traceNext(iter);
+		overlap = traceOverlapHead(iter);
+
+		/*
+		** If the current trace has a non-null overlap field, place the first
+		** overlap on the top of the stack then set the overlap field of the
+		** original node to the next overlapping trace.
+		*/
+		if( overlap != NOT_THERE ){
+			traceOverlapHead(iter) = traceNext(overlap);
+			pushStackUint(mapStackHead,mapStackCount,overlap);
+			iter = overlap;
+		}
+		/*
+		** If the current trace has no overlapping traces but has a 'next'
+		** trace, the top of the stack is set to the next trace and the
+		** original trace is freed.
+		*/
+		else if( next != NOT_THERE ){
+			// Unwind the trace's stack before it is freed
+			destroyStackUvec3(traceStateStackHead(iter),traceStateStackCount(iter));
+			destroyStackUint(traceMatStackHead(iter),traceMatStackCount(iter));
+			freeNode(iter);
+			stackTopUint(mapStackHead,mapStackCount) = next;
+			iter = next;
+		}
+		/*
+		** If the current trace has neither overlapping traces nor 'next'
+		** traces, the trace is freed and the top of the mapping stack is popped
+		*/
+		else{
+			// Unwind the trace's stack before it is freed
+			destroyStackUvec3(traceStateStackHead(iter),traceStateStackCount(iter));
+			destroyStackUint(traceMatStackHead(iter),traceMatStackCount(iter));
+			freeNode(iter);
+			popStackUint(deleteHead,deleteCount);
+			iter = stackTopUint(mapStackHead,mapStackCount);
+		}
+
+	}
+
+}
+
+
+
+
+void onHit(	in uvec4 incident, in uvec4 abcident,
+			in vec3 velocity, in vec3 normal){
+
+	/// Inject the "On Hit" code here. *Super Important*
+	/*
+	** We might be able to expose this stuff to the user later
+	** For now, this will either include the basic or full forward tracer code.
+	*/
+
+}
+
+void onMarch(	inout vec4 mask, inout vec4 sample,
+				in float timeMarched, in uvec4 material){
+
+	/// Inject the "On March" code here. *Super Important*
+	/*
+	** We might be able to expose this stuff to the user later
+	** For now, this will either include the basic or full forward tracer code.
+	*/
+
+}
+
+/*
+** marchTrace is the powerhouse of the ray tracer. With each execution, it
+** takes the current trace branch and marches the root forward by the amount of
+** time left until the next hit occurs (somewhere in the trace tree).
+**
+*/
+uint marchTrace(inout uint trace,
+				inout float currentStep, inout float soonestNextHit,
+				inout vec3 colorMask, inout vec3 lightSample,
+				inout uint hitStackTop, inout uint hitStackCount,
+				inout uint cleanStackTop, inout uint cleanStackCount){
+
+
+	// Load in our trace data from the data buffer.
+	traceNode data = loadTrace(trace);
+
+	/*
+	** Advance trace by the currentStep, update the trace's hit countdown,
+	** and perform onMarch calculations
+	*/
+    data.position.xyz = data.position.xyz + data.velocity.xyz * bestTimes.x;
+	data.timeLeft = data.TimeLeft - currentStep;
+	onMarch(colorMask,lightSample,currentStep,data.attributes);
+
+	/*
+	** If the amount of time left is within the hit threshold, it is added to
+	** the hit stack for later processing. Otherwise, the timeLeft value
+	** represents a hit in a future pass, and hence must be incorporated into
+	** the soonestNextHit calculation.
+	*/
+	if(data.TimeLeft < HIT_DISTANCE){
+		// Make sure the same surface won't be re-hit;
+		data.position.xyz = data.position.xyz + data.velocity.xyz * HIT_DISTANCE * 2;
+		pushStackUint(hitStackTop,hitStackCount,trace);
+	}
+	else{
+		soonestNextHit = min(soonestNextHit,data.timeLeft);
+	}
+
+	// Store trace data for future use.
+	storeTrace(trace,data);
+
+	// Set the trace tree iterator to the next appropriate node.
+	if(trace.overlapHead != NOT_THERE){
+		trace = trace.overlapHead;
+	}
+	else{
+		trace = trace.Next;
+	}
+
+}
+
+
+/*
+** Iterates down the cleaning stack, cleaning up each trace in the structure.
+** Should one of the traces be the root of this thread's current trace tree,
+** we set the variable holding this root trace to NOT_THERE, indicating the
+** current trace tree is finished.
+*/
+void cleanSweep(inout uint cleanStackTop, inout uint cleanStackCount,
+				inout uint rootTrace){
+
+	uint current;
+    while(cleanStackCount > 0){
+		current = stackTopUint(cleanStackTop,cleanStackCount);
+		cleanUpTraceBranch(current);
+		popStackUint(cleanStackTop,cleanStackCount);
+		if(current == rootTrace){
+			rootTrace = NOT_THERE;
+		}
+    }
+
+}
+
+// Stores a copy of the top voxel on top of the mat stack, if one hasn't already
+void storeOldVoxel(inout traceNode data){
+	uint vox;
+	if(data.state & STATE_OLD_STORED == 0){
+		vox = stackTopUint(data.matStackTop,data.matStackCount);
+		data.state |= STATE_OLD_STORED;
+		pushStackTop(data.matStackTop,data.matStackCount,vox);
+	}
+}
+
+/*
+** Writes the given voxel index under the old voxel in the mat stack.
+*/
+void setNewVoxel(inout traceNode data, in uint vox){
+	stackTopUint(data.matStackTop,data.matStackCount) = vox;
+}
+
+
+void pushNewVoxel(inout traceNode data){
+	uint top = stackTopUint(data.matStackTop,data.matStackCount);
+	popStackTop(data.matStackTop,data.matStackCount);
+	uint old = stackTopUint(data.matStackTop,data.matStackCount);
+	stackTopUint(data.matStackTop,data.matStackCount) = top;
+	pushStackTop(data.matStackTop,data.matStackCount,old);
+	pushStackTop(data.matStackTop,data.matStackCount,data.host);
+}
+
+
+void popNewVoxel(inout traceNode data){
+	popStackTop(data.matStackTop,data.matStackCount);
+	uint old = stackTopUint(data.matStackTop,data.matStackCount,vox);
+	popStackTop(data.matStackTop,data.matStackCount);
+	uint vox = stackTopUint(data.matStackTop,data.matStackCount);
+	stackTopUint(data.matStackTop,data.matStackCount) = old;
+	pushStackTop(data.matStackTop,data.matStackCount,vox);
+}
+
+/*
+** Finds the topmost trace index with a corresponding hit type equal to testVal
+** and places the index into currentTrace and the data into data. Additionally,
+** all processed trace indexes, regardless of qualifying, are placed into the
+** filter stack. If no valid trace is found, NOT_THERE is returned.
+*/
+void filter(	inout uint hitStackTop, inout uint hitStackCount,
+				inout uint filterStackTop, inout uint filterStackCount,
+				inout uint currentTrace, inout traceNode data, in uint testVal){
+	uint hitType;
+	// Place non-exiting hits into the filter stack
+	while(hitStackCount > 0){
+		currentTrace = stackTopUint(hitStackTop,hitStackCount);
+		popStackUint(hitStackTop,hitStackCount);
+		// Load trace data and get the type of hit
+		data = traceLoad(currentTrace);
+		hitType = data.state & STATE_TYPE_MASK;
+		pushStackUint(filterStackTop,filterStackCount,currentTrace);
+		if(hitType != testVal){
+			continue;
+		}
+		else{
+			break;
+		}
+	}
+	if(hitStackCount == 0){
+		currentTrace = NOT_THERE;
+	}
+}
+
+// Returns the state of a trace after an enter hit event
+void enterState(inout traceNode data){
+
+	storeOldVoxel(data);
+	childHit(data);
+	surfaceHit(data);
+
+}
+
+// Returns the state of a trace after an exit hit event
+void exitState(inout traceNode data){
+
+	storeOldVoxel(data);
+	// Get the state of the trace one level up
+	uvec3 stateTop = readTopUvec3(data.stateStackTop,data.stateStackCount);
+	popStackUvec3(data.stateStackTop,data.stateStackCount);
+	uint locale = data.state & STATE_LOCALE_MASK;
+
+	// If the current host voxel is the top of the mat stack, remove it
+	if(stackTopUint(data.matStackTop,data.matStackCount)==data.host){
+		popNewVoxel(data);
+	}
+	// Update host-specific data
+	data.host = stateTop.x;
+	data.state = stateTop.y;
+	data.velocity /= 2.0;
+	data.position = data.position / 2.0 - (0.5).xxx +
+					vec3(greaterThan(	locale.xxx^uvec3(1,2,4),
+										(0).xxx					));
+	data.timeLeft = uintBitsToFloat(stateTop.z);
+
+}
+
+// Returns the state of a trace after a child hit event
+void childState(inout traceNode data){
+
+	storeOldVoxel(data);
+	childHit(data);
+	uint newChild = data.child[data.state & STATE_LOCALE_MASK];
+	vec3 state;
+	if(newChild & NOT_THERE != NOT_THERE){
+        state.x = data.host;
+        state.y = data.state;
+        state.z = floatBitsToUint(data.timeLeft);
+        pushStackVec3(data.stateStackTop,data.stateStackCount,state);
+		data.host = newChild;
+		data.velocity *= 2.0;
+		data.position = mod(data.position,1.0) * (2.0).xxx - (1.0).xxx;
+	}
+
+}
+
+// Returns the state of a trace after a surface hit event
+void surfaceState(inout traceNode data){
+	storeOldVoxel(data);
+	data.state = data.state | STATE_SURFACE_HIT;
+	if(data.state & STATE_INSIDE_SURF){
+		popNewVoxel(data);
+		data.state = data.state & (~ STATE_INSIDE_SURF);
+	}
+	else{
+		pushNewVoxel(data);
+		data.state = data.state | STATE_INSIDE_SURF;
+	}
+	childHit(data);
+}
+
+
+void enterSweep(	inout uint hitStackTop, inout uint hitStackCount,
+					inout uint cleanStackTop, inout uint cleanStackCount){
+	uint currentTrace;
+	traceNode data;
+	uint filterStackTop = NOT_THERE;
+	uint filterStackCount = 0;
+	// Keep processing hits until there are no more
+	while(hitStackCount > 0){
+		// Get the topmost entering trace
+		filter(	hitStackTop,hitStackCount,filterStackTop,filterStackCount,
+				currentTrace, data, STATE_ENTER);
+		//Sets up the trace for a potential child hit after entrance
+		if( currentTrace != NOT_THERE ){
+			// If the current host voxel is the top of the mat stack, remove it
+			enterState(data);
+		}
+    }
+    // Place the filtered hits back into the hit stack for future processes
+    hitStackTop = filterStackTop;
+    hitStackCount = filterStackCount;
+}
+
+
+void exitSweep(	inout uint hitStackTop, inout uint hitStackCount,
+				inout uint cleanStackTop, inout uint cleanStackCount){
+	uint hitType;
+	uint hitTarget;
+	uvec3 stateTop;
+	vec3 normal;
+	uint currentTrace;
+	traceNode data;
+	// Keep processing hits until there are no more
+	while(hitStackCount > 0){
+		// Get the topmost entering trace
+		filter(	hitStackTop,hitStackCount,filterStackTop,filterStackCount,
+				currentTrace, data, STATE_EXIT);
+		/*
+		** While the hit currently being processed is an exit from the current
+		** voxel space, exit out to the parent voxel space. If the root voxel
+		** has been exited out of, then that means the trace is done and hence
+		** should be cleaned up.
+		*/
+		if(currentTrace != NOT_THERE){
+			hitType = data.state & STATE_TYPE_MASK;
+			while( (hitType == STATE_EXIT) && (data.timeLeft < HIT_DISTANCE) ){
+				if(data.stateStackCount == 0){
+					pushStackUint(cleanStackTop,cleanStackCount,currentTrace);
+					break;
+				}
+				else{
+					exitState(data);
+					hitType = data.state & STATE_TYPE_MASK;
+				}
+			}
+		}
+		traceStore(currentTrace,data);
+    }
+    // Place the filtered hits back into the hit stack for future processes
+    hitStackTop = filterStackTop;
+    hitStackCount = filterStackCount;
+}
+
+
+void childSweep(	inout uint hitStackTop, inout uint hitStackCount,
+					inout uint cleanStackTop, inout uint cleanStackCount){
+	uint hitType;
+	uint hitTarget;
+	uvec3 stateTop;
+	vec3 normal;
+	uint currentTrace;
+	traceNode data;
+	// Keep processing hits until there are no more
+	while(hitStackCount > 0){
+		// Get the topmost entering trace
+		filter(	hitStackTop,hitStackCount,filterStackTop,filterStackCount,
+				currentTrace, data, STATE_CHILD);
+		/*
+		** While the hit currently being processed is traveling between
+		** the boundaries between child voxels or into child voxels, update
+		** the trace's data appropriately. If the depth limit has been hit,
+		** halt further traversal.
+		*/
+		if(currentTrace != NOT_THERE){
+			hitType = data.state & STATE_TYPE_MASK;
+			while( (hitType == STATE_CHILD) && (data.timeLeft < HIT_DISTANCE) ){
+				if(data.stateStackCount == 0){
+					pushStackUint(cleanStackTop,cleanStackCount,currentTrace);
+					break;
+				}
+				else{
+					childState(data);
+					hitType = data.state & STATE_TYPE_MASK;
+				}
+			}
+		}
+		traceStore(currentTrace,data);
+	}
+	// Place the filtered hits back into the hit stack for future processes
+	hitStackTop = filterStackTop;
+	hitStackCount = filterStackCount;
+}
+
+
+void surfaceSweep(	inout uint hitStackTop, inout uint hitStackCount,
+					inout uint cleanStackTop, inout uint cleanStackCount){
+	uint currentTrace;
+	traceNode data;
+	uint filterStackTop = NOT_THERE;
+	uint filterStackCount = 0;
+	// Keep processing hits until there are no more
+	while(hitStackCount > 0){
+		// Get the topmost entering trace
+		filter(	hitStackTop,hitStackCount,filterStackTop,filterStackCount,
+				currentTrace, data, STATE_SURFACE);
+		//Sets up the trace for a potential child hit after entrance
+		if( currentTrace != NOT_THERE ){
+			surfaceState(data);
+		}
+    }
+    // Place the filtered hits back into the hit stack for future processes
+    hitStackTop = filterStackTop;
+    hitStackCount = filterStackCount;
+}
+
+
+void hitSweep(	inout uint hitStackTop, inout uint hitStackCount){
+	uint oldVoxel;
+	uint newVoxel;
+	uvec4 oldMat;
+	uvec4 newMat;
+	uint hitType;
+	uint hitTarget;
+	uvec3 stateTop;
+	vec3 normal;
+	uint currentTrace;
+	traceNode data;
+	// Keep processing hits until there are no more
+	while(hitStackCount > 0){
+		// Get the hit currently being processed and remove it from the stack
+		currentTrace = stackTopUint(hitStackTop,hitStackCount);
+		popStackUint(hitStackTop,hitStackCount);
+		data = traceLoad(currentTrace);
+
+		// Get the indexes of the voxels enc
+		newVoxel = stackTopUint(trace.matStackTop,trace.matStackCount);
+		popStackUint(trace.matStackTop,trace.matStackCount);
+		oldVoxel = stackTopUint(trace.matStackTop,trace.matStackCount);
+		stackTopUint(trace.matStackTop,trace.matStackCount) = newVoxel;
+
+		if(oldVoxel == NOT_THERE){
+			oldMat = horizonMat;
+		}
+		else{
+			oldMat = vec4(	voxelAttribute(oldVoxel,0),
+							voxelAttribute(oldVoxel,1),
+							voxelAttribute(oldVoxel,2),
+							voxelAttribute(oldVoxel,3)	);
+		}
+
+		if(newVoxel == NOT_THERE){
+			newMat = horizonMat;
+		}
+		else{
+			newMat = vec4(	voxelAttribute(newVoxel,0),
+							voxelAttribute(newVoxel,1),
+							voxelAttribute(newVoxel,2),
+							voxelAttribute(newVoxel,3)	);
+		}
+
+		hitType = data.state & STATE_TYPE_MASK;
+		data.state = data.state & ( ~STATE_OLD_STORED);
+
+		// Get the normal of the hit surface
+		if( data.state & STATE_HIT_SURFACE != 0 ){
+            normal = (unpackSnorm4x8(traceSurface(data.host))).xyz;
+            data.state = data.state & (~ STATE_HIT_SURFACE);
+		}
+		else{
+			normal = getChildHitNormal(data.position);
+		}
+
+		// Pass the appropriate data to the onHitFunction
+		onHit( oldMat, newMat, data.velocity, normal );
+		traceStore(currentTrace,data);
+    }
+
+}
+
+
+/// Task Management Code
+
+layout(local_size_x = X_SIZE) in;
+void main (){
+
+	float currentStep;
+	float soonestNextHit;
+	vec3 colorMask = vec3(1.0,1.0,1.0);
+	vec3 lightSample = vec3(0.0,0.0,0.0);
+	uint traceRoot;
+	traceNode traceData;
+	traceTaskNode taskData;
+	pixNo = pixHeight * pixWidth;
+	uint root_task;
+	bool traceTreeHit;
+	bool traceTreeDone = false;
+
+	uint hitStackTop = NOT_THERE;
+	uint hitStackCount = 0;
+	uint cleanStackTop = NOT_THERE;
+	uint cleanStackCount = 0;
+
+	// Initialize the Thread State and Root Task
+	initYggCompute();
+	if(id == 0){
+		TaskBuffer.data[ROOT_TASK] = grabTask(); // Establish the root task
+		traceTaskParent(ROOT_TASK) = NOT_THERE;
+		traceTaskChildCount(ROOT_TASK) = 0;
+	}
+	root_task = TaskBuffer[ROOT_TASK];
+	memoryBarrierBuffer();
+
+	// Spool Trace Layout
+	spoolScanlineLayout();
+
+
+	traceTask = NOT_THERE;
+	trace = NOT_THERE;
+	// Perform traces until the root task is out of children
+	while( traceTaskChildCount(root_task) != 0 ){
+
+		// If this thread just finished up a trace, clean it up
+		if(traceTreeDone){
+			cleanUpTraceBranch(trace);
+			trace = NOT_THERE;
+		}
+		// Grab a new task from the task queue, if needed and possible
+		if(trace == NOT_THERE){
+			traceTask = grabTask();
+			// Only set up trace if the grabbed task address is valid
+			if(traceTask != NOT_THERE){
+				taskData = traceTaskLoad(traceTask);
+				traceData = traceTaskToTrace(taskData);
+				traceRoot = allocNode();
+				traceStore(traceRoot,traceData);
+				traceTreeState = 0;
+			}
+		}
+
+		// Only check for new tasks after every TASK_SWAP_FREQ hit calculations
+		for(uint swapStep = 0; swapStep < TASK_SWAP_FREQ; swapStep++){
+			trace = traceRoot;
+			while( trace != NOT_THERE ){
+				// Execute march operations down the trace tree
+				marchTrace(trace,bestSteps,bestTraces,colorMask,lightSample);
+			}
+			// Process pending hit operations
+			enterSweep(hitStackTop,hitStackCount,cleanStackTop,cleanStackCount);
+			exitSweep(hitStackTop,hitStackCount,cleanStackTop,cleanStackCount);
+			childSweep(hitStackTop,hitStackCount,cleanStackTop,cleanStackCount);
+			surfaceSweep(hitStackTop,hitStackCount,cleanStackTop,cleanStackCount);
+			hitSweep(hitStackTop,hitStackCount);
+			/*
+			** If the color mask has hit the alpha threshold, the entire trace
+			** tree is cleaned up.
+			*/
+			if(max(colorMask) < alphaThresh){
+				destroyStackUint(cleanStackTop,cleanStackCount);
+				pushStackUint(cleanStackTop,cleanStackCount,traceRoot)
+			}
+			// Process pending cleanup operations
+			cleanSweep(cleanStackTop,cleanStackCount,traceRoot);
+
+		}
+
+	}
+
+}
+
+
+ENDGLSL
+
+}
+}
+}

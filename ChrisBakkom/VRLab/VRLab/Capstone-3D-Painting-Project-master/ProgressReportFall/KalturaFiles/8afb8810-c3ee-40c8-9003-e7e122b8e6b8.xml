@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RecordingSessionMetadata xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <MetadataVersion>1</MetadataVersion>
+  <SessionID>8afb8810-c3ee-40c8-9003-e7e122b8e6b8</SessionID>
+  <Title>Screen Capture - 2017 Dec 03 10:06:51</Title>
+  <CapturedOn>2017-12-03T22:06:51.2990462-08:00</CapturedOn>
+  <LastModified>2017-12-03T22:06:59.8659492-08:00</LastModified>
+  <Duration>73.8</Duration>
+  <Recordings>
+    <RecordingSessionMedia>
+      <ID>e76768f3-cb0a-4ee3-a875-dadf10d05be3</ID>
+      <MediaType>Screen</MediaType>
+      <UploadState>NotUploaded</UploadState>
+      <MediaNaturalWidth>1280</MediaNaturalWidth>
+      <MediaNaturalHeight>720</MediaNaturalHeight>
+      <RelativePath>8afb8810-c3ee-40c8-9003-e7e122b8e6b8\e76768f3-cb0a-4ee3-a875-dadf10d05be3.mp4</RelativePath>
+      <DeviceName>Screen Capture</DeviceName>
+      <StartTime>0</StartTime>
+    </RecordingSessionMedia>
+  </Recordings>
+  <ClientData>
+    <IsEdited>false</IsEdited>
+  </ClientData>
+  <ExtensionData>
+    <SerializedStore>
+      <Kaltura>
+        <Tags>
+        </Tags>
+      </Kaltura>
+    </SerializedStore>
+  </ExtensionData>
+</RecordingSessionMetadata>

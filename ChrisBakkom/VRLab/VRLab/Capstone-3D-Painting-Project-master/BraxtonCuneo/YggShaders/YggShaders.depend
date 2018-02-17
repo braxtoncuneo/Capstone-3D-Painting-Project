@@ -1,0 +1,9 @@
+# depslib dependency file v1.0
+1385316876 source:c:\users\braxton\desktop\program files\yggshaders\main.c
+	<windows.h>
+	<gl/gl.h>
+
+1385316876 source:c:\users\braxton\documents\github\capstone-3d-painting-project\braxtoncuneo\yggshaders\main.c
+	<windows.h>
+	<gl/gl.h>
+

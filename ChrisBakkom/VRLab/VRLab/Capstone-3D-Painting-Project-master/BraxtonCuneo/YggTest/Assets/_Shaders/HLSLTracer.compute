@@ -1,0 +1,914 @@
+﻿
+
+#define CONVERT
+
+#ifdef CONVERT
+	#define vec2	float2
+	#define vec3	float3
+	#define vec4	float4
+	#define uvec2	uint2
+	#define uvec3	uint3
+	#define uvec4	uint4
+	#define ivec2	int2
+	#define ivec3	int3
+	#define ivec4	int4
+	#define bvec2	bool2
+	#define bvec3	bool3
+	#define bvec4	bool4
+	#define mat4	float4x4
+#endif
+
+#pragma kernel main
+
+
+// These should be set as
+#define MEMORY_SWAP_FREQ	8
+#define TASK_SWAP_FREQ		4
+#define HIT_PROC_FREQ		4
+
+#define DEPTH_LIMIT			8
+
+/*
+** The hit distance is something reasonably close to the minimum value
+** representable assuming an exponent of zero. This gives some reasonable
+** assurance that precision loss will not result in weirdness when dealing with
+** large variances in scale.
+*/
+#define HIT_DISTANCE		( 1.0 / float( 1 << 22 ) )
+
+/*
+** All of these masks and flag bits are used by the ray tracer to encode key
+** information about the state of a trace (past, present, and future) in a
+** trace's "state" member.
+*/
+#define STATE_TYPE_MASK		0xF0000000
+	#define STATE_ENTER			0x10000000
+	#define STATE_CHILD			0x20000000
+	#define STATE_SURFACE		0x30000000
+	#define STATE_EXIT			0x40000000
+#define STATE_TARGET_MASK	0x000000F0
+	#define STATE_TGT_X			0x00000010
+	#define STATE_TGT_Y			0x00000020
+	#define STATE_TGT_Z			0x00000040
+	#define STATE_TGT_OUT		0x00000080
+#define	STATE_LOCALE_MASK	0x0000000F
+	#define STATE_LOC_X			0x00000001
+	#define STATE_LOC_Y			0x00000002
+	#define STATE_LOC_Z			0x00000004
+	#define STATE_LOC_OUT		0x00000008
+#define STATE_OLD_STORED	0x00000100
+#define STATE_HIT_SURFACE	0x00000200
+#define STATE_INSIDE_SURF	0x00000400
+
+
+
+
+
+RWBuffer<uint2> TraceLayoutBuffer : register (u5);
+//layout(std430, binding = 5) buffer TraceLayoutBuffer { uvec2 data[]; };
+
+RWTexture2D<float4> outputImage;
+//restrict writeonly image2D outputImage;
+
+
+uniform mat4 viewMatrix;
+uniform uint pixWidth;
+uniform uint pixHeight;
+uniform uint depthLimit;
+uniform uvec4 horizonMat;
+uniform float alphaThresh;
+static uint pixNo;
+static uint traceTask;
+static uint trace;
+
+
+#include "HLSLCommon.compute"
+
+
+/// Trace Management
+
+/* Fills the Trace Layout Buffer with a series of coordinates which tile the
+** grid space of the output image along a row-major, column-minor sequence.
+** If the output image is not a perfect square with a power-of-two side length,
+** the gridspace is decomposed into squares with a power-of-two side length
+** and individually tiled.
+*/
+inline void spoolScanlineLayout(){
+
+    for(uint pos = id; pos < pixNo; pos += THREAD_COUNT){
+        TraceLayoutBuffer[pos] = uvec2(pos%THREAD_COUNT,pos/THREAD_COUNT);
+    }
+
+}
+
+
+/* Fills the Trace Layout Buffer with a series of coordinates which tile the
+** grid space of the output image along a hilbert curve. If the output image is
+** not a perfect square with a power-of-two side length, the gridspace is
+** decomposed into squares with a power-of-two side length and individually
+** tiled.
+*/
+/// THIS FUNCTION IS NOT FINISHED
+/*
+inline void spoolHilbertTraceLayout(){
+
+    uvec2 botLeft;
+    uvec2 topRight;
+    uvec2 coord;
+    uint trMin;
+    bool done;
+
+    /// Decomposing the screen space into squares
+    for(uint pos = id; pos < pixNo; pos += THREAD_COUNT){
+		done = false;
+		botLeft = uvec2(0,0);
+		topRight = uvec2(pixWidth,pixHeight);
+		coord = uvec2(pos%THREAD_COUNT,pos/THREAD_COUNT);
+		while(!done){
+			trMin = int(log2(float(min(topRight)));
+			botLeft +=	trMin *
+						uvec2((coord - botLeft)>uvec2(trMin,trMin));
+		}
+    }
+
+}
+*/
+
+
+
+
+/*
+** Returns the time required to enter the voxel. If the trace is
+** already in the voxel, returns 0.0. If the trace will not ever enter the
+** block, given the position and velocity, the returned value is negative.
+** This is used at the beginning of trace lines through specific blocks.
+*/
+inline float traceCheck( in vec3 position, in vec3 velocity ){
+	float result;
+	/*
+	** Find what time differences are required to hit each of the positive
+	** and negative sides of the unit cube
+	*/
+	vec3 negativeSide = (vec3(-1.0,-1.0,-1.0) - position) / velocity;
+	vec3 positiveSide =  (vec3(1.0,1.0,1.0) - position) / velocity;
+
+	/*
+	** Whichever side (positive or negative) with the lower intersect time must,
+	** by definition, be the side entered through by the trace. Here, we sort
+	** times such that the enter and exit times for each dimension are separated
+	** into the enter and exit vectors;
+	*/
+	vec3 enter = min(negativeSide,positiveSide);
+	vec3 exit = max(negativeSide,positiveSide);
+
+	/*
+	** In order to be inside the box, the trace must have hit all of the 'enter'
+	** points before any of the 'exit' points. The range vector establishes the
+	** true entrance and exit times for the trace.
+	*/
+	vec2 range = vec2(	max(enter.x,max(enter.y,enter.z)),
+						min(exit.x,min(exit.y,exit.z)));
+	// If the trace is already in the unit cube, the returned value is 0.0
+	if( (range.x<=range.y) && (0.0<=range.y)){
+        result = max(0.0,range.x);
+	}
+	else{
+		// If no intersection is possible, a negative value is returned
+		result = -1.0;
+	}
+	return result;
+}
+
+
+
+/* Fills out a traceNode with the data for the initial state of the root state
+** indicated by the input traceTask Node.
+*/
+inline traceNode traceTaskToTrace(in traceTaskNode task){
+
+	traceNode result;
+	result.last = NOT_THERE;
+	result.next = NOT_THERE;
+    result.host = BlockBuffer[0].root;
+    result.stateStackTop = NOT_THERE;
+    result.stateStackCount = 0;
+    result.matStackTop = NOT_THERE;
+    result.matStackCount = 0;
+    pushStackUint(result.matStackTop,result.matStackCount,NOT_THERE);
+    result.overlapHead = NOT_THERE;
+    result.state = 0;
+    result.timeLeft = traceCheck(task.position,task.velocity);
+    result.position = task.position;
+    result.velocity = task.velocity;
+    return result;
+
+}
+
+
+
+inline void childHit( inout traceNode data ){
+	// Result starts off as the childless result
+	uint target = 8;
+	uint locale = dot(vec3(data.position>(0.0).xxx),vec3(1.0,2.0,4.0)) ;
+	float time;
+	// Calculates each dimensional intercept of the trace in the unit cube
+	vec3 crossPoint = (vec3(0.0,0.0,0.0) - data.position) / data.velocity;
+	/*
+	** Result for a dimension is true only if a cross across its intercept
+	** occurs before or simultaneous to all other intercepts and time left is
+	** greater than 0.0
+	*/
+	bvec3 crossStats =	(crossPoint>(0.0).xxx) &
+						(crossPoint>crossPoint.yzx) &
+						(crossPoint>crossPoint.zxy);
+
+	/*
+	** If there is any valid crossing, the child being crossed into is the one
+	** with the bits corresponding to the minimal valid crossing(s)
+	*/
+	if(any(crossStats)){
+		time = min(crossPoint.x,min(crossPoint.y,crossPoint.z));
+		uint crossBits = 	uint(crossStats.x) +
+							(uint(crossStats.y) << 1)+
+							(uint(crossStats.z) << 2);
+		target = locale ^ crossBits;
+	}
+
+	uint state = data.state;
+	uint loc = locale;
+	state = state & (~(STATE_LOCALE_MASK | STATE_TARGET_MASK | STATE_TYPE_MASK));
+	state = state | loc | (target << 4);
+	if( target == 8 ){
+		state = state | STATE_EXIT;
+	}
+	else{
+		state = state | STATE_CHILD;
+	}
+	data.timeLeft = time;
+	data.state = state;
+
+}
+
+
+
+
+inline void surfaceHit( inout traceNode data ){
+	float time;
+	uint state = data.state;
+	bool hits = false;
+	//$
+	vec4 surface = vec4(0.0,0.0,0.0,0.0);
+	if(length(surface.xyz)!=0){
+		float velDir = dot(surface.xyz,data.velocity);
+		float posDir = dot(surface.xyz,data.position);
+		time = (0-posDir)/velDir;
+        if(time > 0){
+			hits = true;
+        }
+        state = state & (~STATE_TYPE_MASK);
+        state = state | STATE_SURFACE;
+	}
+	else{
+		state = state | STATE_INSIDE_SURF;
+	}
+	if(hits && time < data.timeLeft){
+		data.timeLeft = time;
+		data.state = state;
+	}
+
+}
+
+
+// Returns the normal of eligible non-surface hit boundaries
+inline vec3 getChildHitNormal( in vec3 position ){
+	vec3 centerVec = (0.5).xxx;
+	vec3 boundVec = (1.0).xxx;
+	vec3 hitVec	= (HIT_DISTANCE).xxx;
+	vec3 hitPos = fmod(position,boundVec)-centerVec;
+	return normalize(sign(hitPos)*vec3(abs(hitPos)<=hitVec));
+}
+
+
+
+/*
+** This function is in charge of freeing all of the resources associated with
+** a trace branch an all of its child traces. While somewhat of a bottleneck
+** to the ray tracer, it is the cost of having good transparency and being able
+** to escape the computation required of multiple, unsynced traces.
+*/
+inline void cleanUpTraceBranch( in uint traceBranchRoot, in traceNode data ){
+
+	/*
+	** This stack stores mapped nodes which have "next" nodes that have yet
+	** to be processed.
+	*/
+	uint mapStackTop = NOT_THERE;
+	uint mapStackCount = 0;
+
+	// Remove the root node from the rest of the trace tree
+	if( data.next != NOT_THERE ){
+		traceLast(data.next) = data.last;
+	}
+	if( data.last != NOT_THERE ){
+		// If the trace is not the next of its last, it is the overlap
+		if(traceNext(data.last) != traceBranchRoot){
+			traceOverlapHead(data.last) = data.next;
+		}
+		else{
+			traceNext(data.last) = data.next;
+		}
+	}
+	freeNode(traceBranchRoot);
+
+	/*
+	** Push the first overlapping node of the root onto the stack. If there are
+	** no overlapping nodes, the job of cleaning up is done.
+	*/
+	uint iter = data.overlapHead;
+	if(iter != NOT_THERE){
+		pushStackUint(mapStackTop,mapStackCount,iter);
+	}
+	uint next;
+	uint overlap;
+
+	// While there are nodes on the stack, there are nodes to free
+	while(mapStackCount != 0){
+
+		// Store the 'next' and 'overlap' fields of the top node, for future use
+		next = traceNext(iter);
+		overlap = traceOverlapHead(iter);
+
+		/*
+		** If the current trace has a non-null overlap field, place the first
+		** overlap on the top of the stack then set the overlap field of the
+		** original node to the next overlapping trace.
+		*/
+		if( overlap != NOT_THERE ){
+			traceOverlapHead(iter) = traceNext(overlap);
+			pushStackUint(mapStackTop,mapStackCount,overlap);
+			iter = overlap;
+		}
+		/*
+		** If the current trace has no overlapping traces but has a 'next'
+		** trace, the top of the stack is set to the next trace and the
+		** original trace is freed.
+		*/
+		else if( next != NOT_THERE ){
+			// Unwind the trace's stack before it is freed
+			destroyStackUvec3(traceStateStackTop(iter),traceStateStackCount(iter));
+			destroyStackUint(traceMatStackTop(iter),traceMatStackCount(iter));
+			freeNode(iter);
+			stackTopUint(mapStackTop,mapStackCount) = next;
+			iter = next;
+		}
+		/*
+		** If the current trace has neither overlapping traces nor 'next'
+		** traces, the trace is freed and the top of the mapping stack is popped
+		*/
+		else{
+			// Unwind the trace's stack before it is freed
+			destroyStackUvec3(traceStateStackTop(iter),traceStateStackCount(iter));
+			destroyStackUint(traceMatStackTop(iter),traceMatStackCount(iter));
+			freeNode(iter);
+			popStackUint(mapStackTop,mapStackCount);
+			iter = stackTopUint(mapStackTop,mapStackCount);
+		}
+
+	}
+
+}
+
+
+
+
+inline void onHit(	in uvec4 incident, in uvec4 abcident,
+					in vec3 velocity, in vec3 normal){
+
+	/// Inject the "On Hit" code here. *Super Important*
+	/*
+	** We might be able to expose this stuff to the user later
+	** For now, this will either include the basic or full forward tracer code.
+	*/
+
+}
+
+inline void onMarch(	inout vec3 mask, inout vec3 sample,
+						in float timeMarched, in uvec4 material ){
+
+	/// Inject the "On March" code here. *Super Important*
+	/*
+	** We might be able to expose this stuff to the user later
+	** For now, this will either include the basic or full forward tracer code.
+	*/
+	mask *=0.9999;
+
+}
+
+/*
+** marchTrace is the powerhouse of the ray tracer. With each execution, it
+** takes the current trace branch and marches the root forward by the amount of
+** time left until the next hit occurs (somewhere in the trace tree).
+**
+*/
+inline void marchTrace(inout uint trace,
+				inout float currentStep, inout float soonestNextHit,
+				inout vec3 colorMask, inout vec3 lightSample,
+				inout uint hitStackTop, inout uint hitStackCount,
+				inout uint cleanStackTop, inout uint cleanStackCount){
+
+
+	// Load in our trace data from the data buffer.
+	traceNode data = traceLoad(trace);
+	uint host = traceHostNode(trace);
+
+	/*
+	** Advance trace by the currentStep, update the trace's hit countdown,
+	** and perform onMarch calculations
+	*/
+    data.position.xyz = data.position.xyz + data.velocity.xyz * data.timeLeft;
+	data.timeLeft = data.timeLeft - currentStep;
+
+	onMarch(colorMask,lightSample,currentStep,
+			uvec4(	voxelAttribute(host,0),
+					voxelAttribute(host,1),
+					voxelAttribute(host,2),
+					voxelAttribute(host,3)
+	));
+
+	/*
+	** If the amount of time left is within the hit threshold, it is added to
+	** the hit stack for later processing. Otherwise, the timeLeft value
+	** represents a hit in a future pass, and hence must be incorporated into
+	** the soonestNextHit calculation.
+	*/
+	if(data.timeLeft < HIT_DISTANCE){
+		// Make sure the same surface won't be re-hit;
+		data.position.xyz = data.position.xyz + data.velocity.xyz * HIT_DISTANCE * 2;
+		pushStackUint(hitStackTop,hitStackCount,trace);
+	}
+	else{
+		soonestNextHit = min(soonestNextHit,data.timeLeft);
+	}
+
+	// Store trace data for future use.
+	traceStore(trace,data);
+
+	// Set the trace tree iterator to the next appropriate node.
+	if(data.overlapHead != NOT_THERE){
+		trace = data.overlapHead;
+	}
+	else{
+		trace = data.next;
+	}
+
+}
+
+
+/*
+** Iterates down the cleaning stack, cleaning up each trace in the structure.
+** Should one of the traces be the root of this thread's current trace tree,
+** we set the variable holding this root trace to NOT_THERE, indicating the
+** current trace tree is finished.
+*/
+inline void cleanSweep(	inout uint cleanStackTop, inout uint cleanStackCount,
+						inout uint rootTrace){
+
+	uint current;
+    while(cleanStackCount > 0){
+		current = stackTopUint(cleanStackTop,cleanStackCount);
+		traceNode data = traceLoad(current);
+		cleanUpTraceBranch(current,data);
+		popStackUint(cleanStackTop,cleanStackCount);
+		if(current == rootTrace){
+			rootTrace = NOT_THERE;
+		}
+    }
+
+}
+
+// Stores a copy of the top voxel on top of the mat stack, if one hasn't already
+inline void storeOldVoxel(inout traceNode data){
+	uint vox;
+	if(data.state & STATE_OLD_STORED == 0){
+		vox = stackTopUint(data.matStackTop,data.matStackCount);
+		data.state |= STATE_OLD_STORED;
+		pushStackUint(data.matStackTop,data.matStackCount,vox);
+	}
+}
+
+/*
+** Writes the given voxel index under the old voxel in the mat stack.
+*/
+inline void setNewVoxel(inout traceNode data, in uint vox){
+	stackTopUint(data.matStackTop,data.matStackCount) = vox;
+}
+
+
+inline void pushNewVoxel(inout traceNode data){
+	uint top = stackTopUint(data.matStackTop,data.matStackCount);
+	popStackUint(data.matStackTop,data.matStackCount);
+	uint old = stackTopUint(data.matStackTop,data.matStackCount);
+	stackTopUint(data.matStackTop,data.matStackCount) = top;
+	pushStackUint(data.matStackTop,data.matStackCount,old);
+	pushStackUint(data.matStackTop,data.matStackCount,data.host);
+}
+
+
+inline void popNewVoxel(inout traceNode data){
+	popStackUint(data.matStackTop,data.matStackCount);
+	uint old = stackTopUint(data.matStackTop,data.matStackCount);
+	popStackUint(data.matStackTop,data.matStackCount);
+	uint vox = stackTopUint(data.matStackTop,data.matStackCount);
+	stackTopUint(data.matStackTop,data.matStackCount) = old;
+	pushStackUint(data.matStackTop,data.matStackCount,vox);
+}
+
+/*
+** Finds the topmost trace index with a corresponding hit type equal to testVal
+** and places the index into currentTrace and the data into data. Additionally,
+** all processed trace indexes, regardless of qualifying, are placed into the
+** filter stack. If no valid trace is found, NOT_THERE is returned.
+*/
+inline void filter(	inout uint hitStackTop, inout uint hitStackCount,
+				inout uint filterStackTop, inout uint filterStackCount,
+				inout uint currentTrace, inout traceNode data, in uint testVal){
+
+	uint hitType;
+	// Place non-exiting hits into the filter stack
+	while(hitStackCount > 0){
+		currentTrace = stackTopUint(hitStackTop,hitStackCount);
+		popStackUint(hitStackTop,hitStackCount);
+		// Load trace data and get the type of hit
+		data = traceLoad(currentTrace);
+		hitType = data.state & STATE_TYPE_MASK;
+		pushStackUint(filterStackTop,filterStackCount,currentTrace);
+		if(hitType != testVal){
+			continue;
+		}
+		else{
+			break;
+		}
+	}
+	if(hitStackCount == 0){
+		currentTrace = NOT_THERE;
+	}
+}
+
+// Returns the state of a trace after an enter hit event
+inline void enterState(inout traceNode data){
+
+	storeOldVoxel(data);
+	childHit(data);
+	surfaceHit(data);
+
+}
+
+// Returns the state of a trace after an exit hit event
+inline void exitState(inout traceNode data){
+
+	storeOldVoxel(data);
+	// Get the state of the trace one level up
+	uvec3 stateTop = readTopUvec3(data.stateStackTop,data.stateStackCount);
+	popStackUvec3(data.stateStackTop,data.stateStackCount);
+	uint locale = data.state & STATE_LOCALE_MASK;
+
+	// If the current host voxel is the top of the mat stack, remove it
+	if(stackTopUint(data.matStackTop,data.matStackCount)==data.host){
+		popNewVoxel(data);
+	}
+	// Update host-specific data
+	data.host = stateTop.x;
+	data.state = stateTop.y;
+	data.velocity /= 2.0;
+	data.position = data.position / 2.0 - (0.5).xxx +
+					vec3((locale.xxx^uvec3(1,2,4))>(0).xxx);
+	data.timeLeft = asfloat(stateTop.z);
+
+}
+
+// Returns the state of a trace after a child hit event
+inline void childState(inout traceNode data){
+
+	storeOldVoxel(data);
+	childHit(data);
+	voxelNode vox = voxelLoad(data.host);
+	uint newChild = vox.child[data.state & STATE_LOCALE_MASK];
+	vec3 state;
+	if(newChild & NOT_THERE != NOT_THERE){
+        state.x = data.host;
+        state.y = data.state;
+        state.z = asuint(data.timeLeft);
+        pushStackUvec3(data.stateStackTop,data.stateStackCount,state);
+		data.host = newChild;
+		data.velocity *= 2.0;
+		data.position = fmod(data.position,1.0) * (2.0).xxx - (1.0).xxx;
+	}
+
+}
+
+// Returns the state of a trace after a surface hit event
+inline void surfaceState(inout traceNode data){
+	storeOldVoxel(data);
+	data.state = data.state | STATE_HIT_SURFACE;
+	if(data.state & STATE_INSIDE_SURF){
+		popNewVoxel(data);
+		data.state = data.state & (~ STATE_INSIDE_SURF);
+	}
+	else{
+		pushNewVoxel(data);
+		data.state = data.state | STATE_INSIDE_SURF;
+	}
+	childHit(data);
+}
+
+
+inline void enterSweep(	inout uint hitStackTop, inout uint hitStackCount,
+					inout uint cleanStackTop, inout uint cleanStackCount){
+	uint currentTrace;
+	traceNode data = blankTrace();
+	uint filterStackTop = NOT_THERE;
+	uint filterStackCount = 0;
+	// Keep processing hits until there are no more
+	while(hitStackCount > 0){
+		// Get the topmost entering trace
+		filter(	hitStackTop,hitStackCount,filterStackTop,filterStackCount,
+				currentTrace, data, STATE_ENTER);
+		//Sets up the trace for a potential child hit after entrance
+		if( currentTrace != NOT_THERE ){
+			// If the current host voxel is the top of the mat stack, remove it
+			enterState(data);
+		}
+    }
+    // Place the filtered hits back into the hit stack for future processes
+    hitStackTop = filterStackTop;
+    hitStackCount = filterStackCount;
+}
+
+
+inline void exitSweep(	inout uint hitStackTop, inout uint hitStackCount,
+				inout uint cleanStackTop, inout uint cleanStackCount){
+	uint filterStackTop = NOT_THERE;
+	uint filterStackCount = 0;
+
+	uint hitType;
+	uint hitTarget;
+	uvec3 stateTop;
+	vec3 normal;
+	uint currentTrace;
+	traceNode data = blankTrace();
+	// Keep processing hits until there are no more
+	while(hitStackCount > 0){
+		// Get the topmost entering trace
+		filter(	hitStackTop,hitStackCount,filterStackTop,filterStackCount,
+				currentTrace, data, STATE_EXIT);
+		/*
+		** While the hit currently being processed is an exit from the current
+		** voxel space, exit out to the parent voxel space. If the root voxel
+		** has been exited out of, then that means the trace is done and hence
+		** should be cleaned up.
+		*/
+		if(currentTrace != NOT_THERE){
+			hitType = data.state & STATE_TYPE_MASK;
+			while( (hitType == STATE_EXIT) && (data.timeLeft < HIT_DISTANCE) ){
+				if(data.stateStackCount == 0){
+					pushStackUint(cleanStackTop,cleanStackCount,currentTrace);
+					break;
+				}
+				else{
+					exitState(data);
+					hitType = data.state & STATE_TYPE_MASK;
+				}
+			}
+		}
+		traceStore(currentTrace,data);
+    }
+    // Place the filtered hits back into the hit stack for future processes
+    hitStackTop = filterStackTop;
+    hitStackCount = filterStackCount;
+}
+
+
+inline void childSweep(	inout uint hitStackTop, inout uint hitStackCount,
+					inout uint cleanStackTop, inout uint cleanStackCount){
+	uint filterStackTop = NOT_THERE;
+	uint filterStackCount = 0;
+
+	uint hitType;
+	uint hitTarget;
+	uvec3 stateTop;
+	vec3 normal;
+	uint currentTrace;
+	traceNode data = blankTrace();
+	// Keep processing hits until there are no more
+	while(hitStackCount > 0){
+		// Get the topmost entering trace
+		filter(	hitStackTop,hitStackCount,filterStackTop,filterStackCount,
+				currentTrace, data, STATE_CHILD);
+		/*
+		** While the hit currently being processed is traveling between
+		** the boundaries between child voxels or into child voxels, update
+		** the trace's data appropriately. If the depth limit has been hit,
+		** halt further traversal.
+		*/
+		if(currentTrace != NOT_THERE){
+			hitType = data.state & STATE_TYPE_MASK;
+			while( (hitType == STATE_CHILD) && (data.timeLeft < HIT_DISTANCE) ){
+				if(data.stateStackCount == 0){
+					pushStackUint(cleanStackTop,cleanStackCount,currentTrace);
+					break;
+				}
+				else{
+					childState(data);
+					hitType = data.state & STATE_TYPE_MASK;
+				}
+			}
+		}
+		traceStore(currentTrace,data);
+	}
+	// Place the filtered hits back into the hit stack for future processes
+	hitStackTop = filterStackTop;
+	hitStackCount = filterStackCount;
+}
+
+
+inline void surfaceSweep(	inout uint hitStackTop, inout uint hitStackCount,
+					inout uint cleanStackTop, inout uint cleanStackCount){
+	uint currentTrace;
+	traceNode data = blankTrace();
+	uint filterStackTop = NOT_THERE;
+	uint filterStackCount = 0;
+	// Keep processing hits until there are no more
+	while(hitStackCount > 0){
+		// Get the topmost entering trace
+		filter(	hitStackTop,hitStackCount,filterStackTop,filterStackCount,
+				currentTrace, data, STATE_SURFACE);
+		//Sets up the trace for a potential child hit after entrance
+		if( currentTrace != NOT_THERE ){
+			surfaceState(data);
+		}
+    }
+    // Place the filtered hits back into the hit stack for future processes
+    hitStackTop = filterStackTop;
+    hitStackCount = filterStackCount;
+}
+
+
+inline void hitSweep(	inout uint hitStackTop, inout uint hitStackCount){
+	uint oldVoxel;
+	uint newVoxel;
+	uvec4 oldMat;
+	uvec4 newMat;
+	uint hitType;
+	uint hitTarget;
+	uvec3 stateTop;
+	vec3 normal;
+	uint currentTrace;
+	traceNode data;
+	// Keep processing hits until there are no more
+	while(hitStackCount > 0){
+		// Get the hit currently being processed and remove it from the stack
+		currentTrace = stackTopUint(hitStackTop,hitStackCount);
+		popStackUint(hitStackTop,hitStackCount);
+		data = traceLoad(currentTrace);
+
+		// Get the indexes of the voxels enc
+		newVoxel = stackTopUint(data.matStackTop,data.matStackCount);
+		popStackUint(data.matStackTop,data.matStackCount);
+		oldVoxel = stackTopUint(data.matStackTop,data.matStackCount);
+		stackTopUint(data.matStackTop,data.matStackCount) = newVoxel;
+
+		if(oldVoxel == NOT_THERE){
+			oldMat = horizonMat;
+		}
+		else{
+			oldMat = vec4(	voxelAttribute(oldVoxel,0),
+							voxelAttribute(oldVoxel,1),
+							voxelAttribute(oldVoxel,2),
+							voxelAttribute(oldVoxel,3)	);
+		}
+
+		if(newVoxel == NOT_THERE){
+			newMat = horizonMat;
+		}
+		else{
+			newMat = vec4(	voxelAttribute(newVoxel,0),
+							voxelAttribute(newVoxel,1),
+							voxelAttribute(newVoxel,2),
+							voxelAttribute(newVoxel,3)	);
+		}
+
+		hitType = data.state & STATE_TYPE_MASK;
+		data.state = data.state & ( ~STATE_OLD_STORED);
+
+		// Get the normal of the hit surface
+		if( data.state & STATE_HIT_SURFACE != 0 ){
+            //$ normal = (unpackSnorm4x8(traceSurface(data.host))).xyz;
+            data.state = data.state & (~ STATE_HIT_SURFACE);
+		}
+		else{
+			normal = getChildHitNormal(data.position);
+		}
+
+		// Pass the appropriate data to the onHitFunction
+		onHit( oldMat, newMat, data.velocity, normal );
+		traceStore(currentTrace,data);
+    }
+
+}
+
+
+/// Task Management Code
+
+[numthreads(GROUP_SIZE,1,1)]
+void main (uint3 _id : SV_DispatchThreadID){
+	id = _id.x;
+	float currentStep = 0.0;
+	float soonestNextHit;
+	vec3 colorMask = vec3(1.0,1.0,1.0);
+	vec3 lightSample = vec3(0.0,0.0,0.0);
+	uint traceRoot;
+	traceNode traceData;
+	traceTaskNode taskData;
+	pixNo = pixHeight * pixWidth;
+	uint root_task;
+	bool traceTreeHit;
+	bool traceTreeDone = false;
+
+	uint hitStackTop = NOT_THERE;
+	uint hitStackCount = 0;
+	uint cleanStackTop = NOT_THERE;
+	uint cleanStackCount = 0;
+
+	// Initialize the Thread State and Root Task
+	initYggCompute();
+	if(id == 0){
+		TaskBuffer[ROOT_TASK] = grabTask(); // Establish the root task
+		taskParent(ROOT_TASK) = NOT_THERE;
+		taskChildCount(ROOT_TASK) = 0;
+	}
+	root_task = TaskBuffer[ROOT_TASK];
+	DeviceMemoryBarrier();
+
+	// Spool Trace Layout
+	spoolScanlineLayout();
+	DeviceMemoryBarrier();
+
+
+	traceTask = NOT_THERE;
+	trace = NOT_THERE;
+	// Perform traces until the root task is out of children
+	while( taskChildCount(root_task) != 0 ){
+
+		// If this thread just finished up a trace, clean it up
+		if(traceTreeDone){
+			traceNode data = traceLoad(trace);
+			cleanUpTraceBranch(trace,data);
+			trace = NOT_THERE;
+		}
+		// Grab a new task from the task queue, if needed and possible
+		if(trace == NOT_THERE){
+			traceTask = grabTask();
+			// Only set up trace if the grabbed task address is valid
+			if(traceTask != NOT_THERE){
+				taskData = traceTaskLoad(traceTask);
+				traceData = traceTaskToTrace(taskData);
+				traceRoot = allocNode();
+				traceStore(traceRoot,traceData);
+			}
+		}
+
+		// Only check for new tasks after every TASK_SWAP_FREQ hit calculations
+		for(uint swapStep = 0; swapStep < TASK_SWAP_FREQ; swapStep++){
+			trace = traceRoot;
+			while( trace != NOT_THERE ){
+				// Execute march operations down the trace tree
+				marchTrace(	trace,currentStep,soonestNextHit,colorMask,lightSample,
+							hitStackTop,hitStackCount,cleanStackTop,cleanStackCount);
+			}
+			// Process pending hit operations
+			enterSweep(hitStackTop,hitStackCount,cleanStackTop,cleanStackCount);
+			exitSweep(hitStackTop,hitStackCount,cleanStackTop,cleanStackCount);
+			childSweep(hitStackTop,hitStackCount,cleanStackTop,cleanStackCount);
+			surfaceSweep(hitStackTop,hitStackCount,cleanStackTop,cleanStackCount);
+			hitSweep(hitStackTop,hitStackCount);
+			/*
+			** If the color mask has hit the alpha threshold, the entire trace
+			** tree is cleaned up.
+			*/
+			if(max(colorMask.x,max(colorMask.y,colorMask.z)) < alphaThresh){
+				destroyStackUint(cleanStackTop,cleanStackCount);
+				pushStackUint(cleanStackTop,cleanStackCount,traceRoot);
+			}
+			// Process pending cleanup operations
+			cleanSweep(cleanStackTop,cleanStackCount,traceRoot);
+			currentStep = soonestNextHit;
+
+		}
+
+	}
+
+}
+
+
+
+

@@ -1,0 +1,27 @@
+//These should be set by the interchange to dimensions appropriate to the GPU
+#define X_SIZE 64
+
+// This should be replaced with the contents of CommonCode.comp
+#include "CommonCode.comp"
+
+uniform uint rotateNo;
+uniform uint levelsPerRotate;
+
+
+/*
+** The simplest of the shaders in Yggdrasil, the Memory Manager simply repeats
+** a number of calls to levelHeaps and rotate heaps, hopefully leveling memory.
+*/
+layout(local_size_x = X_SIZE) in;
+void main(){
+
+    initYggCompute();
+	for(uint i = 0; i < rotateNo; i++){
+		levelHeaps(levelsPerRotate);
+		rotateHeaps();
+	}
+    exitYggCompute();
+
+}
+
+

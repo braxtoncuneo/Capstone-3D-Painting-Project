@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_layout_file>
+	<ActiveTarget name="Debug" />
+	<File name="Initializer.comp" open="1" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="193" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="CommonCode.comp" open="1" top="1" tabpos="5" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="34" />
+		</Cursor>
+	</File>
+	<File name="BasicToolTemplate.comp" open="1" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1556" topLine="70" />
+		</Cursor>
+	</File>
+	<File name="MemoryManager.comp" open="1" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="583" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="RayTracer.comp" open="1" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="19968" topLine="187" />
+		</Cursor>
+		<Folding>
+			<Collapse line="69" />
+			<Collapse line="85" />
+			<Collapse line="113" />
+			<Collapse line="136" />
+			<Collapse line="173" />
+			<Collapse line="219" />
+			<Collapse line="242" />
+			<Collapse line="258" />
+			<Collapse line="344" />
+			<Collapse line="355" />
+			<Collapse line="375" />
+			<Collapse line="425" />
+			<Collapse line="440" />
+			<Collapse line="452" />
+			<Collapse line="457" />
+			<Collapse line="467" />
+			<Collapse line="484" />
+			<Collapse line="507" />
+			<Collapse line="516" />
+			<Collapse line="540" />
+			<Collapse line="559" />
+			<Collapse line="575" />
+			<Collapse line="598" />
+			<Collapse line="638" />
+			<Collapse line="678" />
+			<Collapse line="699" />
+			<Collapse line="766" />
+		</Folding>
+	</File>
+	<File name="TreeManager.comp" open="1" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
+	</File>
+	<File name="main.c" open="0" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
+	</File>
+</CodeBlocks_layout_file>

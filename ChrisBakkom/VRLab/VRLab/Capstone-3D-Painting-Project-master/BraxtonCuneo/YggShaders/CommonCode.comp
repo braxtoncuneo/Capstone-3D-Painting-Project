@@ -1,0 +1,717 @@
+#define NODE_SIZE		16
+#define HEADER_SIZE		4
+#define ATT_NUM			4
+#define CHILD_NUM		8
+#define THREAD_COUNT	1024
+#define RSRC_PER		3
+#define RSRC_SIZE		2
+#define RSRC_IDX_OFFSET THREAD_COUNT * RSRC_PER * RSRC_SIZE
+#define ROOT_TASK		RSRC_IDX_OFFSET + THREAD_COUNT * RSRC_PER
+#define HIT_DISTANCE 	1.0 / 256.0
+
+
+#define NOT_THERE	0x7FFFFFFF
+#define CACHED		0x80000000
+
+#define NODE_PLAIN_COLOR	0x00000000
+#define NODE_TEXTURE_MAP	0x00000001
+
+
+
+
+/*
+** Global values and struct defs for managing common resources
+**
+** Struct types with the word "Node" correspond to the contents of nodes
+**
+** Line comments are the 32-bit fields in which the corresponding member
+** exists when stored in a node in the DataBuffer
+**
+*/
+
+struct voxelNode{
+    uint meta;// 0
+    uint surface;// 1
+    uint light;// 2
+    uint overlap;// 3
+    uvec4 attributes;// 4-7
+    uint child[8];// 8-15
+};
+
+struct traceNode{
+    uint last;// 0
+    uint next;// 1
+    uint host;// 2
+    uint stateStackTop;// 3
+    uint stateStackCount;// 4
+    uint matStackTop;// 5
+    uint matStackCount;// 6
+    uint overlapHead;// 7
+    float timeLeft;// 8
+    uint state;	// 9
+    vec3 position;// 10-12
+    vec3 velocity;// 13-15
+};
+
+struct traceTaskNode{
+	uint next;// 0
+    uint parent;// 1
+    uint childCount;// 2
+    vec3 position;// 4-6
+    vec3 velocity;// 7-9
+    vec3 lightMask;// 10-12
+    vec3 lightSample;// 13-15
+};
+
+struct basicToolTaskNode{
+	uint next;// 0
+	uint parent;// 1
+	uint childCount;// 2
+	uint state; // 3
+    uint hostNode; // 4
+    vec3 position; // 5-7
+};
+
+struct block{
+    uint parent;
+    uint referenceCount;
+    uint type;
+    uint root;
+	mat4 transformation;
+};
+
+// Used for keeping track of task and heap resources
+uint heapIdxs_loc[2];
+uint heapCounts_loc[2];
+uint heapHeads_loc[2];
+
+uint taskQIdxs_loc[2];
+uint taskQCounts_loc[2];
+uint taskQHeads_loc[2];
+
+// Used to identify which thread is executing code
+uint id;
+
+// Used to identify which thread resources are being swapped with
+uint swapBit;
+
+
+
+/// Yggdrasil Buffer Definitions
+
+layout(std430, binding = 0) buffer DataBuffer { uint data[]; };
+
+layout(std430, binding = 1) buffer BlockBuffer { block data[]; };
+
+layout(std430, binding = 2) buffer HeapBuffer { uint data[ROOT_TASK]; };
+
+layout(std430, binding = 3) buffer TaskBuffer { uint data[ROOT_TASK+1]; };
+
+layout(std430, binding = 4) buffer ExchangeBuffer { uint data[]; };
+
+
+
+
+/// Direct Node Member Access Macros
+
+#define rawNode(node,idx)			DataBuffer.data[ node * NODE_SIZE + idx ]
+
+#define voxelMeta(node)				DataBuffer.data[ node * NODE_SIZE]
+#define voxelSurface(node)			DataBuffer.data[ node * NODE_SIZE + 1 ]
+#define voxelLight(node)			DataBuffer.data[ node * NODE_SIZE + 2 ]
+#define voxelOverlap(node)			DataBuffer.data[ node * NODE_SIZE + 3 ]
+#define voxelAttribute(node,idx)	DataBuffer.data[ node * NODE_SIZE + 4 + idx ]
+#define voxelChild(node,idx)		DataBuffer.data[ node * NODE_SIZE + 8 + idx ]
+
+#define traceLast(node)					DataBuffer.data[ node * NODE_SIZE ]
+#define traceNext(node)					DataBuffer.data[ node * NODE_SIZE + 1 ]
+#define traceHostNode(node)				DataBuffer.data[ node * NODE_SIZE + 2 ]
+#define traceStateStackTop(node)		DataBuffer.data[ node * NODE_SIZE + 3 ]
+#define traceStateStackCount(node)		DataBuffer.data[ node * NODE_SIZE + 4 ]
+#define traceMatStackTop(node)			DataBuffer.data[ node * NODE_SIZE + 5 ]
+#define traceMatStackCount(node)		DataBuffer.data[ node * NODE_SIZE + 6 ]
+#define traceOverlapHead(node)			DataBuffer.data[ node * NODE_SIZE + 7 ]
+#define traceTimeLeft(node)				DataBuffer.data[ node * NODE_SIZE + 8 ]
+#define traceState(node)				DataBuffer.data[ node * NODE_SIZE + 9 ]
+#define tracePosition(node,idx)			DataBuffer.data[ node * NODE_SIZE + 10 + idx ]
+#define traceVelocity(node,idx)			DataBuffer.data[ node * NODE_SIZE + 13 + idx ]
+
+
+#define taskNext(node)					DataBuffer.data[ node * NODE_SIZE ]
+#define taskParent(node)				DataBuffer.data[ node * NODE_SIZE + 1 ]
+#define taskChildCount(node)			DataBuffer.data[ node * NODE_SIZE + 2 ]
+
+#define traceTaskPosition(node,idx)		DataBuffer.data[ node * NODE_SIZE + 4 + idx ]
+#define traceTaskVelocity(node,idx)		DataBuffer.data[ node * NODE_SIZE + 7 + idx ]
+#define traceTaskLightMask(node,idx)	DataBuffer.data[ node * NODE_SIZE + 10 + idx ]
+#define traceTaskLightSample(node,idx)	DataBuffer.data[ node * NODE_SIZE + 13 + idx ]
+
+#define basicToolTaskState(node)		DataBuffer.data[ node * NODE_SIZE + 3 ]
+#define basicToolTaskHost(node)			DataBuffer.data[ node * NODE_SIZE + 4 ]
+#define basicToolPosition(node,idx)		DataBuffer.data[ node * NODE_SIZE + 5 + idx ]
+
+
+/// Node Loading/Storing
+
+
+// This loads a trace node from the data buffer to local registers
+traceNode traceLoad(in uint node){
+	traceNode result;
+    result.last =				traceLast(node);
+	result.next =				traceNext(node);
+    result.host =				traceHostNode(node);
+    result.stateStackTop =		traceStateStackHead(node);
+    result.stateStackCount =	traceStateStackCount(node);
+    result.matStackTop =		traceMatStackHead(node);
+    result.matStackCount =		traceMatStackCount(node);
+    result.overlapHead = 		traceOverlapHead(node);
+    result.timeLeft =			uintBitsToFloat(traceTimeLeft(node));
+    result.intPosition = 	uvec3(	traceIntegerPosition(node,0),
+									traceIntegerPosition(node,1),
+									traceIntegerPosition(node,2) );
+    result.position = 	vec3(	uintBitsToFloat(tracePosition(node,0)),
+								uintBitsToFloat(tracePosition(node,1)),
+								uintBitsToFloat(tracePosition(node,2)) );
+    result.velocity = 	vec3(	uintBitsToFloat(traceVelocity(node,0)),
+								uintBitsToFloat(traceVelocity(node,1)),
+								uintBitsToFloat(traceVelocity(node,2)) );
+    return result;
+}
+
+// This stores a trace node from local registers to the data buffer
+void traceStore(in uint node, in traceNode trace){
+	traceNext(node) =				trace.next;
+    traceHostNode(node) =			trace.host;
+    traceStateStackTop(node) =		trace.stateStackTop;
+    traceStateStackCount(node) =	trace.stateStackCount;
+    traceMatStackTop(node) =		trace.matStackTop;
+    traceMatStackCount(node) =		trace.matStackCount;
+    traceOverlapHead(node) =		trace.overlapHead;
+    traceTimeLeft(node) =			floatBitsToUint(trace.distanceLeft);
+    traceIntegerPosition(node,0) =	trace.intPosition.x;
+    traceIntegerPosition(node,1) =	trace.intPosition.y;
+    traceIntegerPosition(node,2) =	trace.intPosition.z;
+    tracePosition(node,0) =			floatBitsToUint(trace.position.x);
+    tracePosition(node,1) =			floatBitsToUint(trace.position.y);
+    tracePosition(node,2) =			floatBitsToUint(trace.position.z);
+    traceVelocity(node,0) =			floatBitsToUint(trace.velocity.x);
+    traceVelocity(node,1) =			floatBitsToUint(trace.velocity.y);
+    traceVelocity(node,2) =			floatBitsToUint(trace.velocity.z);
+}
+
+basicToolTaskNode basicToolTaskLoad(in uint node){
+	basicToolTaskNode result;
+	result.next			= taskNext(node);
+	result.parent		= taskParent(node);
+	result.childCount	= taskChildCount(node);
+	result.state		= basicToolTaskState(node);
+	result.hostNode		= basicToolTaskHostNode(node);
+	result.position = 	vec3(	uintBitsToFloat(basicToolPosition(node,0)),
+								uintBitsToFloat(basicToolPosition(node,1)),
+								uintBitsToFloat(basicToolPosition(node,2)) );
+}
+
+void basicToolTaskStore(in uint node, in basicToolTaskNode data){
+	taskNext(node)				= data.next;
+	taskParent(node)			= data.parent;
+	taskChildCount(node)		= data.childCount;
+	basicToolTaskState(node)	= data.state;
+	basicToolTaskHostNode(node)	= data.hostNode;
+	basicToolPosition(node,0) 	= floatBitsToUint(data.position.x);
+    basicToolPosition(node,1) 	= floatBitsToUint(data.position.y);
+    basicToolPosition(node,2) 	= floatBitsToUint(data.position.z);
+}
+
+
+
+/// Resource Value Indexing Functions
+
+/*
+** Returns the index in the heap buffer where the head of the thread's
+** idx-th heap list is stored.
+*/
+uint heapHeadIdx(in uint idx){
+	return heapIdxs_loc[idx]*RSRC_SIZE;
+}
+
+/*
+** Returns the index in the heap buffer where the head of the thread's
+** idx-th heap count is stored.
+*/
+uint heapCountIdx(in uint idx){
+	return heapIdxs_loc[idx]*RSRC_SIZE + 1;
+}
+
+/*
+** Returns the index in the heap buffer where the index of the global heap list
+** of the idx-th thread is stored
+*/
+uint heapIdxIdx(int uint idx){
+	return RSRC_IDX_OFFSET + idx;
+}
+
+/*
+** Returns the index in the task buffer where the head of the thread's
+** idx-th task list is stored.
+*/
+uint taskQHeadIdx(in uint idx){
+	return taskQIdxs_loc[idx]*RSRC_SIZE;
+}
+
+/*
+** Returns the index in the task buffer where the head of the thread's
+** idx-th task count is stored.
+*/
+uint taskQCountIdx(in uint idx){
+	return taskQIdxs_loc[idx]*RSRC_SIZE + 1;
+}
+
+/*
+** Returns the index in the task buffer where the index of the global task list
+** of the idx-th thread is stored
+*/
+uint taskQIdxIdx(int uint idx){
+	return RSRC_IDX_OFFSET + idx;
+}
+
+
+
+
+/// Memory Management Functions
+
+// Returns the index of a free node from the largest local memory list
+uint allocNode(){
+	// Get the index of the head of the bigger list and set result to its value
+	uint bigger = uint(lessThan(heapCounts_loc[0],heapCounts_loc[1]);
+	uint result = heapHeads_loc[bigger];
+	// If the result is non-null, its listed 'next' address is set as the head
+	if(result != NOT_THERE){
+		heapHeads_loc[bigger] = rawNode(result,0);
+		heapCounts_loc[bigger]--;
+	}
+	return result;
+}
+
+// Adds the node at the given address to the smallest local memory list
+void freeNode( in uint node ){
+	uint smaller = uint(greaterThan(heapCounts_loc[0],heapCounts_loc[1]);
+	rawNode(node,0) = heapHeads_loc[smaller];
+	heapHeads_loc[smaller] = node;
+	heapCounts_loc[smaller]++;
+}
+
+/*
+** Removes up to len nodes from the larger local memory list and adds it to
+** the front of the smaller local memory list.
+*/
+void levelHeaps( in uint len ){
+	// Find which lists are bigger than which
+	uint bigger = uint(lessThan(heapCounts_loc[0],heapCounts_loc[1]);
+	uint smaller = 1-bigger;
+	// Calculate the difference in size
+	uint diff = abs(heapCounts_loc[0]-heapCounts_loc[1]);
+	// Set an iterator to the head of the larger list
+	uint iter = heapHeads_loc[bigger];
+	uint holder;
+	// Traverse down the list diff-1 times
+	for(uint i = 0; i < len; i++){
+		if(i < diff - 1){
+			iter = rawNode(iter,0);
+		}
+	}
+	// Perform a swap between list heads only if there are nodes to be swapped
+	if(diff > 0){
+		holder = heapHeads_loc[bigger];
+		heapHeads_loc[bigger] = rawNode(iter,0);
+		rawNode(iter,0) = heapHeads_loc[smaller];
+        heapHeads_loc[smaller] = holder;
+		heapCounts_loc[smaller] += diff;
+		heapCounts_loc[bigger] += diff;
+	}
+}
+
+/*
+** Pushes the head and count of the given heap to their corresponding location
+** in the heap buffer.
+*/
+void pushHeap(in uint idx){
+	HeapBuffer.data[heapHeadIdx(idx)] = heapHeads_loc[idx];
+	HeapBuffer.data[heapCountIdx(idx)] = heapCounts_loc[idx];
+}
+
+/*
+** Pulls the head and count of the given heap to their corresponding location
+** in the heap buffer.
+*/
+void pullHeap(in uint idx){
+	heapHeads_loc[idx] = HeapBuffer.data[heapHeadIdx(idx)];
+	heapCounts_loc[idx] = HeapBuffer.data[heapCountIdx(idx)];
+}
+
+/*
+** Rotates the memory heaps for the thread, shuffling data in global memory
+** as well as swapping lists back and forth from global memory to local memory.
+*/
+void rotateHeaps(){
+	// Prep heap data in heap buffer for swapping
+	pushHeap(0);
+	pushHeap(1);
+
+	/*
+	** Calculate the bit that will be flipped to find this thread's swapping
+	** partner.
+	*/
+	uint swpIdx = id ^ swapBit;
+
+	// Swaps the index of our first local list with our partner's swap list
+    heapIdxs_loc[0] = atomicExchange(
+						HeapBuffer.data[heapIdxIdx(swpIdx)],
+						heapIdxs_loc[0]
+					);
+	// Swaps the index of our first local list with that of our global swap list
+	heapIdxs_loc[1] = atomicExchange(
+						HeapBuffer.data[heapIdxIdx(id)],
+						heapIdxs_loc[1]
+					);
+	// Swaps the order of our two local lists
+	uint temp = heapIdxs_loc[0];
+	heapIdxs_loc[0] = heapIdxs_loc[1];
+	heapIdxs_loc[1] = temp;
+
+	// Sets the swapBit for the next swap execution
+	swapBit = (swapBit >= THREAD_COUNT) ? 1 : (swapBit<<1);
+	// Pulls the heads and counts of the new local lists
+    pullHeap(0);
+    pullHeap(1);
+}
+
+
+
+
+/// Task Management Functions
+
+// Returns the index of a free node from the largest local task list
+uint grabTask(){
+	// Get the index of the head of the bigger list and set result to its value
+	uint bigger = uint(lessThan(taskQCounts_loc[0],taskQCounts_loc[1]);
+	uint result = taskQHeads_loc[bigger];
+	// If the result is non-null, its listed 'next' address is set as the head
+	if(result != NOT_THERE){
+		taskQHeads_loc[bigger] = taskNext(result,0);
+		taskQCounts_loc[bigger]--;
+	}
+	return result;
+}
+
+
+// Adds the node at the given address to the smallest local task list
+void postTask( in uint node ){
+	uint smaller = uint(greaterThan(taskQCounts_loc[0],taskQCounts_loc[1]);
+	taskNext(node,0) = taskQHeads_loc[smaller];
+	taskQHeads_loc[smaller] = node;
+	taskCounts_loc[smaller]++;
+}
+
+
+/*
+** Removes up to len nodes from the larger local task list and adds it to
+** the front of the smaller local task list.
+*/
+void levelTasks( in uint len ){
+	// Find which lists are bigger than which
+	uint bigger = uint(lessThan(taskQCounts_loc[0],taskQCounts_loc[1]);
+	uint smaller = 1-bigger;
+	// Calculate the difference in size
+	uint diff = abs(taskQCounts_loc[0]-taskQCounts_loc[1]);
+	// Set an iterator to the head of the larger list
+	uint iter = taskQHeads_loc[bigger];
+	uint holder;
+	// Traverse down the list diff-1 times
+	for(uint i = 0; i < len; i++){
+		if(i < diff - 1){
+			iter = taskNext(iter);
+		}
+	}
+	// Perform a swap between list heads only if there are nodes to be swapped
+	if(diff > 0){
+		holder = taskQHeads_loc[bigger];
+		taskQHeads_loc[bigger] = taskNext(iter);
+		taskNext(iter) = taskQHeads_loc[smaller];
+        taskQHeads_loc[smaller] = holder;
+		taskQCounts_loc[smaller] += diff;
+		taskQCounts_loc[bigger] += diff;
+	}
+}
+
+
+
+/*
+** Pushes the head and count of the given heap to their corresponding location
+** in the task buffer.
+*/
+void pushTaskQ(in uint idx){
+	TaskBuffer.data[taskQHeadIdx(idx)] = taskQHeads_loc[idx];
+	TaskBuffer.data[taskQCountIdx(idx)] = taskQCounts_loc[idx];
+}
+
+/*
+** Pulls the head and count of the given heap to their corresponding location
+** in the task buffer.
+*/
+void pullTaskQ(in uint idx){
+	taskQHeads_loc[idx] = TaskBuffer.data[taskQHeadIdx(idx)];
+	taskQCounts_loc[idx] = TaskBuffer.data[taskQCountIdx(idx)];
+}
+
+/*
+** Rotates the memory heaps for the thread, shuffling data in global memory
+** as well as swapping lists back and forth from global memory to local memory.
+*/
+void rotateTaskQs(){
+
+	// Prep task data in the task buffer for swapping
+	pushTaskQ(0);
+	pushTaskQ(1);
+
+	/*
+	** Calculate the bit that will be flipped to find this thread's swapping
+	** partner.
+	*/
+	uint swpIdx = id ^ swapBit;
+
+	// Swaps the index of our first local list with our partner's swap list
+    taskQIdxs_loc[0] = atomicExchange(
+						TaskBuffer.data[taskQIdxIdx(swpIdx)],
+						taskQIdxs_loc[0]
+					);
+	// Swaps the index of our first local list with that of our global swap list
+	taskQIdxs_loc[1] = atomicExchange(
+						TaskBuffer.data[taskQIdxIdx(id)],
+						taskQIdxs_loc[1]
+					);
+	// Swaps the order of our two local lists
+	uint temp = taskQIdxs_loc[0];
+	taskQIdxs_loc[0] = taskQIdxs_loc[1];
+	taskQIdxs_loc[1] = temp;
+
+	// Sets the swapBit for the next swap execution
+	swapBit = (swapBit >= THREAD_COUNT) ? 1 : (swapBit<<1);
+	// Pulls the heads and counts of the new local lists
+    pullTaskQ(0);
+    pullTaskQ(1);
+}
+
+
+
+
+/// Unsigned Int Stack
+
+/*
+** Given the head node of the stack and the number of elements currently in
+** the stack, it allocates a new node if necessary and stores val in the head
+** node.
+*/
+void pushStackUint(inout uint top, inout uint count, in uint val){
+	// This finds where in a head node's data field the value should be stored
+	uint modPt = count % (NODE_SIZE - 1);
+	uint result = top;
+	// If the count rolls into a new node, it is allocated and made the head
+    if( modPt == 0 ){
+		result = allocNode();
+		rawNode(result,0) = top;
+		top = result;
+    }
+    // Stores the data
+    DataBuffer[NODE_SIZE*top + 1 + modPt] = val;
+    count++;
+}
+
+
+/*
+** Given the head node of the stack and the number of elements currently in
+** the stack, removes the top value, changing count and top if necessary and
+** freeing nodes as necessary.
+*/
+void popStackUint(inout uint top, inout uint count){
+	// This finds where in a head node's data field the value should be stored
+	uint modPt = count % (NODE_SIZE - 1);
+	uint result = top;
+	// If the count rolls out of the current head node, it is made the new head
+    if( modPt == 1 ){
+		result = rawNode(top,0);
+		freeNode(top);
+		top = result;
+    }
+    count--;
+}
+
+// So we can read and write to the stack top cleanly
+#define stackTopUint(top,count) DataBuffer[ NODE_SIZE * top + 1 + ( count % ( NODE_SIZE - 1 ) ) ]
+
+// Traverses down the linked list making up the stack, freeing nodes as it goes
+void destroyStackUint(inout uint top, inout uint count){
+	uint iter = top;
+	uint next;
+	while(iter != NOT_THERE){
+		next = rawNode(iter,0);
+		freeNode(iter);
+		iter = next;
+	}
+	top = NOT_THERE;
+	count = 0;
+}
+
+
+
+/// Uvec3 Stack
+
+/*
+** Given the head node of the stack and the number of elements currently in
+** the stack, it allocates a new node if necessary and stores val in the head
+** node.
+*/
+void pushStackUvec3(inout uint top, inout uint count, in uvec3 val){
+	// Find which triplet of fields in a head node val should be stored
+	// (keep in mind, 16-1=15, which is divisible by 3), so no space is wasted
+	uint modPt = (count * 3) % (NODE_SIZE - 1);
+	uint result = top;
+	// Allocate a new node and make it the head of the list, if necessary
+    if( modPt == 0 ){
+		result = allocNode();
+		DataBuffer.data[NODE_SIZE*result] = top;
+		top = result;
+    }
+    // load in the new data
+    DataBuffer[NODE_SIZE*top + 1 + modPt] = val.x;
+    DataBuffer[NODE_SIZE*top + 1 + 1 + modPt] = val.y;
+    DataBuffer[NODE_SIZE*top + 1 + 2 + modPt] = val.z;
+    count++;
+}
+
+/*
+** Given the head node of the stack and the number of elements currently in
+** the stack, removes the top value, changing count and top if necessary and
+** freeing nodes as necessary.
+*/
+void popStackUvec3(inout uint top, inout uint count){
+	uint modPt = (count * 3) % (NODE_SIZE - 1);
+	uint result = top;
+    if( modPt == 3 ){
+		result = DataBuffer.data[NODE_SIZE*top];
+		freeNode(top);
+		top = result;
+    }
+    count--;
+}
+
+// Returns the uvec3 at the top of the stack
+uvec3 readTopUvec3(inout uint top, inout uint count){
+	uint idx = NODE_SIZE * top + 1 + ( (count * 3) % ( NODE_SIZE - 1 ) );
+	return uvec3( 	DataBuffer[ idx ],
+					DataBuffer[ idx + 1 ],
+					DataBuffer[ idx + 2 ]
+				);
+}
+
+// Overwrites the given uvec3 to the top of the stack
+void writeTopUvec3(inout uint top, inout uint count, uvec3 data){
+	uint idx = NODE_SIZE * top + 1 + ( (count * 3) % ( NODE_SIZE - 1 ) );
+	DataBuffer[ idx ] = data.x;
+	DataBuffer[ idx + 1 ] = data.y;
+	DataBuffer[ idx + 2 ] = data.z;
+}
+
+// Traverses down the linked list making up the stack, freeing nodes as it goes
+void destroyStackUvec3(inout uint top, inout uint count){
+	uint iter = top;
+	uint next;
+	while(iter != NOT_THERE){
+		next = DataBuffer.data[NODE_SIZE*iter];
+		freeNode(iter);
+		iter = next;
+	}
+	top = NOT_THERE;
+	count = 0;
+}
+
+
+
+/// Voxel State Traversal Functions
+
+
+
+/*
+** Overwrites the given voxel address with the address of its child at the given
+** relative position, unless that child is not in the Voxel State. Likewise, the
+** relative position is changed to match the space of the child voxel, should
+** the child actually exist in the Voxel State. Additionally, this function
+** returns true if a new child was found and false if no child was found.
+*/
+bool childSeek(	inout uint voxel, inout vec3 position ){
+	uint idx = 0;
+	vec3 posStep = step(position,vec3(0.0,0.0,0.0));
+	idx = uint(dot(posStep,vec3(1.0,2.0,4.0)));
+	uint addr = voxelChild(voxel,idx);
+	if(addr | NOT_THERE != NOT_THERE){
+		voxel = addr;
+		position = mod(position,1.0) * 2.0;
+		return true;
+	}
+    return false;
+}
+
+/// Program resource initialization/cleanup
+
+
+void initYggCompute(){
+	// Get our thread id
+	id = gl_GlobalInvocationID();
+
+	// Remove any
+	for(uint i = 0; i < RSRC_PER; i++){
+		TaskBuffer.data[taskHeadIdx(id * RSRC_PER + i)] = NOT_THERE;
+		TaskBuffer.data[taskCountIdx(id * RSRC_PER + i)] = 0;
+	}
+
+	/*
+	** Assign the first and second heap and task list of the id-th available
+	** triplet of heap and task lists.
+	*/
+	heapIdxs_loc[0] = id * RSRC_PER;
+	heapIdxs_loc[1] = id * RSRC_PER + RSRC_SIZE;
+	taskQIdxs_loc[0] = id * RSRC_PER;
+	taskQIdxs_loc[1] = id * RSRC_PER + RSRC_SIZE;
+
+	/*
+	** Assign the third heap and task list of the id-th available triplet of
+	** heap and task lists to be available in the id-th element of the
+	** swapping section of their respective buffer .
+	*/
+	HeapBuffer.data[taskQIdxIdx(id)] = id * RSRC_PER + 2;
+	TaskBuffer.data[taskQIdxIdx(id)] = id * RSRC_PER + 2;
+
+	// Get the heads of each of our non-swapping lists
+	pullHeap(0);
+	pullHeap(1);
+	pullTaskQ(0);
+	pullTaskQ(1);
+	// Set the swapMask to 1 so the first set of swaps will have valid pairings
+	swapMask = 1;
+}
+
+
+void exitYggCompute(){
+	/*
+	** Push the thread's non-swapping heap memory to the heap buffer for
+	** future use.
+	*/
+	pushHeap(0);
+	pushHeap(1);
+	/*
+	** The task buffer's data should not need to be pushed back, as they should
+	** all be empty. If this is not the case, then this is VERY BAD.
+	*/
+}
+
+
+

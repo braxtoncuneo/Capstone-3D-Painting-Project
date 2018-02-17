@@ -1,0 +1,117 @@
+//These should be set by the interchange to dimensions appropriate to the GPU
+#define X_SIZE 64
+
+// This should be replaced with the contents of CommonCode.comp
+#include "CommonCode.comp"
+
+uniform uint rotateNo;
+uniform uint levelsPerRotate;
+
+uniform uint	SelectedBlock;
+uniform uint	FocusBlock;
+uniform mat4	StartTransform;
+mat4	StartInverse;
+uniform mat4	EndTransform;
+mat4	EndInverse;
+uniform float	StartWeight;
+uniform float	EndWeight;
+uniform uint	DepthLimit
+
+uniform vec4	Color1;
+uniform vec4	Color2;
+uniform vec4	Sliders;
+
+
+
+void traceCheck(inout float time, inout vec3 position, inout vec3 forward){
+	vec3 start = StartInverse * position;
+	vec3 end   = EndInverse * position;
+	vec3 velocity = (end-start);
+	vec3 direction = normalize(velocity);
+	vec3 startProject = dot(direction,start);
+	time = (0.0 - startProject) / (endProject-startProject);
+	position = start + velocity * time;
+	forward = direction;
+}
+
+bool Deeper(in bool contains, in uint depth, in vec3 position, in vec3 forward){
+
+	/// Inject the "Deeper" code here. *Super Important*
+
+}
+
+void Assign(inout vec4 color, inout vec4 optics){
+
+	/// Inject the "Assign" code here. *Super Important*
+
+}
+
+
+void downStroke(in uint task, in basicToolTaskNode data){
+
+	uint childTasks[8];
+	uint idx = 0;
+	basicToolTaskNode childData;
+	childData.next = NOT_THERE;
+	childData.parent = task;
+	childData.childCount = 0;
+	for(float i = -0.5; i <= 0.5; i+=1.0){
+		for(float j = -0.5; j <= 0.5; j+=1.0){
+			for(float k = -0.5; k <= 0.5; k+=1.0){
+
+				idx++;
+			}
+		}
+	}
+
+}
+
+
+layout(local_size_x = X_SIZE) in;
+void main(){
+
+	uint root_task = NOT_THERE;
+	uint task = NOT_THERE;
+	basicToolTaskNode taskData;
+
+    initYggCompute();
+	if(id == 0){
+		TaskBuffer.data[ROOT_TASK] = grabTask(); // Establish the root task
+		root_task = TaskBuffer.data[ROOT_TASK];
+		traceTaskParent(root_task) = NOT_THERE;
+		traceTaskChildCount(root_task) = 0;
+	}
+	root_task = TaskBuffer.data[ROOT_TASK];
+	memoryBarrierBuffer();
+
+	/// Keep running until the root task is out of children
+	while( traceTaskChildCount(ROOT_TASK) != 0 ){
+
+		/// Grab a new task from the task queue, if possible
+		toolTask = grabTask();
+		if(traceTask != NOT_THERE){
+			taskData = basicToolTaskLoad(traceTask);
+            if(taskData.state == 0){
+
+            }
+            else{
+
+            }
+		}
+
+	}
+
+    exitYggCompute();
+
+}
+
+
+
+
+
+
+
+
+
+
+
