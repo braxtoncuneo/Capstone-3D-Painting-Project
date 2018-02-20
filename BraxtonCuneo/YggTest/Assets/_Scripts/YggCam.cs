@@ -18,9 +18,6 @@ public class YggCam : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 		Tracer = ygg.rayTracer;
-		Rect r = Camera.current.pixelRect;
-		pixWidth = unchecked((uint) r.height);
-		pixWidth = unchecked((uint) r.width);
 		viewMatrix = Matrix4x4.LookAt (new Vector3 (-2.5f, -2.5f, -2.5f), new Vector3 (0.0f, 0.0f, 0.0f), new Vector3 (0.0f, 1.0f, 0.0f));
 		depthLimit = (uint) 5;
 		alphaThresh = 0.5f;
@@ -29,7 +26,7 @@ public class YggCam : MonoBehaviour {
 		horizonMat.Add (1);
 		horizonMat.Add (1);
 		horizonMat.Add (1);
-		outputImage = new RenderTexture (new RenderTextureDescriptor ((int)r.width,(int)r.height));
+		outputImage = new RenderTexture (new RenderTextureDescriptor ((int)64,(int)64));
 	}
 	
 	// Update is called once per frame

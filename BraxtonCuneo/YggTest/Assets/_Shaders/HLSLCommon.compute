@@ -118,19 +118,19 @@ static uint swapBit;
 
 /// Yggdrasil Buffer Definitions
 
-RWBuffer<uint> DataBuffer : register (u0);
+RWStructuredBuffer<uint> DataBuffer : register (u0);
 //layout(std430, binding = 0) buffer DataBuffer { uint data[]; };
 
 StructuredBuffer<block> BlockBuffer : register (t0);
 //layout(std430, binding = 1) buffer BlockBuffer { block data[]; };
 
-RWBuffer<uint> HeapBuffer : register (u2);
+RWStructuredBuffer<uint> HeapBuffer : register (u2);
 //layout(std430, binding = 2) buffer HeapBuffer { uint data[ROOT_TASK]; };
 
-RWBuffer<uint> TaskBuffer : register (u3);
+RWStructuredBuffer<uint> TaskBuffer : register (u3);
 //layout(std430, binding = 3) buffer TaskBuffer { uint data[ROOT_TASK+1]; };
 
-RWBuffer<uint> ExchangeBuffer : register (u4);
+RWStructuredBuffer<uint> ExchangeBuffer : register (u4);
 //layout(std430, binding = 4) buffer ExchangeBuffer { uint data[]; };
 
 
@@ -140,7 +140,7 @@ RWBuffer<uint> ExchangeBuffer : register (u4);
 
 #define rawNode(node,idx)			DataBuffer[ node * NODE_SIZE + idx ]
 
-#define voxelMeta(node)				DataBuffer[ node * NODE_SIZE]
+#define voxelMeta(node)				DataBuffer[ node * NODE_SIZE ]
 #define voxelSurface(node)			DataBuffer[ node * NODE_SIZE + 1 ]
 #define voxelLight(node)			DataBuffer[ node * NODE_SIZE + 2 ]
 #define voxelOverlap(node)			DataBuffer[ node * NODE_SIZE + 3 ]
@@ -423,8 +423,11 @@ inline uint allocNode(){
 	if(result != NOT_THERE){
 		heapHeads_loc[bigger] = rawNode(result,0);
 		heapCounts_loc[bigger]--;
+		return result;
 	}
-	return result;
+	else {
+		return NOT_THERE;
+	}
 }
 
 // Adds the node at the given address to the smallest local memory list

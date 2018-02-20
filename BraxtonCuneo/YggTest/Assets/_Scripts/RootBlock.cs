@@ -11,8 +11,8 @@ public class RootBlock : MonoBehaviour {
 	Mesh getBoxMesh()
 	{
 		int ptsPerCube = 26;
-		int edgeOffset = 8;
-		int faceOffset = 20;
+		//int edgeOffset = 8;
+		//int faceOffset = 20;
 		Mesh result = new Mesh();
 		result.vertices = new Vector3[ptsPerCube];
 		result.uv = new Vector2[ptsPerCube];

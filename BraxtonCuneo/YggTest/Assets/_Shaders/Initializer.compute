@@ -40,16 +40,22 @@ static const uint dataBufferSize = asuint(_dataBufferSize);
 void main (uint3 _id : SV_DispatchThreadID){
 	id = _id.x;
 
-	uint nodesPer = (dataBufferSize / ( THREAD_COUNT * RSRC_PER ));
+	uint nodesPer = ( dataBufferSize / ( THREAD_COUNT * RSRC_PER * NODE_SIZE ) );
 	uint start;
 	uint end;
-	uint idx;
 	for(uint i = 0; i < RSRC_PER; i++){
 		// Connect the links making up the i-th heap of the thread
 		start =  nodesPer * (id * RSRC_PER + i);
 		end = start + nodesPer;
-		for(idx = start; idx < (end - 1); idx++){
+		
+		uint idx = start;
+		while( idx < (end-1) ){
 			rawNode(idx,0) = idx+1;
+			rawNode(idx,1) = id;
+			rawNode(idx,2) = start;
+			rawNode(idx,3) = end-1;
+			rawNode(idx,4) = end-1-idx;
+			idx++;
 		}
 		rawNode(idx,0) = NOT_THERE;
 
@@ -79,7 +85,5 @@ void main (uint3 _id : SV_DispatchThreadID){
 		TaskBuffer[taskQIdxIdx(id)] = id * RSRC_PER + 2;
 	}
 }
-
-
 
 
