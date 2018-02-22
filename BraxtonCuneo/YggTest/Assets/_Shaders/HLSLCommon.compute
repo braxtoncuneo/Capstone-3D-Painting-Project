@@ -121,7 +121,7 @@ static uint swapBit;
 RWStructuredBuffer<uint> DataBuffer : register (u0);
 //layout(std430, binding = 0) buffer DataBuffer { uint data[]; };
 
-StructuredBuffer<block> BlockBuffer : register (t0);
+RWStructuredBuffer<block> BlockBuffer : register (u1);
 //layout(std430, binding = 1) buffer BlockBuffer { block data[]; };
 
 RWStructuredBuffer<uint> HeapBuffer : register (u2);
@@ -423,11 +423,8 @@ inline uint allocNode(){
 	if(result != NOT_THERE){
 		heapHeads_loc[bigger] = rawNode(result,0);
 		heapCounts_loc[bigger]--;
-		return result;
 	}
-	else {
-		return NOT_THERE;
-	}
+	return result;
 }
 
 // Adds the node at the given address to the smallest local memory list

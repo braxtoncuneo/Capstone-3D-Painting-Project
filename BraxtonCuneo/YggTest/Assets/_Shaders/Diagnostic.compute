@@ -34,6 +34,7 @@
 #define TOUCHED						0x80000000
 
 
+
 int _loopNo;
 static const uint loopNo = asuint(_loopNo);
 
@@ -55,25 +56,44 @@ void main(uint3 _id : SV_DispatchThreadID) {
 	uint status = TOUCHED;
 
 	count = 0;
-	nowNode = allocNode();
-	status = 2;
-	while ( (nowNode != NOT_THERE) && (count < loopNo) ){
-		if (nowNode == NOT_THERE) {
-			status = 1;
-		}
-		
-		rawNode(nowNode, 0) = lastNode;
-		rawNode(nowNode, 1) = id;
-		rawNode(nowNode, 2) = 1;
-		lastNode = nowNode;
-		nowNode = allocNode();
-		count++;
 
+	for (uint i = 0; i < 4; i++) {
+		lastNode = NOT_THERE; 
+		nowNode = allocNode();
+		if (nowNode != NOT_THERE) {
+			rawNode(nowNode, 0) = lastNode;
+		}
+		status = 0;
+
+		while (nowNode != NOT_THERE)
+		{
+			if (id == 0) {
+				ExchangeBuffer[count] = nowNode;
+			}
+			lastNode = nowNode;
+			nowNode = allocNode();
+			if (nowNode != NOT_THERE) {
+				rawNode(nowNode, 0) = lastNode;
+			}
+			count++;
+		}
+		nowNode = lastNode;
+		while (nowNode != NOT_THERE)
+		{
+			if (id == 0) {
+				ExchangeBuffer[count] = nowNode;
+			}
+			nextNode = rawNode(nowNode, 0);
+			freeNode(nowNode);
+			nowNode = nextNode;
+			count++;
+		}
+		status = count;
 	}
-	status = count;
-	ExchangeBuffer[id] = status;
+	//ExchangeBuffer[id] = status;
 
 	exitYggCompute();
 
 }
+
 

@@ -1,13 +1,13 @@
-﻿<Properties StartupItem="Assembly-CSharp.csproj">
-  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="Unity.Instance.Unity Editor" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\_Scripts\YggManager.cs">
+﻿<Properties StartupItem="YggTest.CSharp.csproj">
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\_Shaders\Diagnostic.compute">
     <Files>
       <File FileName="Assets\_Shaders\MemoryManager.compute" Line="1" Column="1" />
       <File FileName="Assets\_Shaders\HLSLTracer.compute" Line="1" Column="1" />
       <File FileName="Assets\_Shaders\HLSLCommon.compute" Line="1" Column="1" />
       <File FileName="Assets\_Shaders\Initializer.compute" Line="1" Column="1" />
       <File FileName="Assets\_Shaders\Diagnostic.compute" Line="1" Column="1" />
-      <File FileName="Assets\_Scripts\YggManager.cs" Line="71" Column="30" />
+      <File FileName="Assets\_Scripts\YggManager.cs" Line="1" Column="1" />
       <File FileName="Assets\_Scripts\YggCam.cs" Line="1" Column="1" />
     </Files>
   </MonoDevelop.Ide.Workbench>

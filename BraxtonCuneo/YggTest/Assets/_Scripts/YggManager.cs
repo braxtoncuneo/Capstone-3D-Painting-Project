@@ -65,7 +65,7 @@ public class YggManager : MonoBehaviour
 		totalGPURAM = SystemInfo.graphicsMemorySize;
         dataSat = 0.01f;
 		threadCount = 4096;
-		groupSize = 512;
+		groupSize = 64;
 		extraneousNodes = 0;
 		demandedNodes = 0;
 		dataBufferUsage = 0;
@@ -87,7 +87,7 @@ public class YggManager : MonoBehaviour
     }
 
 	void Update(){
-        Debug.Log("Frame");
+        //Debug.Log("Frame");
     }
 		
 
@@ -114,7 +114,7 @@ public class YggManager : MonoBehaviour
     void run(ComputeShader prog)
     {
         int k = prog.FindKernel("main");
-        prog.Dispatch(k, threadCount, 1, 1);
+        prog.Dispatch(k, threadCount/groupSize, 1, 1);
     }
 
 
@@ -193,11 +193,8 @@ public class YggManager : MonoBehaviour
         DiagExg.GetData(state);
         for ( int i = 0; i < lim; i++)
         {
-            if (state[i] != 0x80000000)
-            {
-                Debug.Log(state[i]);
-                result = false;
-            }
+            Debug.Log(state[i]);
+            result = false;
         }
         return result;
     }
@@ -205,8 +202,10 @@ public class YggManager : MonoBehaviour
     void init(){
 		loadCommon (initializer);
         initializer.SetInt("_dataBufferSize", dataBufferSize());
-        float start = Time.unscaledTime;
+        float start = Time.realtimeSinceStartup;
         run(initializer);
+        float end = Time.realtimeSinceStartup;
+        Debug.Log("Initialization took " + (end - start) + " seconds");
         #if DBUG
         if (checkInitData() && checkInitHeap() && checkInitTask())
         {
@@ -217,17 +216,18 @@ public class YggManager : MonoBehaviour
             Debug.Log("Initialization checks failed");
         }
         #endif
-        float end = Time.unscaledTime;
-        Debug.Log("Initialization took " + (end - start) + " seconds");
     }
 
 	void diagnose(){
 		ComputeBuffer DiagExg = new ComputeBuffer (threadCount, sizeof(uint));
 		loadCommon (diagnostic,DiagExg);
-        diagnostic.SetInt("_loopNo",0x00080000);
+        diagnostic.SetInt("_loopNo",0x00000800);
+        float start = Time.realtimeSinceStartup;
         run(diagnostic);
         checkDiagnostic(DiagExg);
-		DiagExg.Dispose();
+        float end = Time.realtimeSinceStartup;
+        Debug.Log("Diagnostics took " + (end - start) + " seconds");
+        DiagExg.Dispose();
 	}
 
 }
