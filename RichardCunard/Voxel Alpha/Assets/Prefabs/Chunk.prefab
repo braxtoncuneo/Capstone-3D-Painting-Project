@@ -109,5 +109,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 03cdc5f316eecca43ae033cc10a44d49, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  worldGO: {fileID: 0}
   chunkSize: 16
+  worldReference: {fileID: 0}
+  chunkX: 0
+  chunkY: 0
+  chunkZ: 0
+  scale: 0.01
+  update: 0

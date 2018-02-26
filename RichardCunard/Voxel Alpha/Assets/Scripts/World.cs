@@ -12,6 +12,7 @@ public class World : MonoBehaviour
     public GameObject chunk;
     public Chunk[,,] chunks;
     public int chunkSize = 16;
+    public float scale;
 
     void Start ()
     {
@@ -72,7 +73,7 @@ public class World : MonoBehaviour
         for (int y = 0; y < chunks.GetLength(1); y++)
         {
             //instantiates chunks as game objects for easy spawning and despawning
-            GameObject newChunk = Instantiate(chunk, new Vector3(x * chunkSize - 0.5f, y * chunkSize + 0.5f, z * chunkSize - 0.5f), new Quaternion(0, 0, 0, 0)) as GameObject; 
+            GameObject newChunk = Instantiate(chunk, new Vector3(scale * x * chunkSize - 0.5f * scale, scale * y * chunkSize + 0.5f * scale, scale * z * chunkSize - 0.5f * scale), new Quaternion(0, 0, 0, 0)) as GameObject; 
             chunks[x, y, z] = newChunk.GetComponent("Chunk") as Chunk;
             chunks[x, y, z].worldReference = gameObject;
             chunks[x, y, z].chunkSize = chunkSize;
