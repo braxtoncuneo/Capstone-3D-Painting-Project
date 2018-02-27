@@ -34,7 +34,7 @@ static const uint dataBufferSize = asuint(_dataBufferSize);
 /*
 ** The initializer takes the entire contents of the data buffer and distributes
 ** the nodes over the heaps in the heap buffer. Additionally, this program
-** clears the task buffer.
+** clears the task buffer. 
 */
 [numthreads(GROUP_SIZE,1,1)]
 void main (uint3 _id : SV_DispatchThreadID){
@@ -58,6 +58,7 @@ void main (uint3 _id : SV_DispatchThreadID){
 			idx++;
 		}
 		rawNode(idx,0) = NOT_THERE;
+		rawNode(idx, 1) = id;
 
 		// Assign the head of the linked list to the i-th heap head element
 		HeapBuffer[rsrcHeadIdx(id * RSRC_PER + i)] = start;

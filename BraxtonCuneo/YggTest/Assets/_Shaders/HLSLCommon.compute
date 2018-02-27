@@ -1,5 +1,8 @@
 ﻿
+#pragma target 5.0
+
 #define CONVERT
+
 
 #ifdef CONVERT
 	#define vec2	float2
@@ -34,7 +37,7 @@
 #define NODE_PLAIN_COLOR	0x00000000
 #define NODE_TEXTURE_MAP	0x00000001
 
-
+#define maybeGlobal	globallycoherent
 
 
 
@@ -118,19 +121,19 @@ static uint swapBit;
 
 /// Yggdrasil Buffer Definitions
 
-RWStructuredBuffer<uint> DataBuffer : register (u0);
+maybeGlobal RWStructuredBuffer<uint> DataBuffer : register (u0);
 //layout(std430, binding = 0) buffer DataBuffer { uint data[]; };
 
-RWStructuredBuffer<block> BlockBuffer : register (u1);
+maybeGlobal RWStructuredBuffer<block> BlockBuffer : register (u1);
 //layout(std430, binding = 1) buffer BlockBuffer { block data[]; };
 
-RWStructuredBuffer<uint> HeapBuffer : register (u2);
+maybeGlobal RWStructuredBuffer<uint> HeapBuffer : register (u2);
 //layout(std430, binding = 2) buffer HeapBuffer { uint data[ROOT_TASK]; };
 
-RWStructuredBuffer<uint> TaskBuffer : register (u3);
+maybeGlobal RWStructuredBuffer<uint> TaskBuffer : register (u3);
 //layout(std430, binding = 3) buffer TaskBuffer { uint data[ROOT_TASK+1]; };
 
-RWStructuredBuffer<uint> ExchangeBuffer : register (u4);
+maybeGlobal RWStructuredBuffer<uint> ExchangeBuffer : register (u4);
 //layout(std430, binding = 4) buffer ExchangeBuffer { uint data[]; };
 
 
@@ -357,6 +360,7 @@ inline uint rsrcHeadIdx(in uint idx){
 	return RSRC_SIZE * idx;
 }
 
+
 inline uint rsrcCountIdx(in uint idx){
 	return RSRC_SIZE * idx + 1;
 }
@@ -420,7 +424,7 @@ inline uint allocNode(){
 	uint bigger = uint(heapCounts_loc[0]<heapCounts_loc[1]);
 	uint result = heapHeads_loc[bigger];
 	// If the result is non-null, its listed 'next' address is set as the head
-	if(result != NOT_THERE){
+	if( ( result & NOT_THERE )  != NOT_THERE ){
 		heapHeads_loc[bigger] = rawNode(result,0);
 		heapCounts_loc[bigger]--;
 	}
@@ -430,9 +434,11 @@ inline uint allocNode(){
 // Adds the node at the given address to the smallest local memory list
 inline void freeNode( in uint node ){
 	uint smaller = uint(heapCounts_loc[0]>heapCounts_loc[1]);
-	rawNode(node,0) = heapHeads_loc[smaller];
-	heapHeads_loc[smaller] = node;
-	heapCounts_loc[smaller]++;
+	if ( ( node & NOT_THERE ) != NOT_THERE ) {
+		rawNode(node, 0) = heapHeads_loc[smaller];
+		heapHeads_loc[smaller] = node;
+		heapCounts_loc[smaller]++;
+	}
 }
 
 /*
@@ -470,8 +476,22 @@ inline void levelHeaps( in uint len ){
 ** in the heap buffer.
 */
 inline void pushHeap(in uint idx){
+	
 	HeapBuffer[heapHeadIdx(idx)] = heapHeads_loc[idx];
 	HeapBuffer[heapCountIdx(idx)] = heapCounts_loc[idx];
+	
+	/*
+	InterlockedExchange(
+		HeapBuffer[heapHeadIdx(idx)],
+		heapHeads_loc[idx],
+		heapHeads_loc[idx]
+	);
+	InterlockedExchange(
+		HeapBuffer[heapCountIdx(idx)],
+		heapCounts_loc[idx],
+		heapCounts_loc[idx]
+	);
+	*/
 }
 
 /*
@@ -479,47 +499,63 @@ inline void pushHeap(in uint idx){
 ** in the heap buffer.
 */
 inline void pullHeap(in uint idx){
+	
 	heapHeads_loc[idx] = HeapBuffer[heapHeadIdx(idx)];
 	heapCounts_loc[idx] = HeapBuffer[heapCountIdx(idx)];
+	
+	/*
+	InterlockedExchange(
+		HeapBuffer[heapHeadIdx(idx)],
+		heapHeads_loc[idx],
+		heapHeads_loc[idx]
+	);
+	InterlockedExchange(
+		HeapBuffer[heapCountIdx(idx)],
+		heapCounts_loc[idx],
+		heapCounts_loc[idx]
+	);
+	*/
 }
+
 
 /*
 ** Rotates the memory heaps for the thread, shuffling data in global memory
 ** as well as swapping lists back and forth from global memory to local memory.
 */
-inline void rotateHeaps(){
+inline void rotateHeaps() {
 	// Prep heap data in heap buffer for swapping
-	pushHeap(0);
-	pushHeap(1);
+	//pushHeap(0);
+	HeapBuffer[RSRC_SIZE * heapIdxs_loc[0]] = heapHeads_loc[0];
+	HeapBuffer[RSRC_SIZE * heapIdxs_loc[0] + 1] = heapCounts_loc[0];
 
 	/*
 	** Calculate the bit that will be flipped to find this thread's swapping
 	** partner.
 	*/
 	uint swpIdx = id ^ swapBit;
+	uint swapy = 0;
+	uint swapo = NOT_THERE;
 
 	// Swaps the index of our first local list with our partner's swap list
-     InterlockedExchange(
-						HeapBuffer[heapIdxIdx(swpIdx)],
-						heapIdxs_loc[0],
-						heapIdxs_loc[0]
-					);
-	// Swaps the index of our first local list with that of our global swap list
-	InterlockedExchange(
-						HeapBuffer[heapIdxIdx(id)],
-						heapIdxs_loc[1],
-						heapIdxs_loc[1]
-					);
-	// Swaps the order of our two local lists
-	uint temp = heapIdxs_loc[0];
-	heapIdxs_loc[0] = heapIdxs_loc[1];
-	heapIdxs_loc[1] = temp;
+	DeviceMemoryBarrier();
+	if (id < swpIdx) {
+		InterlockedExchange(
+			HeapBuffer[RSRC_IDX_OFFSET + swpIdx],
+			heapIdxs_loc[0],
+			heapIdxs_loc[0]
+		);
+	}
+	DeviceMemoryBarrier();
 
 	// Sets the swapBit for the next swap execution
-	swapBit = (swapBit >= THREAD_COUNT) ? 1 : (swapBit<<1);
+	swapBit = swapBit << 1;
+	swapBit = (swapBit >= THREAD_COUNT) ? 1 : swapBit;
 	// Pulls the heads and counts of the new local lists
-    pullHeap(0);
-    pullHeap(1);
+
+    //pullHeap(0);
+	heapHeads_loc[0] = HeapBuffer[RSRC_SIZE * heapIdxs_loc[0] ];
+	heapCounts_loc[0] = HeapBuffer[RSRC_SIZE * heapIdxs_loc[0] + 1];
+
 }
 
 
@@ -634,7 +670,8 @@ inline void rotateTaskQs(){
 	taskQIdxs_loc[1] = temp;
 
 	// Sets the swapBit for the next swap execution
-	swapBit = (swapBit >= THREAD_COUNT) ? 1 : (swapBit<<1);
+	swapBit = swapBit << 1;
+	swapBit = (swapBit >= THREAD_COUNT) ? 1 : swapBit;
 	// Pulls the heads and counts of the new local lists
     pullTaskQ(0);
     pullTaskQ(1);
@@ -661,7 +698,7 @@ inline void pushStackUint(inout uint top, inout uint count, in uint val){
 		top = result;
     }
     // Stores the data
-    DataBuffer[NODE_SIZE*top + 1 + modPt] = val;
+    rawNode(top,1+modPt) = val;
     count++;
 }
 
@@ -685,7 +722,7 @@ inline void popStackUint(inout uint top, inout uint count){
 }
 
 // So we can read and write to the stack top cleanly
-#define stackTopUint(top,count) DataBuffer[ NODE_SIZE * top + 1 + ( count % ( NODE_SIZE - 1 ) ) ]
+#define stackTopUint(top,count) rawNode( top, 1 + ( ( count - 1 ) % ( NODE_SIZE - 1 ) ) )
 
 // Traverses down the linked list making up the stack, freeing nodes as it goes
 inline void destroyStackUint(inout uint top, inout uint count){
@@ -805,10 +842,12 @@ inline void initYggCompute(){
 	// Get our thread id
 
 	// Remove any
+	/*
 	for(uint i = 0; i < RSRC_PER; i++){
 		TaskBuffer[rsrcHeadIdx(id * RSRC_PER + i)] = NOT_THERE;
 		TaskBuffer[rsrcCountIdx(id * RSRC_PER + i)] = 0;
 	}
+	*/
 
 	/*
 	** Assign the first and second heap and task list of the id-th available
@@ -824,7 +863,7 @@ inline void initYggCompute(){
 	** heap and task lists to be available in the id-th element of the
 	** swapping section of their respective buffer .
 	*/
-	HeapBuffer[taskQIdxIdx(id)] = id * RSRC_PER + 2;
+	HeapBuffer[heapIdxIdx(id)] = id * RSRC_PER + 2;
 	TaskBuffer[taskQIdxIdx(id)] = id * RSRC_PER + 2;
 
 	// Get the heads of each of our non-swapping lists

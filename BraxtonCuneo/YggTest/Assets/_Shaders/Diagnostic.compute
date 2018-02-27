@@ -27,8 +27,8 @@
 #define MISSED_NODE				 	0x00000001
 #define THREAD_INTERFERENCE 		0x00000002
 #define TIME_INTERFERENCE 			0x00000004
-#define TOO_MANY_FREED				0x00000008
-#define TOO_FEW_FREED				0x00000010
+#define ALLOC_DISCREPANCY			0x00000008
+#define BAD_STACK					0x00000010
 #define OVERALLOCD					0x00000020
 #define COPIED						0x00000040
 #define TOUCHED						0x80000000
@@ -54,44 +54,89 @@ void main(uint3 _id : SV_DispatchThreadID) {
 	uint nowNode = NOT_THERE;
 	uint count;
 	uint status = TOUCHED;
-
 	count = 0;
+	uint a = NOT_THERE;
+	uint b = NOT_THERE;
 
-	for (uint i = 0; i < 4; i++) {
+	/*
+	if (id == 0) {
+		HeapBuffer[0] = NOT_THERE;
+	}*/
+
+	for (uint i = 0; i < 1; i++) { 
+		/* 
 		lastNode = NOT_THERE; 
-		nowNode = allocNode();
+		nowNode = allocNode(); 
 		if (nowNode != NOT_THERE) {
-			rawNode(nowNode, 0) = lastNode;
+			rawNode(nowNode, 0) = lastNode; 
+			rawNode(nowNode, 1) = id;
+			rawNode(nowNode, 2) = i;
 		}
-		status = 0;
-
 		while (nowNode != NOT_THERE)
 		{
-			if (id == 0) {
-				ExchangeBuffer[count] = nowNode;
-			}
 			lastNode = nowNode;
 			nowNode = allocNode();
 			if (nowNode != NOT_THERE) {
 				rawNode(nowNode, 0) = lastNode;
+				rawNode(nowNode, 1) = id;
+				rawNode(nowNode, 2) = i;
 			}
 			count++;
 		}
 		nowNode = lastNode;
+		 
 		while (nowNode != NOT_THERE)
 		{
-			if (id == 0) {
-				ExchangeBuffer[count] = nowNode;
+			if (rawNode(nowNode, 1) != id) {
+				status |= THREAD_INTERFERENCE;
+			}
+			if (rawNode(nowNode, 2) != i) {
+				status |= TIME_INTERFERENCE;
 			}
 			nextNode = rawNode(nowNode, 0);
 			freeNode(nowNode);
-			nowNode = nextNode;
-			count++;
+			nowNode = nextNode; 
+			count--;
 		}
-		status = count;
+		if (count != 0) {
+			status |= ALLOC_DISCREPANCY;
+		}*/
+		a = heapIdxs_loc[0];
+		InterlockedExchange(
+			HeapBuffer[0],
+			heapIdxs_loc[0],
+			b
+		);
+		DeviceMemoryBarrier();
+		heapIdxs_loc[0] = b;
+		//rotateHeaps();
 	}
-	//ExchangeBuffer[id] = status;
+	ExchangeBuffer[id * 3] = heapIdxs_loc[0]; 
+	ExchangeBuffer[id * 3 + 1] = heapIdxs_loc[1];
+	ExchangeBuffer[id * 3 + 2] = /*status;//*/ HeapBuffer[heapIdxIdx(id)];
 
+	/*
+	status = TOUCHED;
+	ExchangeBuffer[id] = TOUCHED;
+	uint stackHead = NOT_THERE;
+	uint stackCount = 0;
+	uint k = 0;
+	for (uint j = 1; j < 100; j++) {
+		pushStackUint(stackHead, stackCount, id);
+		k++;
+	}
+
+	while(stackHead != NOT_THERE) {
+		if ( stackTopUint(stackHead, stackCount) != id ) {
+			ExchangeBuffer[id] = stackHead;
+		}
+		popStackUint(stackHead, stackCount); 
+		k--;
+	} 
+	if (k != 0) {
+		ExchangeBuffer[id] = ( heapHeads_loc[0] == NOT_THERE ) ? heapHeads_loc[0] : heapHeads_loc[1];
+	}
+	*/
 	exitYggCompute();
 
 }

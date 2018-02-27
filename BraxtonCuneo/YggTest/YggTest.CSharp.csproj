@@ -297,6 +297,7 @@
     <Compile Include="Assets\_Scripts\YggManager.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Assets\_Shaders\AtomicSanity.compute" />
     <None Include="Assets\_Shaders\Diagnostic.compute" />
     <None Include="Assets\_Shaders\HLSLCommon.compute" />
     <None Include="Assets\_Shaders\HLSLTracer.compute" />

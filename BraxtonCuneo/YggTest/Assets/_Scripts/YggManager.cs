@@ -29,6 +29,7 @@ public class YggManager : MonoBehaviour
 
 	public ComputeShader initializer;
 	public ComputeShader diagnostic;
+    public ComputeShader atomicSanityCheck;
 	public ComputeShader rayTracer;
 	public ComputeShader treeManager;
 	public ComputeShader memoryManager;
@@ -63,7 +64,7 @@ public class YggManager : MonoBehaviour
 			Debug.LogError("This system cannot run compute shaders. This is bad. Go fix that.");
 		}
 		totalGPURAM = SystemInfo.graphicsMemorySize;
-        dataSat = 0.01f;
+        dataSat = 0.1f;
 		threadCount = 4096;
 		groupSize = 64;
 		extraneousNodes = 0;
@@ -79,10 +80,10 @@ public class YggManager : MonoBehaviour
 		taskBuffer = new ComputeBuffer (taskBufferSize (), sizeof(uint));
 		blockBuffer = new ComputeBuffer (blockNumber, sizeof(block));
 		exchangeBuffer = new ComputeBuffer (exchangeSize, sizeof(uint));
-
+         
 		init ();
         #if DBUG
-        diagnose ();
+        doAtomicSanity (); 
         #endif
     }
 
@@ -144,6 +145,10 @@ public class YggManager : MonoBehaviour
                     result = false;
                 }
             }
+            if (state[i * 16 + 1] != (i / (nodesPer*3)))
+            {
+                Debug.Log(i + " - D ID -> " + state[i * 16 + 1] + "," + (i/(nodesPer*3)));
+            }
         }
         return result;
     }
@@ -188,13 +193,85 @@ public class YggManager : MonoBehaviour
     bool checkDiagnostic(ComputeBuffer DiagExg)
     {
         bool result = true;
-        int lim = threadCount;
+        int lim = threadCount*3;
         uint[] state = new uint[lim];
+        uint[] check = new uint[lim];
+        for (int i = 0; i < lim; i++)
+        {
+            check[i] = 0;
+        }
         DiagExg.GetData(state);
         for ( int i = 0; i < lim; i++)
+        { 
+            //Debug.Log("Heap Pos: " + state[i]+ " at " + i/3);
+            if (state[i] < lim)
+            {
+                check[state[i]]++;
+                if (check[state[i]] > 1)
+                {
+                    Debug.Log("Duplicate heap position " + state[i] + " at " + i/3);
+                }
+            }
+            else
+            {
+                Debug.Log("Out of Bounds " + state[i] + " at " + i);
+            }
+            /*
+            if (state[i] != 0x80000000)
+            {
+                Debug.Log(state[i].ToString("X"));
+                result = false;
+            }
+            */
+        }
+        return result;
+    }
+
+    bool checkAtomicSanity(ComputeBuffer AtomSanExg)
+    {
+        bool result = true;
+        int lim = threadCount + 1;
+        uint[] state = new uint[lim];
+        uint[] check = new uint[lim];
+        for (int i = 0; i < lim; i++)
         {
-            Debug.Log(state[i]);
-            result = false;
+            check[i] = 0;
+        }
+        AtomSanExg.GetData(state);
+        for (int i = 0; i < lim; i++)
+        {
+            //Debug.Log("Atom Thread Pos: " + state[i]+ " at " + i);
+            if (state[i] < lim)
+            {
+                check[state[i]]++;
+                if (check[state[i]] > 1)
+                {
+                    Debug.Log("Duplicate atomic value for " + state[i] + " at " + i);
+                }
+            }
+            else
+            {
+                Debug.Log("Out of Bounds " + state[i] + " at " + i);
+            }
+            /*
+            if (state[i] != 0x80000000)
+            {
+                Debug.Log(state[i].ToString("X"));
+                result = false;
+            }
+            */
+        }
+        for(int i = 0; i < lim; i++)
+        {
+            if (check[i] > 1)
+            {
+                Debug.Log("Duplicate atomic value for " + i);
+            }
+            if (check[i] == 0)
+            {
+                Debug.Log("Missing atomic value for " + i);
+            }
+            
         }
         return result;
     }
@@ -219,7 +296,7 @@ public class YggManager : MonoBehaviour
     }
 
 	void diagnose(){
-		ComputeBuffer DiagExg = new ComputeBuffer (threadCount, sizeof(uint));
+		ComputeBuffer DiagExg = new ComputeBuffer (threadCount*3, sizeof(uint));
 		loadCommon (diagnostic,DiagExg);
         diagnostic.SetInt("_loopNo",0x00000800);
         float start = Time.realtimeSinceStartup;
@@ -229,6 +306,18 @@ public class YggManager : MonoBehaviour
         Debug.Log("Diagnostics took " + (end - start) + " seconds");
         DiagExg.Dispose();
 	}
+
+    void doAtomicSanity()
+    {
+        ComputeBuffer AtomSan = new ComputeBuffer(threadCount+1, sizeof(uint));
+        loadCommon(atomicSanityCheck, AtomSan);
+        float start = Time.realtimeSinceStartup;
+        run(atomicSanityCheck);
+        checkAtomicSanity(AtomSan);
+        float end = Time.realtimeSinceStartup;
+        Debug.Log("AtomicSanity took " + (end - start) + " seconds");
+        AtomSan.Dispose();
+    }
 
 }
 
