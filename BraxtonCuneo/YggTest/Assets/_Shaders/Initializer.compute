@@ -16,7 +16,7 @@
 	#define bvec4	bool4
 	#define mat4	float4x4
 #endif
-
+ 
 
 
 // Each #kernel tells which function to compile; you can have many kernels
@@ -36,6 +36,7 @@ static const uint dataBufferSize = asuint(_dataBufferSize);
 ** the nodes over the heaps in the heap buffer. Additionally, this program
 ** clears the task buffer. 
 */
+
 [numthreads(GROUP_SIZE,1,1)]
 void main (uint3 _id : SV_DispatchThreadID){
 	id = _id.x;
@@ -50,41 +51,42 @@ void main (uint3 _id : SV_DispatchThreadID){
 		
 		uint idx = start;
 		while( idx < (end-1) ){
-			rawNode(idx,0) = idx+1;
-			rawNode(idx,1) = id;
-			rawNode(idx,2) = start;
-			rawNode(idx,3) = end-1;
-			rawNode(idx,4) = end-1-idx;
+			storeRawNode(idx,0,idx+1);
+			storeRawNode(idx,1,id);
+			storeRawNode(idx,2,start);
+			storeRawNode(idx,3,end-1);
+			storeRawNode(idx,4,end-1-idx);
 			idx++;
 		}
-		rawNode(idx,0) = NOT_THERE;
-		rawNode(idx, 1) = id;
+		storeRawNode(idx,0,NOT_THERE);
+		storeRawNode(idx,1,id);
 
 		// Assign the head of the linked list to the i-th heap head element
-		HeapBuffer[rsrcHeadIdx(id * RSRC_PER + i)] = start;
-		HeapBuffer[rsrcCountIdx(id * RSRC_PER + i)] = nodesPer;
+		storeHeap(rsrcHeadIdx(id * RSRC_PER + i),start);
+		storeHeap(rsrcCountIdx(id * RSRC_PER + i),nodesPer);
 
 		// Clear the task buffers
-		TaskBuffer[rsrcHeadIdx(id * RSRC_PER + i)] = NOT_THERE;
-		TaskBuffer[rsrcCountIdx(id * RSRC_PER + i)] = 0;
+		storeTask(rsrcHeadIdx(id * RSRC_PER + i),NOT_THERE);
+		storeTask(rsrcCountIdx(id * RSRC_PER + i),0);
 
 		/*
 		** Assign the first and second heap and task list of the id-th available
 		** triplet of heap and task lists.
-		*/
+		*/ 
 		heapIdxs_loc[0] = id * RSRC_PER;
 		heapIdxs_loc[1] = id * RSRC_PER + 1;
 		taskQIdxs_loc[0] = id * RSRC_PER;
 		taskQIdxs_loc[1] = id * RSRC_PER + 1;
 
-		/*
+		/* 
 		** Assign the third heap and task list of the id-th available triplet of
 		** heap and task lists to be available in the id-th element of the
 		** swapping section of their respective buffer .
 		*/
-		HeapBuffer[taskQIdxIdx(id)] = id * RSRC_PER + 2;
-		TaskBuffer[taskQIdxIdx(id)] = id * RSRC_PER + 2;
+		storeHeap(taskQIdxIdx(id),id * RSRC_PER + 2);
+		storeTask(taskQIdxIdx(id),id * RSRC_PER + 2);
 	}
 }
+
 
 

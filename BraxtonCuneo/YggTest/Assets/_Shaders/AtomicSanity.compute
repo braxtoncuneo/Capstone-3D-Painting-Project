@@ -1,4 +1,4 @@
-﻿// 
+﻿
 #define CONVERT
 
 #ifdef CONVERT
@@ -33,29 +33,30 @@ void main(uint3 _id : SV_DispatchThreadID) {
 	id = _id.x;
 
 	uint X = id;
+	uint div = 4;
+	uint lim = THREAD_COUNT / div;
 	uint A;
 	uint B;
+	uint count;
 	if (id == 0) {
-		HeapBuffer[0] = NOT_THERE;
-	} 
-
-	for (uint i = 0; i < 4; i++) {
-		A = X;
-		InterlockedExchange(
-			HeapBuffer[0],
-			A,
-			B
-		);
-		X = B;
-		DeviceMemoryBarrierWithGroupSync();
+		//storeHeap(0, NOT_THERE);
+		atomicSwapHeap(0, NOT_THERE, B);
 	}
-	DeviceMemoryBarrierWithGroupSync(); 
-	if (id == 0) {
-		ExchangeBuffer[THREAD_COUNT] = HeapBuffer[0];
+	DeviceMemoryBarrierWithGroupSync();
+	A = X;
+	atomicSwapHeap(0, A, B);
+	X = B;
+	DeviceMemoryBarrierWithGroupSync();
+	if (id == THREAD_COUNT-1) {
+		B = loadHeap(0);
+		storeExchange(THREAD_COUNT, B);
 	}
-	ExchangeBuffer[id] = X;
+	storeExchange(id, X);
 	DeviceMemoryBarrierWithGroupSync();
 
 }
+
+
+
 
 

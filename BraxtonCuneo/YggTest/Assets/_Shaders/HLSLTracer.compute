@@ -136,7 +136,6 @@ inline void spoolHilbertTraceLayout(){
 
 
 
-
 /*
 ** Returns the time required to enter the voxel. If the trace is
 ** already in the voxel, returns 0.0. If the trace will not ever enter the

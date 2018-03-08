@@ -1,0 +1,48 @@
+#define NODE_SIZE		16
+#define THREAD_COUNT	4096
+#define GROUP_SIZE		64
+
+#define NOT_THERE	0x7FFFFFFF
+
+
+layout(std430, binding = 0) buffer SwapBuffer { uint data[1]; };
+
+layout(std430, binding = 1) buffer OutputBuffer { uint data[THREAD_COUNT + 1]; };
+
+
+/*
+** The simplest of the shaders in Yggdrasil, the Memory Manager simply repeats
+** a number of calls to levelHeaps and rotate heaps, hopefully leveling memory.
+*/
+layout(local_size_x = GROUP_SIZE) in;
+void main() {
+
+	id = gl_GlobalInvocationID;
+
+	uint X = id;
+	uint A;
+	uint B;
+
+	if (id == 0) {
+		SwapBuffer.data[0] = NOT_THERE;
+	}
+
+	memoryBarrierBuffer();
+
+	A = X;
+	B = atomicExchange(SwapBuffer.data[0], A);
+	X = B;
+
+	memoryBarrierBuffer();
+
+	if (id == 0) {
+		B = SwapBuffer.data[0];
+		OutputBuffer.data[THREAD_COUNT] = B;
+	}
+
+	OutputBuffer.data[id] = X;
+
+	memoryBarrierBuffer();
+
+}
+

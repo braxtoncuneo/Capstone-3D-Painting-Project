@@ -3,6 +3,9 @@
 
 #define CONVERT
 
+#define maybeGlobal	globallycoherent
+
+#define RAWBUFFER
 
 #ifdef CONVERT
 	#define vec2	float2
@@ -37,7 +40,9 @@
 #define NODE_PLAIN_COLOR	0x00000000
 #define NODE_TEXTURE_MAP	0x00000001
 
-#define maybeGlobal	globallycoherent
+
+
+
 
 
 
@@ -121,6 +126,20 @@ static uint swapBit;
 
 /// Yggdrasil Buffer Definitions
 
+#ifdef RAWBUFFER
+
+maybeGlobal RWByteAddressBuffer DataBuffer : register (u0);
+
+maybeGlobal RWStructuredBuffer<block> BlockBuffer : register (u1);
+
+maybeGlobal RWByteAddressBuffer HeapBuffer : register (u2);
+
+maybeGlobal RWByteAddressBuffer TaskBuffer : register (u3);
+
+maybeGlobal RWByteAddressBuffer ExchangeBuffer : register (u4);
+
+#else
+
 maybeGlobal RWStructuredBuffer<uint> DataBuffer : register (u0);
 //layout(std430, binding = 0) buffer DataBuffer { uint data[]; };
 
@@ -136,46 +155,102 @@ maybeGlobal RWStructuredBuffer<uint> TaskBuffer : register (u3);
 maybeGlobal RWStructuredBuffer<uint> ExchangeBuffer : register (u4);
 //layout(std430, binding = 4) buffer ExchangeBuffer { uint data[]; };
 
+#endif
+
 
 
 
 /// Direct Node Member Access Macros
+#ifdef RAWBUFFER
+	#define loadRawNode(node,idx)				DataBuffer.Load( ( ( node ) * NODE_SIZE + ( idx ) ) * 4 )
+	#define storeRawNode(node,idx,val)			DataBuffer.Store( ( ( node ) * NODE_SIZE + ( idx ) ) * 4 , val )
+	#define loadHeap(idx)						HeapBuffer.Load( ( idx ) * 4 )
+	#define storeHeap(idx,val)					HeapBuffer.Store( ( idx ) * 4 , val )
+	#define loadTask(idx)						TaskBuffer.Load( ( idx ) * 4 )
+	#define storeTask(idx,val)					TaskBuffer.Store( ( idx ) * 4 , val )
+	#define loadExchange(idx)					ExchangeBuffer.Load( ( idx ) * 4 )
+	#define storeExchange(idx,val)				ExchangeBuffer.Store( ( idx ) * 4 , val )
+	#define atomicSwapHeap(idx,val,ret)			HeapBuffer.InterlockedExchange( ( idx ) * 4 , val , ret )
+#else
+	#define loadRawNode(node,idx)				DataBuffer[ ( node ) * NODE_SIZE + ( idx ) ]
+	#define storeRawNode(node,idx,val)			DataBuffer[ ( node ) * NODE_SIZE + ( idx ) ] = val
+	#define loadHeap(idx)						HeapBuffer[ idx ]
+	#define storeHeap(idx,val)					HeapBuffer[ idx ] = val
+	#define loadTask(idx)						TaskBuffer[ idx ]
+	#define storeTask(idx,val)					TaskBuffer[ idx ] = val
+	#define loadExchange(idx)					ExchangeBuffer[ idx ]
+	#define storeExchange(idx,val)				ExchangeBuffer[ idx ] = val
+	#define atomicSwapHeap(idx,val,ret)			InterlockedExchange( HeapBuffer[ idx ] , val , ret );
+#endif
 
-#define rawNode(node,idx)			DataBuffer[ node * NODE_SIZE + idx ]
+#define loadVoxelMeta(node)					loadRawNode( node , 0 )
+#define loadVoxelSurface(node)				loadRawNode( node , 1 )
+#define loadVoxelLight(node)				loadRawNode( node , 2 )
+#define loadVoxelOverlap(node)				loadRawNode( node , 3 )
+#define loadVoxelAttribute(node,idx)		loadRawNode( node , 4 + idx )
+#define loadVoxelChild(node,idx)			loadRawNode( node , 8 + idx )
 
-#define voxelMeta(node)				DataBuffer[ node * NODE_SIZE ]
-#define voxelSurface(node)			DataBuffer[ node * NODE_SIZE + 1 ]
-#define voxelLight(node)			DataBuffer[ node * NODE_SIZE + 2 ]
-#define voxelOverlap(node)			DataBuffer[ node * NODE_SIZE + 3 ]
-#define voxelAttribute(node,idx)	DataBuffer[ node * NODE_SIZE + 4 + idx ]
-#define voxelChild(node,idx)		DataBuffer[ node * NODE_SIZE + 8 + idx ]
-
-#define traceLast(node)					DataBuffer[ node * NODE_SIZE ]
-#define traceNext(node)					DataBuffer[ node * NODE_SIZE + 1 ]
-#define traceHostNode(node)				DataBuffer[ node * NODE_SIZE + 2 ]
-#define traceStateStackTop(node)		DataBuffer[ node * NODE_SIZE + 3 ]
-#define traceStateStackCount(node)		DataBuffer[ node * NODE_SIZE + 4 ]
-#define traceMatStackTop(node)			DataBuffer[ node * NODE_SIZE + 5 ]
-#define traceMatStackCount(node)		DataBuffer[ node * NODE_SIZE + 6 ]
-#define traceOverlapHead(node)			DataBuffer[ node * NODE_SIZE + 7 ]
-#define traceTimeLeft(node)				DataBuffer[ node * NODE_SIZE + 8 ]
-#define traceState(node)				DataBuffer[ node * NODE_SIZE + 9 ]
-#define tracePosition(node,idx)			DataBuffer[ node * NODE_SIZE + 10 + idx ]
-#define traceVelocity(node,idx)			DataBuffer[ node * NODE_SIZE + 13 + idx ]
+#define loadTraceLast(node)					loadRawNode( node , 0 )
+#define loadTraceNext(node)					loadRawNode( node , 1 )
+#define loadTraceHostNode(node)				loadRawNode( node , 2 )
+#define loadTraceStateStackTop(node)		loadRawNode( node , 3 )
+#define loadTraceStateStackCount(node)		loadRawNode( node , 4 )
+#define loadTraceMatStackTop(node)			loadRawNode( node , 5 )
+#define loadTraceMatStackCount(node)		loadRawNode( node , 6 )
+#define loadTraceOverlapHead(node)			loadRawNode( node , 7 )
+#define loadTraceTimeLeft(node)				loadRawNode( node , 8 )
+#define loadTraceState(node)				loadRawNode( node , 9 )
+#define loadTracePosition(node,idx)			loadRawNode( node , 10 + idx )
+#define loadTraceVelocity(node,idx)			loadRawNode( node , 13 + idx )
 
 
-#define taskNext(node)					DataBuffer[ node * NODE_SIZE ]
-#define taskParent(node)				DataBuffer[ node * NODE_SIZE + 1 ]
-#define taskChildCount(node)			DataBuffer[ node * NODE_SIZE + 2 ]
+#define loadTaskNext(node)					loadRawNode( node , 0 )
+#define loadTaskParent(node)				loadRawNode( node , 1 )
+#define loadTaskChildCount(node)			loadRawNode( node , 2 )
 
-#define traceTaskPosition(node,idx)		DataBuffer[ node * NODE_SIZE + 4 + idx ]
-#define traceTaskVelocity(node,idx)		DataBuffer[ node * NODE_SIZE + 7 + idx ]
-#define traceTaskLightMask(node,idx)	DataBuffer[ node * NODE_SIZE + 10 + idx ]
-#define traceTaskLightSample(node,idx)	DataBuffer[ node * NODE_SIZE + 13 + idx ]
+#define loadTraceTaskPosition(node,idx)		loadRawNode( node , 4 + idx )
+#define loadTraceTaskVelocity(node,idx)		loadRawNode( node , 7 + idx )
+#define loadTraceTaskLightMask(node,idx)	loadRawNode( node , 10 + idx )
+#define loadTraceTaskLightSample(node,idx)	loadRawNode( node , 13 + idx )
 
-#define basicToolTaskState(node)		DataBuffer[ node * NODE_SIZE + 3 ]
-#define basicToolTaskHost(node)			DataBuffer[ node * NODE_SIZE + 4 ]
-#define basicToolPosition(node,idx)		DataBuffer[ node * NODE_SIZE + 5 + idx ]
+#define loadBasicToolTaskState(node)		loadRawNode( node , 3 )
+#define loadBasicToolTaskHost(node)			loadRawNode( node , 4 )
+#define loadBasicToolPosition(node,idx)		loadRawNode( node , 5 + idx )
+
+
+#define storeVoxelMeta(node,val)				storeRawNode( node , 0 , val )
+#define storeVoxelSurface(node,val)				storeRawNode( node , 1 , val )
+#define storeVoxelLight(node,val)				storeRawNode( node , 2 , val )
+#define storeVoxelOverlap(node,val)				storeRawNode( node , 3 , val )
+#define storeVoxelAttribute(node,idx,val)		storeRawNode( node , 4 + idx , val )
+#define storeVoxelChild(node,idx,val)			storeRawNode( node , 8 + idx , val )
+
+#define storeTraceLast(node,val)				storeRawNode( node , 0 , val )
+#define storeTraceNext(node,val)				storeRawNode( node , 1 , val )
+#define storeTraceHostNode(node,val)			storeRawNode( node , 2 , val )
+#define storeTraceStateStackTop(node,val)		storeRawNode( node , 3 , val )
+#define storeTraceStateStackCount(node,val)		storeRawNode( node , 4 , val )
+#define storeTraceMatStackTop(node,val)			storeRawNode( node , 5 , val )
+#define storeTraceMatStackCount(node,val)		storeRawNode( node , 6 , val )
+#define storeTraceOverlapHead(node,val)			storeRawNode( node , 7 , val )
+#define storeTraceTimeLeft(node,val)			storeRawNode( node , 8 , val )
+#define storeTraceState(node,val)				storeRawNode( node , 9 , val )
+#define storeTracePosition(node,idx,val)		storeRawNode( node , 10 + idx , val )
+#define storeTraceVelocity(node,idx,val)		storeRawNode( node , 13 + idx , val )
+
+
+#define storeTaskNext(node,val)					storeRawNode( node , 0 , val )
+#define storeTaskParent(node,val)				storeRawNode( node , 1 , val )
+#define storeTaskChildCount(node,val)			storeRawNode( node , 2 , val )
+
+#define storeTraceTaskPosition(node,idx,val)	storeRawNode( node , 4 + idx , val )
+#define storeTraceTaskVelocity(node,idx,val)	storeRawNode( node , 7 + idx , val )
+#define storeTraceTaskLightMask(node,idx,val)	storeRawNode( node , 10 + idx , val )
+#define storeTraceTaskLightSample(node,idx,val)	storeRawNode( node , 13 + idx , val )
+
+#define storeBasicToolTaskState(node,val)		storeRawNode( node , 3 , val )
+#define storeBasicToolTaskHost(node,val)		storeRawNode( node , 4 , val )
+#define storeBasicToolPosition(node,idx,val)	storeRawNode( node , 5 + idx , val )
 
 
 /// Node Loading/Storing
@@ -184,41 +259,41 @@ maybeGlobal RWStructuredBuffer<uint> ExchangeBuffer : register (u4);
 
 voxelNode voxelLoad(in uint node){
 	voxelNode result;
-	result.meta = voxelMeta(node);
-	result.surface = voxelSurface(node);
-	result.light = voxelLight(node);
-	result.overlap = voxelOverlap(node);
-	result.attributes = 	uvec4(
-							voxelAttribute(node,0),
-							voxelAttribute(node,1),
-							voxelAttribute(node,2),
-							voxelAttribute(node,3)
+	result.meta = loadVoxelMeta(node);
+	result.surface = loadVoxelSurface(node);
+	result.light = loadVoxelLight(node);
+	result.overlap = loadVoxelOverlap(node);
+	result.attributes = uvec4(
+							loadVoxelAttribute(node,0),
+							loadVoxelAttribute(node,1),
+							loadVoxelAttribute(node,2),
+							loadVoxelAttribute(node,3)
 						);
 	
-	result.child[0] = voxelChild(node,0);
-	result.child[1] = voxelChild(node,1);
-	result.child[2] = voxelChild(node,2);
-	result.child[3] = voxelChild(node,3);
-	result.child[4] = voxelChild(node,4);
-	result.child[5] = voxelChild(node,5);
-	result.child[6] = voxelChild(node,6);
-	result.child[7] = voxelChild(node,7);
+	result.child[0] = loadVoxelChild(node,0);
+	result.child[1] = loadVoxelChild(node,1);
+	result.child[2] = loadVoxelChild(node,2);
+	result.child[3] = loadVoxelChild(node,3);
+	result.child[4] = loadVoxelChild(node,4);
+	result.child[5] = loadVoxelChild(node,5);
+	result.child[6] = loadVoxelChild(node,6);
+	result.child[7] = loadVoxelChild(node,7);
 
 	return result;
 }
 
 
 void voxelStore(in uint node, in voxelNode data){
-	voxelMeta(node) = data.meta;
-	voxelSurface(node) = data.surface;
-	voxelLight(node) = data.light;
-	voxelOverlap(node) = data.overlap;
-	voxelAttribute(node,0) = data.attributes.x;
-	voxelAttribute(node,1) = data.attributes.y;
-	voxelAttribute(node,2) = data.attributes.z;
-	voxelAttribute(node,3) = data.attributes.w;
+	storeVoxelMeta(node,data.meta);
+	storeVoxelSurface(node,data.surface);
+	storeVoxelLight(node,data.light);
+	storeVoxelOverlap(node,data.overlap);
+	storeVoxelAttribute(node,0,data.attributes.x);
+	storeVoxelAttribute(node,1,data.attributes.y);
+	storeVoxelAttribute(node,2,data.attributes.z);
+	storeVoxelAttribute(node,3,data.attributes.w);
 	for(int i = 0; i < 8; i++){
-		voxelChild(node,i) = data.child[i];
+		storeVoxelChild(node,i,data.child[i]);
 	}
 }
 
@@ -226,42 +301,42 @@ void voxelStore(in uint node, in voxelNode data){
 // This loads a trace node from the data buffer to local registers
 inline traceNode traceLoad(in uint node){
 	traceNode result;
-    result.last =				traceLast(node);
-	result.next =				traceNext(node);
-    result.host =				traceHostNode(node);
-    result.stateStackTop =		traceStateStackTop(node);
-    result.stateStackCount =	traceStateStackCount(node);
-    result.matStackTop =		traceMatStackTop(node);
-    result.matStackCount =		traceMatStackCount(node);
-    result.overlapHead = 		traceOverlapHead(node);
-    result.timeLeft =			asfloat(traceTimeLeft(node));
-    result.state = 				traceState(node);
-    result.position = 	vec3(	asfloat(tracePosition(node,0)),
-								asfloat(tracePosition(node,1)),
-								asfloat(tracePosition(node,2)) );
-    result.velocity = 	vec3(	asfloat(traceVelocity(node,0)),
-								asfloat(traceVelocity(node,1)),
-								asfloat(traceVelocity(node,2)) );
+    result.last =				loadTraceLast(node);
+	result.next =				loadTraceNext(node);
+    result.host =				loadTraceHostNode(node);
+    result.stateStackTop =		loadTraceStateStackTop(node);
+    result.stateStackCount =	loadTraceStateStackCount(node);
+    result.matStackTop =		loadTraceMatStackTop(node);
+    result.matStackCount =		loadTraceMatStackCount(node);
+    result.overlapHead =		loadTraceOverlapHead(node);
+    result.timeLeft =			asfloat(loadTraceTimeLeft(node));
+    result.state =				loadTraceState(node);
+    result.position = 	vec3(	asfloat(loadTracePosition(node,0)),
+								asfloat(loadTracePosition(node,1)),
+								asfloat(loadTracePosition(node,2)) );
+    result.velocity = 	vec3(	asfloat(loadTraceVelocity(node,0)),
+								asfloat(loadTraceVelocity(node,1)),
+								asfloat(loadTraceVelocity(node,2)) );
     return result;
 }
 
 // This stores a trace node from local registers to the data buffer
 inline void traceStore(in uint node, in traceNode trace){
-	traceNext(node) =				trace.next;
-    traceHostNode(node) =			trace.host;
-    traceStateStackTop(node) =		trace.stateStackTop;
-    traceStateStackCount(node) =	trace.stateStackCount;
-    traceMatStackTop(node) =		trace.matStackTop;
-    traceMatStackCount(node) =		trace.matStackCount;
-    traceOverlapHead(node) =		trace.overlapHead;
-    traceTimeLeft(node) =			asuint(trace.timeLeft);
-    traceState(node) =				trace.state;
-    tracePosition(node,0) =			asuint(trace.position.x);
-    tracePosition(node,1) =			asuint(trace.position.y);
-    tracePosition(node,2) =			asuint(trace.position.z);
-    traceVelocity(node,0) =			asuint(trace.velocity.x);
-    traceVelocity(node,1) =			asuint(trace.velocity.y);
-    traceVelocity(node,2) =			asuint(trace.velocity.z);
+	storeTraceNext(node,trace.next);
+	storeTraceHostNode(node,trace.host);
+	storeTraceStateStackTop(node,trace.stateStackTop);
+	storeTraceStateStackCount(node,trace.stateStackCount);
+	storeTraceMatStackTop(node,trace.matStackTop);
+	storeTraceMatStackCount(node,trace.matStackCount);
+	storeTraceOverlapHead(node,trace.overlapHead);
+	storeTraceTimeLeft(node,asuint(trace.timeLeft));
+	storeTraceState(node,trace.state);
+	storeTracePosition(node,0,asuint(trace.position.x));
+	storeTracePosition(node,1,asuint(trace.position.y));
+	storeTracePosition(node,2,asuint(trace.position.z));
+	storeTraceVelocity(node,0,asuint(trace.velocity.x));
+	storeTraceVelocity(node,1,asuint(trace.velocity.y));
+	storeTraceVelocity(node,2,asuint(trace.velocity.z));
 }
 
 
@@ -289,66 +364,65 @@ inline traceNode blankTrace(){
 
 inline basicToolTaskNode basicToolTaskLoad(in uint node){
 	basicToolTaskNode result;
-	result.next			= taskNext(node);
-	result.parent		= taskParent(node);
-	result.childCount	= taskChildCount(node);
-	result.state		= basicToolTaskState(node);
-	result.hostNode		= basicToolTaskHost(node);
-	result.position = 	vec3(	asfloat(basicToolPosition(node,0)),
-								asfloat(basicToolPosition(node,1)),
-								asfloat(basicToolPosition(node,2)) );
+	result.next			= loadTaskNext(node);
+	result.parent		= loadTaskParent(node);
+	result.childCount	= loadTaskChildCount(node);
+	result.state		= loadBasicToolTaskState(node);
+	result.hostNode		= loadBasicToolTaskHost(node);
+	result.position = 	vec3(	asfloat( loadBasicToolPosition(node,0) ),
+								asfloat( loadBasicToolPosition(node,1) ),
+								asfloat( loadBasicToolPosition(node,2) ) );
 	return result;
 }
 
 inline void basicToolTaskStore(in uint node, in basicToolTaskNode data){
-	taskNext(node)				= data.next;
-	taskParent(node)			= data.parent;
-	taskChildCount(node)		= data.childCount;
-	basicToolTaskState(node)	= data.state;
-	basicToolTaskHost(node)	= data.hostNode;
-	basicToolPosition(node,0) 	= asuint(data.position.x);
-    basicToolPosition(node,1) 	= asuint(data.position.y);
-    basicToolPosition(node,2) 	= asuint(data.position.z);
+	storeTaskNext(node,data.next);
+	storeTaskParent(node,data.parent);
+	storeTaskChildCount(node,data.childCount);
+	storeBasicToolTaskState(node,data.state);
+	storeBasicToolTaskHost(node,data.hostNode);
+	storeBasicToolPosition(node,0,asuint(data.position.x));
+	storeBasicToolPosition(node,1,asuint(data.position.y));
+	storeBasicToolPosition(node,2,asuint(data.position.z));
 }
 
 inline traceTaskNode traceTaskLoad(in uint node){
 	traceTaskNode result;
-	result.next= 					taskNext(node);
-	result.parent =					taskParent(node);
-	result.childCount =				taskChildCount(node);
-	result.position =				vec3(	traceTaskPosition(node,0),
-											traceTaskPosition(node,1),
-											traceTaskPosition(node,2)	);
-	result.velocity =				vec3(	traceTaskVelocity(node,0),
-											traceTaskVelocity(node,1),
-											traceTaskVelocity(node,2)	);
-	result.lightMask =				vec3(	traceTaskLightMask(node,0),
-											traceTaskLightMask(node,1),
-											traceTaskLightMask(node,2)	);
-	result.lightSample =			vec3(	traceTaskLightSample(node,0),
-											traceTaskLightSample(node,1),
-											traceTaskLightSample(node,2));
+	result.next					= loadTaskNext(node);
+	result.parent				= loadTaskParent(node);
+	result.childCount			= loadTaskChildCount(node);
+	result.position				=	vec3(	loadTraceTaskPosition(node,0),
+											loadTraceTaskPosition(node,1),
+											loadTraceTaskPosition(node,2)	);
+	result.velocity				=	vec3(	loadTraceTaskVelocity(node,0),
+											loadTraceTaskVelocity(node,1),
+											loadTraceTaskVelocity(node,2)	);
+	result.lightMask			=	vec3(	loadTraceTaskLightMask(node,0),
+											loadTraceTaskLightMask(node,1),
+											loadTraceTaskLightMask(node,2)	);
+	result.lightSample			=	vec3(	loadTraceTaskLightSample(node,0),
+											loadTraceTaskLightSample(node,1),
+											loadTraceTaskLightSample(node,2));
 	return result;
 }
 
 
 inline void traceTaskStore(in uint node, in traceTaskNode data){
-	traceTaskNode result;
-	taskNext(node)					= data.next;
-	taskParent(node)				= data.parent;
-	taskChildCount(node)			= data.childCount;
-	traceTaskPosition(node,0)		= data.position.x;
-	traceTaskPosition(node,1)		= data.position.y;
-	traceTaskPosition(node,2)		= data.position.z;
-	traceTaskVelocity(node,0)		= data.velocity.x;
-	traceTaskVelocity(node,1)		= data.velocity.y;
-	traceTaskVelocity(node,2)		= data.velocity.z;
-	traceTaskLightMask(node,0)		= data.lightMask.x;
-	traceTaskLightMask(node,1)		= data.lightMask.y;
-	traceTaskLightMask(node,2)		= data.lightMask.z;
-	traceTaskLightSample(node,0)	= data.lightSample.x;
-	traceTaskLightSample(node,0)	= data.lightSample.y;
-	traceTaskLightSample(node,0)	= data.lightSample.z;
+	storeTaskNext(node,data.next);
+	storeTaskParent(node,data.parent);
+	storeTaskChildCount(node,data.childCount);
+	storeTraceTaskPosition(node,0,data.position.x);
+	storeTraceTaskPosition(node,1,data.position.y);
+	storeTraceTaskPosition(node,2,data.position.z);
+	storeTraceTaskVelocity(node,0,data.velocity.x);
+	storeTraceTaskVelocity(node,1,data.velocity.y);
+	storeTraceTaskVelocity(node,2,data.velocity.z);
+	storeTraceTaskLightMask(node,0,data.lightMask.x);
+	storeTraceTaskLightMask(node,1,data.lightMask.y);
+	storeTraceTaskLightMask(node,2,data.lightMask.z);
+	storeTraceTaskLightSample(node,0,data.lightSample.x);
+	storeTraceTaskLightSample(node,0,data.lightSample.y);
+	storeTraceTaskLightSample(node,0,data.lightSample.z);
 }
 
 
@@ -425,7 +499,7 @@ inline uint allocNode(){
 	uint result = heapHeads_loc[bigger];
 	// If the result is non-null, its listed 'next' address is set as the head
 	if( ( result & NOT_THERE )  != NOT_THERE ){
-		heapHeads_loc[bigger] = rawNode(result,0);
+		heapHeads_loc[bigger] = loadRawNode(result,0);
 		heapCounts_loc[bigger]--;
 	}
 	return result;
@@ -435,7 +509,7 @@ inline uint allocNode(){
 inline void freeNode( in uint node ){
 	uint smaller = uint(heapCounts_loc[0]>heapCounts_loc[1]);
 	if ( ( node & NOT_THERE ) != NOT_THERE ) {
-		rawNode(node, 0) = heapHeads_loc[smaller];
+		storeRawNode(node, 0, heapHeads_loc[smaller]);
 		heapHeads_loc[smaller] = node;
 		heapCounts_loc[smaller]++;
 	}
@@ -457,14 +531,14 @@ inline void levelHeaps( in uint len ){
 	// Traverse down the list diff-1 times
 	for(uint i = 0; i < len; i++){
 		if(i < diff - 1){
-			iter = rawNode(iter,0);
+			iter = loadRawNode(iter,0);
 		}
 	}
 	// Perform a swap between list heads only if there are nodes to be swapped
 	if(diff > 0){
 		holder = heapHeads_loc[bigger];
-		heapHeads_loc[bigger] = rawNode(iter,0);
-		rawNode(iter,0) = heapHeads_loc[smaller];
+		heapHeads_loc[bigger] = loadRawNode(iter,0);
+		storeRawNode(iter,0,heapHeads_loc[smaller]);
         heapHeads_loc[smaller] = holder;
 		heapCounts_loc[smaller] += diff;
 		heapCounts_loc[bigger] += diff;
@@ -477,8 +551,8 @@ inline void levelHeaps( in uint len ){
 */
 inline void pushHeap(in uint idx){
 	
-	HeapBuffer[heapHeadIdx(idx)] = heapHeads_loc[idx];
-	HeapBuffer[heapCountIdx(idx)] = heapCounts_loc[idx];
+	storeHeap(heapHeadIdx(idx),heapHeads_loc[idx]);
+	storeHeap(heapCountIdx(idx),heapCounts_loc[idx]);
 	
 	/*
 	InterlockedExchange(
@@ -500,8 +574,8 @@ inline void pushHeap(in uint idx){
 */
 inline void pullHeap(in uint idx){
 	
-	heapHeads_loc[idx] = HeapBuffer[heapHeadIdx(idx)];
-	heapCounts_loc[idx] = HeapBuffer[heapCountIdx(idx)];
+	heapHeads_loc[idx] = loadHeap(heapHeadIdx(idx));
+	heapCounts_loc[idx] = loadHeap(heapCountIdx(idx));
 	
 	/*
 	InterlockedExchange(
@@ -525,8 +599,8 @@ inline void pullHeap(in uint idx){
 inline void rotateHeaps() {
 	// Prep heap data in heap buffer for swapping
 	//pushHeap(0);
-	HeapBuffer[RSRC_SIZE * heapIdxs_loc[0]] = heapHeads_loc[0];
-	HeapBuffer[RSRC_SIZE * heapIdxs_loc[0] + 1] = heapCounts_loc[0];
+	storeHeap(RSRC_SIZE * heapIdxs_loc[0],heapHeads_loc[0]);
+	storeHeap(RSRC_SIZE * heapIdxs_loc[0] + 1,heapCounts_loc[0]);
 
 	/*
 	** Calculate the bit that will be flipped to find this thread's swapping
@@ -540,7 +614,7 @@ inline void rotateHeaps() {
 	DeviceMemoryBarrier();
 	if (id < swpIdx) {
 		InterlockedExchange(
-			HeapBuffer[RSRC_IDX_OFFSET + swpIdx],
+			loadHeap(RSRC_IDX_OFFSET + swpIdx),
 			heapIdxs_loc[0],
 			heapIdxs_loc[0]
 		);
@@ -553,8 +627,8 @@ inline void rotateHeaps() {
 	// Pulls the heads and counts of the new local lists
 
     //pullHeap(0);
-	heapHeads_loc[0] = HeapBuffer[RSRC_SIZE * heapIdxs_loc[0] ];
-	heapCounts_loc[0] = HeapBuffer[RSRC_SIZE * heapIdxs_loc[0] + 1];
+	heapHeads_loc[0] = loadHeap(RSRC_SIZE * heapIdxs_loc[0] );
+	heapCounts_loc[0] = loadHeap(RSRC_SIZE * heapIdxs_loc[0] + 1);
 
 }
 
@@ -570,7 +644,7 @@ inline uint grabTask(){
 	uint result = taskQHeads_loc[bigger];
 	// If the result is non-null, its listed 'next' address is set as the head
 	if(result != NOT_THERE){
-		taskQHeads_loc[bigger] = taskNext(result);
+		taskQHeads_loc[bigger] = loadTaskNext(result);
 		taskQCounts_loc[bigger]--;
 	}
 	return result;
@@ -580,7 +654,7 @@ inline uint grabTask(){
 // Adds the node at the given address to the smallest local task list
 inline void postTask( in uint node ){
 	uint smaller = uint(taskQCounts_loc[0]>taskQCounts_loc[1]);
-	taskNext(node) = taskQHeads_loc[smaller];
+	storeTaskNext(node,taskQHeads_loc[smaller]);
 	taskQHeads_loc[smaller] = node;
 	taskQCounts_loc[smaller]++;
 }
@@ -602,14 +676,14 @@ inline void levelTasks( in uint len ){
 	// Traverse down the list diff-1 times
 	for(uint i = 0; i < len; i++){
 		if(i < diff - 1){
-			iter = taskNext(iter);
+			iter = loadTaskNext(iter);
 		}
 	}
 	// Perform a swap between list heads only if there are nodes to be swapped
 	if(diff > 0){
 		holder = taskQHeads_loc[bigger];
-		taskQHeads_loc[bigger] = taskNext(iter);
-		taskNext(iter) = taskQHeads_loc[smaller];
+		taskQHeads_loc[bigger] = loadTaskNext(iter);
+		storeTaskNext(iter,taskQHeads_loc[smaller]);
         taskQHeads_loc[smaller] = holder;
 		taskQCounts_loc[smaller] += diff;
 		taskQCounts_loc[bigger] += diff;
@@ -623,8 +697,8 @@ inline void levelTasks( in uint len ){
 ** in the task buffer.
 */
 inline void pushTaskQ(in uint idx){
-	TaskBuffer[taskQHeadIdx(idx)] = taskQHeads_loc[idx];
-	TaskBuffer[taskQCountIdx(idx)] = taskQCounts_loc[idx];
+	storeTask(taskQHeadIdx(idx),taskQHeads_loc[idx]);
+	storeTask(taskQCountIdx(idx),taskQCounts_loc[idx]);
 }
 
 /*
@@ -632,8 +706,8 @@ inline void pushTaskQ(in uint idx){
 ** in the task buffer.
 */
 inline void pullTaskQ(in uint idx){
-	taskQHeads_loc[idx] = TaskBuffer[taskQHeadIdx(idx)];
-	taskQCounts_loc[idx] = TaskBuffer[taskQCountIdx(idx)];
+	taskQHeads_loc[idx] = loadTask(taskQHeadIdx(idx));
+	taskQCounts_loc[idx] = loadTask(taskQCountIdx(idx));
 }
 
 /*
@@ -654,13 +728,13 @@ inline void rotateTaskQs(){
 
 	// Swaps the index of our first local list with our partner's swap list
     InterlockedExchange(
-						TaskBuffer[taskQIdxIdx(swpIdx)],
+						loadTask(taskQIdxIdx(swpIdx)),
 						taskQIdxs_loc[0],
 						taskQIdxs_loc[0]
 					);
 	// Swaps the index of our first local list with that of our global swap list
 	InterlockedExchange(
-						TaskBuffer[taskQIdxIdx(id)],
+						loadTask(taskQIdxIdx(id)),
 						taskQIdxs_loc[1],
 						taskQIdxs_loc[1]
 					);
@@ -694,11 +768,11 @@ inline void pushStackUint(inout uint top, inout uint count, in uint val){
 	// If the count rolls into a new node, it is allocated and made the head
     if( modPt == 0 ){
 		result = allocNode();
-		rawNode(result,0) = top;
+		storeRawNode(result,0,top);
 		top = result;
     }
     // Stores the data
-    rawNode(top,1+modPt) = val;
+    storeRawNode(top,1+modPt,val);
     count++;
 }
 
@@ -714,7 +788,7 @@ inline void popStackUint(inout uint top, inout uint count){
 	uint result = top;
 	// If the count rolls out of the current head node, it is made the new head
     if( modPt == 1 ){
-		result = rawNode(top,0);
+		result = loadRawNode(top,0);
 		freeNode(top);
 		top = result;
     }
@@ -722,14 +796,15 @@ inline void popStackUint(inout uint top, inout uint count){
 }
 
 // So we can read and write to the stack top cleanly
-#define stackTopUint(top,count) rawNode( top, 1 + ( ( count - 1 ) % ( NODE_SIZE - 1 ) ) )
+#define loadStackTopUint(top,count) loadRawNode( top, 1 + ( ( count - 1 ) % ( NODE_SIZE - 1 ) ) )
+#define storeStackTopUint(top,count,val) storeRawNode( top, 1 + ( ( count - 1 ) % ( NODE_SIZE - 1 ) ) , val )
 
 // Traverses down the linked list making up the stack, freeing nodes as it goes
 inline void destroyStackUint(inout uint top, inout uint count){
 	uint iter = top;
 	uint next;
 	while(iter != NOT_THERE){
-		next = rawNode(iter,0);
+		next = loadRawNode(iter,0);
 		freeNode(iter);
 		iter = next;
 	}
@@ -754,13 +829,13 @@ inline void pushStackUvec3(inout uint top, inout uint count, in uvec3 val){
 	// Allocate a new node and make it the head of the list, if necessary
     if( modPt == 0 ){
 		result = allocNode();
-		DataBuffer[NODE_SIZE*result] = top;
+		storeRawNode(result,0,top);
 		top = result;
     }
     // load in the new data
-    DataBuffer[NODE_SIZE*top + 1 + modPt] = val.x;
-    DataBuffer[NODE_SIZE*top + 1 + 1 + modPt] = val.y;
-    DataBuffer[NODE_SIZE*top + 1 + 2 + modPt] = val.z;
+    storeRawNode(top, 1 + modPt, val.x);
+    storeRawNode(top, 1 + 1 + modPt, val.y);
+    storeRawNode(top, 1 + 2 + modPt, val.z);
     count++;
 }
 
@@ -773,7 +848,7 @@ inline void popStackUvec3(inout uint top, inout uint count){
 	uint modPt = (count * 3) % (NODE_SIZE - 1);
 	uint result = top;
     if( modPt == 3 ){
-		result = DataBuffer[NODE_SIZE*top];
+		result = loadRawNode(top,0);
 		freeNode(top);
 		top = result;
     }
@@ -782,19 +857,18 @@ inline void popStackUvec3(inout uint top, inout uint count){
 
 // Returns the uvec3 at the top of the stack
 inline uvec3 readTopUvec3(inout uint top, inout uint count){
-	uint idx = NODE_SIZE * top + 1 + ( (count * 3) % ( NODE_SIZE - 1 ) );
-	return uvec3( 	DataBuffer[ idx ],
-					DataBuffer[ idx + 1 ],
-					DataBuffer[ idx + 2 ]
-				);
+	uint idx = 1 + ( (count * 3) % ( NODE_SIZE - 1 ) );
+	return uvec3( 	loadRawNode(top, idx),
+					loadRawNode(top, idx + 1),
+					loadRawNode(top, idx + 2)	);
 }
 
 // Overwrites the given uvec3 to the top of the stack
 inline void writeTopUvec3(inout uint top, inout uint count, uvec3 data){
-	uint idx = NODE_SIZE * top + 1 + ( (count * 3) % ( NODE_SIZE - 1 ) );
-	DataBuffer[ idx ] = data.x;
-	DataBuffer[ idx + 1 ] = data.y;
-	DataBuffer[ idx + 2 ] = data.z;
+	uint idx =  1 + ( (count * 3) % ( NODE_SIZE - 1 ) );
+	storeRawNode(top,idx,data.x);
+	storeRawNode(top,idx+1,data.y);
+	storeRawNode(top,idx+2,data.z);
 }
 
 // Traverses down the linked list making up the stack, freeing nodes as it goes
@@ -802,7 +876,7 @@ inline void destroyStackUvec3(inout uint top, inout uint count){
 	uint iter = top;
 	uint next;
 	while(iter != NOT_THERE){
-		next = DataBuffer[NODE_SIZE*iter];
+		next = loadRawNode(iter,0);
 		freeNode(iter);
 		iter = next;
 	}
@@ -827,7 +901,7 @@ inline bool childSeek(	inout uint voxel, inout vec3 position ){
 	uint idx = 0;
 	vec3 posStep = step(position,vec3(0.0,0.0,0.0));
 	idx = uint(dot(posStep,vec3(1.0,2.0,4.0)));
-	uint addr = voxelChild(voxel,idx);
+	uint addr = loadVoxelChild(voxel,idx);
 	if(addr | NOT_THERE != NOT_THERE){
 		voxel = addr;
 		position = fmod(position,1.0) * 2.0;
@@ -863,8 +937,8 @@ inline void initYggCompute(){
 	** heap and task lists to be available in the id-th element of the
 	** swapping section of their respective buffer .
 	*/
-	HeapBuffer[heapIdxIdx(id)] = id * RSRC_PER + 2;
-	TaskBuffer[taskQIdxIdx(id)] = id * RSRC_PER + 2;
+	storeHeap(heapIdxIdx(id),id * RSRC_PER + 2);
+	storeTask(taskQIdxIdx(id),id * RSRC_PER + 2);
 
 	// Get the heads of each of our non-swapping lists
 	pullHeap(0);

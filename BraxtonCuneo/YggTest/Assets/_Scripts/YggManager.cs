@@ -1,5 +1,6 @@
 ﻿
 #define DBUG
+#define RAWBUFFER
 
 
 using UnityEngine;
@@ -64,7 +65,7 @@ public class YggManager : MonoBehaviour
 			Debug.LogError("This system cannot run compute shaders. This is bad. Go fix that.");
 		}
 		totalGPURAM = SystemInfo.graphicsMemorySize;
-        dataSat = 0.1f;
+        dataSat = 0.001f;
 		threadCount = 4096;
 		groupSize = 64;
 		extraneousNodes = 0;
@@ -75,13 +76,22 @@ public class YggManager : MonoBehaviour
         Debug.Log("System has " + totalGPURAM + " MB of Video Memory");
         Debug.Log("Databuffer size is " + dataBufferSize());
         Debug.Log("Nodes per heap list is "+ ( dataBufferSize() / ( threadCount * 16 * 3 ) ) );
+
+#if RAWBUFFER
+        dataBuffer = new ComputeBuffer (dataBufferSize (), sizeof(uint),ComputeBufferType.Raw);
+		heapBuffer = new ComputeBuffer (heapBufferSize (), sizeof(uint), ComputeBufferType.Raw);
+		taskBuffer = new ComputeBuffer (taskBufferSize (), sizeof(uint), ComputeBufferType.Raw);
+		blockBuffer = new ComputeBuffer (blockNumber, sizeof(block), ComputeBufferType.Raw);
+		exchangeBuffer = new ComputeBuffer (exchangeSize, sizeof(uint), ComputeBufferType.Raw);
+#else
         dataBuffer = new ComputeBuffer (dataBufferSize (), sizeof(uint));
 		heapBuffer = new ComputeBuffer (heapBufferSize (), sizeof(uint));
 		taskBuffer = new ComputeBuffer (taskBufferSize (), sizeof(uint));
 		blockBuffer = new ComputeBuffer (blockNumber, sizeof(block));
 		exchangeBuffer = new ComputeBuffer (exchangeSize, sizeof(uint));
-         
-		init ();
+#endif
+
+        init();
         #if DBUG
         doAtomicSanity (); 
         #endif
@@ -240,7 +250,7 @@ public class YggManager : MonoBehaviour
         AtomSanExg.GetData(state);
         for (int i = 0; i < lim; i++)
         {
-            //Debug.Log("Atom Thread Pos: " + state[i]+ " at " + i);
+            Debug.Log("Atom Thread Pos: " + state[i]+ " at " + i);
             if (state[i] < lim)
             {
                 check[state[i]]++;
@@ -251,7 +261,14 @@ public class YggManager : MonoBehaviour
             }
             else
             {
-                Debug.Log("Out of Bounds " + state[i] + " at " + i);
+                if (state[i] == 0x7FFFFFFF)
+                {
+                    check[threadCount]++;
+                }
+                else
+                {
+                    Debug.Log("Out of Bounds " + state[i] + " at " + i);
+                }
             }
             /*
             if (state[i] != 0x80000000)
@@ -283,7 +300,7 @@ public class YggManager : MonoBehaviour
         run(initializer);
         float end = Time.realtimeSinceStartup;
         Debug.Log("Initialization took " + (end - start) + " seconds");
-        #if DBUG
+#if DBUG
         if (checkInitData() && checkInitHeap() && checkInitTask())
         {
             Debug.Log("Initialization checks passed");
@@ -292,11 +309,11 @@ public class YggManager : MonoBehaviour
         {
             Debug.Log("Initialization checks failed");
         }
-        #endif
+#endif
     }
 
 	void diagnose(){
-		ComputeBuffer DiagExg = new ComputeBuffer (threadCount*3, sizeof(uint));
+		ComputeBuffer DiagExg = new ComputeBuffer (threadCount*3, sizeof(uint),ComputeBufferType.Raw);
 		loadCommon (diagnostic,DiagExg);
         diagnostic.SetInt("_loopNo",0x00000800);
         float start = Time.realtimeSinceStartup;
@@ -309,7 +326,7 @@ public class YggManager : MonoBehaviour
 
     void doAtomicSanity()
     {
-        ComputeBuffer AtomSan = new ComputeBuffer(threadCount+1, sizeof(uint));
+        ComputeBuffer AtomSan = new ComputeBuffer(threadCount+1, sizeof(uint),ComputeBufferType.Raw);
         loadCommon(atomicSanityCheck, AtomSan);
         float start = Time.realtimeSinceStartup;
         run(atomicSanityCheck);

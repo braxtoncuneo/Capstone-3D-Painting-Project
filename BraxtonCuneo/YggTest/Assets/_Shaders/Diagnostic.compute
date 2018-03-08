@@ -1,6 +1,7 @@
 ﻿
 #define CONVERT
 
+
 #ifdef CONVERT
 #define vec2	float2
 #define vec3	float3
@@ -100,7 +101,7 @@ void main(uint3 _id : SV_DispatchThreadID) {
 		}
 		if (count != 0) {
 			status |= ALLOC_DISCREPANCY;
-		}*/
+		}*/ 
 		a = heapIdxs_loc[0];
 		InterlockedExchange(
 			HeapBuffer[0],

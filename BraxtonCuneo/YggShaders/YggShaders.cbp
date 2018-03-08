@@ -36,6 +36,7 @@
 			<Add library="glu32" />
 			<Add library="gdi32" />
 		</Linker>
+		<Unit filename="AtomicSanity.comp" />
 		<Unit filename="BasicToolTemplate.comp" />
 		<Unit filename="CommonCode.comp" />
 		<Unit filename="Initializer.comp" />

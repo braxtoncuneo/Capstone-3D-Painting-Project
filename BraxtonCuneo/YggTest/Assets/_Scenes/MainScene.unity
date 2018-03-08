@@ -207,7 +207,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   initializer: {fileID: 7200000, guid: de5f9f3011c016a468ec3967fe1d4797, type: 3}
   diagnostic: {fileID: 7200000, guid: 56ca291b4df10b446891ac1268286743, type: 3}
-  atomicSanityCheck: {fileID: 7200000, guid: 23453233434c0af46a798455fb1ba3ec, type: 3}
+  atomicSanityCheck: {fileID: 7200000, guid: 367b1625e76b5424b889d649e3ef7cfa, type: 3}
   rayTracer: {fileID: 7200000, guid: 0256bc60f2ad33f4cb11c0c3d8da4836, type: 3}
   treeManager: {fileID: 0}
   memoryManager: {fileID: 7200000, guid: 438475714410d8147b0e27b21d298a93, type: 3}
