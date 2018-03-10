@@ -1,0 +1,23 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel main
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWTexture3D<float4> _Data;
+
+float3 baseOffset;
+float3 brushCenter;
+
+[numthreads(4,4,4)]
+void main (uint3 id : SV_DispatchThreadID)
+{
+	float4 color = float4(0,1,0,256.0);
+	float4 backg = float4(1, 0, 0, 0.0);
+	float3 position = id / 32.0 + baseOffset - brushCenter;
+	if (length(position) < 1.0) {
+		_Data[id] = color;
+	}
+	else {
+		_Data[id] = backg;
+	}
+}

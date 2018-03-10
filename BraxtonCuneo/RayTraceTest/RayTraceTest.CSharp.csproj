@@ -289,8 +289,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\_Scripts\BlockScript.cs" />
+    <Compile Include="Assets\_Scripts\BrushScript.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Assets\_Shaders\BasicBrush.compute" />
     <None Include="Assets\_Shaders\RayTracer.shader" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\SyntaxTree\UnityVS\2015\UnityVS.CSharp.targets" />
