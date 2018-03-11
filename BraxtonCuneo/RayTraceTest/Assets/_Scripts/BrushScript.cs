@@ -5,29 +5,83 @@ using System;
 
 public class BrushScript : MonoBehaviour {
 
-    Transform tform;
+    Matrix4x4 last;
+    Vector4 lastColor;
     public ComputeShader BasicBrush;
     public List<BlockScript> blocks;
    // public Color brushColor;
 
 	// Use this for initialization
 	void Start () {
-        tform = GetComponent<Transform>();
+        last = transform.worldToLocalMatrix;
+        BasicBrush.SetInt("texWidth",BlockScript.width);
 	}
-	
-	// Update is called once per frame
-	void Update ()
+
+    void setCenter(float x, float y, float z)
+    {
+        float[] center = new float[3];
+        center[0] = x;
+        center[1] = y;
+        center[2] = z;
+        transform.position.Set(x, y, z);
+        BasicBrush.SetFloats("brushCenter", center);
+    }
+
+    void setStartColor(Vector4 color)
+    {
+        float[] col = new float[4];
+        col[0] = color.x;
+        col[1] = color.y;
+        col[2] = color.z;
+        col[3] = color.w;
+        BasicBrush.SetFloats("startColor", col);
+    }
+
+    void setEndColor(Vector4 color)
+    {
+        float[] col = new float[4];
+        col[0] = color.x;
+        col[1] = color.y;
+        col[2] = color.z;
+        col[3] = color.w;
+        BasicBrush.SetFloats("endColor", col);
+    }
+
+    // Update is called once per frame
+    void Update ()
     {
         int kInd = BasicBrush.FindKernel("main");
-        float[] cent = new float[3];
-        //float[] col = new float[4];
         float[] offset = new float[3];
-        cent[0] = (float)Math.Sin(Time.time);
-        cent[1] = 0;
-        cent[2] = (float)Math.Cos(Time.time);
-        //Debug.Log(cent[0] + "," + cent[1] + "," + cent[2]);
-        tform.position.Set(cent[0], cent[1], cent[2]);
-        BasicBrush.SetFloats("brushCenter", cent);
+
+        setCenter(
+            1 + (float)(Math.Sin(Time.time * 2.0) * Math.Cos(Time.time * 3.5)),
+            1 + (float)Math.Sin(Time.time * 0.23125),
+            1 + (float)(Math.Cos(Time.time * 4.0) * Math.Sin(Time.time * 1.2))
+        );
+
+        Vector4 nowColor = new Vector4((float)Math.Sin(Time.time * 2.3), (float)Math.Sin(Time.time * 1.3), (float)Math.Sin(Time.time * 1.7), 128.0f);
+        
+        setStartColor(lastColor);
+        setEndColor(nowColor);
+        lastColor = nowColor;
+
+
+        float m = 1.0f;
+
+        transform.SetPositionAndRotation(
+                new Vector3(
+                    1 + (float)(Math.Sin(Time.time * 2.0 * m) * Math.Cos(Time.time * 3.5 * m)),
+                    1 + (float)Math.Sin(Time.time * 0.23125 * m),
+                    1 + (float)(Math.Cos(Time.time * 4.0 * m) * Math.Sin(Time.time * 1.2 * m))
+                ), 
+                new Quaternion()
+        );
+
+        Matrix4x4 current = transform.worldToLocalMatrix;
+        Debug.Log(current);
+        BasicBrush.SetMatrix("start", last);
+        BasicBrush.SetMatrix("end", current);
+        last = current;
 
         foreach(BlockScript b in blocks)
         {

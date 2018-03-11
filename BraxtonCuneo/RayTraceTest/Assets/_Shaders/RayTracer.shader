@@ -37,6 +37,7 @@
 			};
 
 			sampler3D _Data;
+			int texWidth;
 
 
 			float4 _MainTex_ST;
@@ -57,7 +58,7 @@
 					result = float4(samp.xyz + curr.xyz * (1 - samp.w), 1);
 				}
 				else {
-					result = float4(samp.xyz + curr.xyz * (1 - samp.w) * curr.w * stepSize, samp.w + (1 - samp.w)* curr.w * stepSize);
+					result = float4(samp.xyz + curr.xyz * (1 - samp.w) * curr.w  * stepSize, samp.w + (1 - samp.w)* curr.w  * stepSize );
 					result.w = clamp(result.w,0.0, 1.0);
 				}
 				return result;
@@ -65,7 +66,7 @@
 			
 			fixed4 frag (v2f i) : SV_Target
 			{
-				float stepSize = length(i.dir) * 1.0 / 64;
+				float stepSize = max(length(i.dir) * 1.0 / 256, 1.0/texWidth);
 				float level = 0.0;// floor(log2(length(i.dir) / 4.0));
 				float3 pos = (i.color-0.5)*2.0;
 				float3 vel = normalize(i.dir);

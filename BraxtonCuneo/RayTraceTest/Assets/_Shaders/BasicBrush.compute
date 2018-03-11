@@ -7,17 +7,39 @@ RWTexture3D<float4> _Data;
 
 float3 baseOffset;
 float3 brushCenter;
+float4 startColor;
+float4 endColor;
+
+int texWidth;
+
+float4x4 start;
+float4x4 end;
 
 [numthreads(4,4,4)]
 void main (uint3 id : SV_DispatchThreadID)
 {
-	float4 color = float4(0,1,0,256.0);
-	float4 backg = float4(1, 0, 0, 0.0);
-	float3 position = id / 32.0 + baseOffset - brushCenter;
-	if (length(position) < 1.0) {
-		_Data[id] = color;
+	float4 worldPos = float4((id + 0.5) / ((float)texWidth) + baseOffset,1.0);
+	float3 relStart = mul(start,worldPos).xyz;
+	float3 relEnd =  mul(end,worldPos).xyz;
+	float3 brushDir = normalize(relEnd - relStart);
+	float before = dot(relStart, brushDir);
+	float after = dot(relEnd, brushDir);
+	float3 pos;
+	if (before >= 0) {
+		pos = relStart;
 	}
-	else {
-		_Data[id] = backg;
+	else if (after <= 0) {
+		pos = relEnd;
+	}
+	else if (before == after) {
+		pos = relStart;
+	}
+	else{
+		pos = lerp(relStart, relEnd, 1.0 - (after) / (after - before));
+	}
+
+
+	if (length(pos) <= 0.05) {
+		_Data[id] = lerp(startColor, endColor, 1.0 - (after) / (after - before));
 	}
 }

@@ -18,7 +18,7 @@ public class BlockScript : MonoBehaviour
 #endif
 
     public Mesh Model;
-    const int width = 32;
+    public const int width = 32;
     const int layers = 1;
     const bool doesMipMapping = true;
     const int groupWidth = 4;
@@ -129,8 +129,11 @@ public class BlockScript : MonoBehaviour
             VoxelData.width = width;
             VoxelData.volumeDepth = width;
             VoxelData.enableRandomWrite = true;
+            VoxelData.filterMode = FilterMode.Point;
+            VoxelData.format = RenderTextureFormat.ARGBFloat;
             VoxelData.Create();
             RayTracer.SetTexture("_Data", VoxelData);
+            RayTracer.SetFloat("texWidth",width);
         }
         brushShader.SetTexture(0, "_Data", VoxelData);
         brushShader.Dispatch(kernelIndex, width / groupWidth, width / groupWidth, width / groupWidth);
