@@ -24,7 +24,7 @@ public class Chunk : MonoBehaviour
     public int chunkX;
     public int chunkY;
     public int chunkZ;
-    public float scale;
+    //public float world.scale;
 
     public bool update;
 
@@ -46,10 +46,10 @@ public class Chunk : MonoBehaviour
 
     void CubeTop(int x, int y, int z, int block)
     {
-        tempVerts.Add(new Vector3(scale * x, scale * y, scale * z + scale));
-        tempVerts.Add(new Vector3(scale * x + scale, scale * y, scale * z + scale));
-        tempVerts.Add(new Vector3(scale * x + scale, scale * y, scale * z));
-        tempVerts.Add(new Vector3(scale * x, scale * y, scale * z));
+        tempVerts.Add(new Vector3(world.scale * x, world.scale * y, world.scale * z + world.scale));
+        tempVerts.Add(new Vector3(world.scale * x + world.scale, world.scale * y, world.scale * z + world.scale));
+        tempVerts.Add(new Vector3(world.scale * x + world.scale, world.scale * y, world.scale * z));
+        tempVerts.Add(new Vector3(world.scale * x, world.scale * y, world.scale * z));
 
         Vector2 color = new Vector2(0, 0);
 
@@ -75,10 +75,10 @@ public class Chunk : MonoBehaviour
 
     void CubeFront(int x, int y, int z, int block)
     {
-        tempVerts.Add(new Vector3(scale * x + 1, scale * y - scale, scale * z + scale));
-        tempVerts.Add(new Vector3(scale * x + 1, scale * y, scale * z + scale));
-        tempVerts.Add(new Vector3(scale * x, scale * y, scale * z + scale));
-        tempVerts.Add(new Vector3(scale * x, scale * y - scale, scale * z + scale));
+        tempVerts.Add(new Vector3(world.scale * x + 1, world.scale * y - world.scale, world.scale * z + world.scale));
+        tempVerts.Add(new Vector3(world.scale * x + 1, world.scale * y, world.scale * z + world.scale));
+        tempVerts.Add(new Vector3(world.scale * x, world.scale * y, world.scale * z + world.scale));
+        tempVerts.Add(new Vector3(world.scale * x, world.scale * y - world.scale, world.scale * z + world.scale));
 
         Vector2 color = new Vector2(0, 0);
 
@@ -105,10 +105,10 @@ public class Chunk : MonoBehaviour
 
     void CubeRight(int x, int y, int z, int block)
     {
-        tempVerts.Add(new Vector3(scale * x + scale, scale * y - scale, scale * z));
-        tempVerts.Add(new Vector3(scale * x + scale, scale * y, scale * z));
-        tempVerts.Add(new Vector3(scale * x + scale, scale * y, scale * z + scale));
-        tempVerts.Add(new Vector3(scale * x + scale, scale * y - scale, scale * z + scale));
+        tempVerts.Add(new Vector3(world.scale * x + world.scale, world.scale * y - world.scale, world.scale * z));
+        tempVerts.Add(new Vector3(world.scale * x + world.scale, world.scale * y, world.scale * z));
+        tempVerts.Add(new Vector3(world.scale * x + world.scale, world.scale * y, world.scale * z + world.scale));
+        tempVerts.Add(new Vector3(world.scale * x + world.scale, world.scale * y - world.scale, world.scale * z + world.scale));
 
         Vector2 color = new Vector2(0, 0);
 
@@ -135,10 +135,10 @@ public class Chunk : MonoBehaviour
 
     void CubeBack(int x, int y, int z, int block)
     {
-        tempVerts.Add(new Vector3(scale * x, scale * y - scale, scale * z));
-        tempVerts.Add(new Vector3(scale * x, scale * y, scale * z));
-        tempVerts.Add(new Vector3(scale * x + scale, scale * y, scale * z));
-        tempVerts.Add(new Vector3(scale * x + scale, scale * y - scale, scale * z));
+        tempVerts.Add(new Vector3(world.scale * x, world.scale * y - world.scale, world.scale * z));
+        tempVerts.Add(new Vector3(world.scale * x, world.scale * y, world.scale * z));
+        tempVerts.Add(new Vector3(world.scale * x + world.scale, world.scale * y, world.scale * z));
+        tempVerts.Add(new Vector3(world.scale * x + world.scale, world.scale * y - world.scale, world.scale * z));
 
         Vector2 color = new Vector2(0, 0);
 
@@ -165,10 +165,10 @@ public class Chunk : MonoBehaviour
 
     void CubeLeft(int x, int y, int z, int block)
     {
-        tempVerts.Add(new Vector3(scale * x, scale * y - scale, scale * z + scale));
-        tempVerts.Add(new Vector3(scale * x, scale * y, scale * z + scale));
-        tempVerts.Add(new Vector3(scale * x, scale * y, scale * z));
-        tempVerts.Add(new Vector3(scale * x, scale * y - scale, scale * z));
+        tempVerts.Add(new Vector3(world.scale * x, world.scale * y - world.scale, world.scale * z + world.scale));
+        tempVerts.Add(new Vector3(world.scale * x, world.scale * y, world.scale * z + world.scale));
+        tempVerts.Add(new Vector3(world.scale * x, world.scale * y, world.scale * z));
+        tempVerts.Add(new Vector3(world.scale * x, world.scale * y - world.scale, world.scale * z));
 
         Vector2 color = new Vector2(0, 0);
 
@@ -195,10 +195,10 @@ public class Chunk : MonoBehaviour
 
     void CubeBot(int x, int y, int z, int block)
     {
-        tempVerts.Add(new Vector3(scale * x, scale * y - scale, scale * z));
-        tempVerts.Add(new Vector3(scale * x + scale, scale * y - scale, scale * z));
-        tempVerts.Add(new Vector3(scale * x + scale, scale * y - scale, scale * z + scale));
-        tempVerts.Add(new Vector3(scale * x, scale * y - scale, scale * z + scale));
+        tempVerts.Add(new Vector3(world.scale * x, world.scale * y - world.scale, world.scale * z));
+        tempVerts.Add(new Vector3(world.scale * x + world.scale, world.scale * y - world.scale, world.scale * z));
+        tempVerts.Add(new Vector3(world.scale * x + world.scale, world.scale * y - world.scale, world.scale * z + world.scale));
+        tempVerts.Add(new Vector3(world.scale * x, world.scale * y - world.scale, world.scale * z + world.scale));
 
         Vector2 color = new Vector2(0, 0);
 

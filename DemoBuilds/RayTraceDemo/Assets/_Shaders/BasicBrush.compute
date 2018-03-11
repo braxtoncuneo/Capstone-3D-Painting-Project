@@ -1,0 +1,45 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel main
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWTexture3D<float4> _Data;
+
+float3 baseOffset;
+float3 brushCenter;
+float4 startColor;
+float4 endColor;
+
+int texWidth;
+
+float4x4 start;
+float4x4 end;
+
+[numthreads(4,4,4)]
+void main (uint3 id : SV_DispatchThreadID)
+{
+	float4 worldPos = float4((id + 0.5) / ((float)texWidth) + baseOffset,1.0);
+	float3 relStart = mul(start,worldPos).xyz;
+	float3 relEnd =  mul(end,worldPos).xyz;
+	float3 brushDir = normalize(relEnd - relStart);
+	float before = dot(relStart, brushDir);
+	float after = dot(relEnd, brushDir);
+	float3 pos;
+	if (before >= 0) {
+		pos = relStart;
+	}
+	else if (after <= 0) {
+		pos = relEnd;
+	}
+	else if (before == after) {
+		pos = relStart;
+	}
+	else{
+		pos = lerp(relStart, relEnd, 1.0 - (after) / (after - before));
+	}
+
+
+	if (length(pos) <= 0.15) {
+		_Data[id] = lerp(startColor, endColor, 1.0 - (after) / (after - before));
+	}
+}

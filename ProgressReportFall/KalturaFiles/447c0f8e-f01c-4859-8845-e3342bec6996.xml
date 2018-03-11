@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RecordingSessionMetadata xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <MetadataVersion>1</MetadataVersion>
+  <SessionID>447c0f8e-f01c-4859-8845-e3342bec6996</SessionID>
+  <Title>Screen Capture - 2018 Mar 07 10:55:47</Title>
+  <CapturedOn>2018-03-07T22:55:47.28853-08:00</CapturedOn>
+  <LastModified>2018-03-07T22:56:44.6873809-08:00</LastModified>
+  <Duration>53.0666</Duration>
+  <URL>http://media.oregonstate.edu/my-media</URL>
+  <Recordings>
+    <RecordingSessionMedia>
+      <ID>685f967b-fac9-4d7d-95ae-a5aedac1150f</ID>
+      <MediaType>Screen</MediaType>
+      <UploadState>Uploaded</UploadState>
+      <MediaNaturalWidth>1920</MediaNaturalWidth>
+      <MediaNaturalHeight>1080</MediaNaturalHeight>
+      <RelativePath>447c0f8e-f01c-4859-8845-e3342bec6996\685f967b-fac9-4d7d-95ae-a5aedac1150f.mp4</RelativePath>
+      <DeviceName>Screen Capture</DeviceName>
+      <StartTime>0</StartTime>
+    </RecordingSessionMedia>
+  </Recordings>
+  <ClientData>
+    <IsEdited>false</IsEdited>
+  </ClientData>
+  <ExtensionData>
+    <SerializedStore>
+      <Kaltura>
+        <Tags>
+        </Tags>
+      </Kaltura>
+    </SerializedStore>
+  </ExtensionData>
+</RecordingSessionMetadata>
