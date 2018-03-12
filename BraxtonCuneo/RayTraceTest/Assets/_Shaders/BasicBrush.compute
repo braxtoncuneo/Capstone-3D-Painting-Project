@@ -6,9 +6,9 @@
 RWTexture3D<float4> _Data;
 
 float3 baseOffset;
-float3 brushCenter;
-float4 startColor;
-float4 endColor;
+float4 color0;
+float4 color1;
+float4 sliders;
 
 int texWidth;
 
@@ -38,8 +38,8 @@ void main (uint3 id : SV_DispatchThreadID)
 		pos = lerp(relStart, relEnd, 1.0 - (after) / (after - before));
 	}
 
-
-	if (length(pos) <= 0.05) {
-		_Data[id] = lerp(startColor, endColor, 1.0 - (after) / (after - before));
+	if (length(pos) <= 1.0) {
+		_Data[id] = lerp(color0, color1, 1.0 - (after) / (after - before));
 	}
+
 }

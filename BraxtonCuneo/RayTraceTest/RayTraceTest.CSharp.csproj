@@ -288,8 +288,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\_Scripts\BlockScript.cs" />
-    <Compile Include="Assets\_Scripts\BrushScript.cs" />
+    <Compile Include="Assets\_Scripts\Block.cs" />
+    <Compile Include="Assets\_Scripts\Brush.cs" />
+    <Compile Include="Assets\_Scripts\DemoController.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\_Shaders\BasicBrush.compute" />
