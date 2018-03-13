@@ -2,7 +2,8 @@
 {
 	Properties
 	{
-		_Data ("DataTex", 3D) = "" {}
+		ColorData ("ColorData", 3D) = "" {}
+		SurfaceData("SurfaceData", 3D) = "" {}
 	}
 	SubShader
 	{
@@ -36,7 +37,8 @@
 				float3 dir: O_DIRECTION;
 			};
 
-			sampler3D _Data;
+			sampler3D ColorData;
+			sampler3D SurfaceData;
 			int texWidth;
 
 
@@ -66,8 +68,7 @@
 			
 			fixed4 frag (v2f i) : SV_Target
 			{
-				float stepSize;// = max(length(i.dir), 1.0) / texWidth;
-			float level;// = floor(log2(length(i.dir) / 4.0));
+				float stepSize = max(length(i.dir), 0.5) / texWidth;
 				float3 pos = (i.color-0.5)*2.0;
 				float3 vel = normalize(i.dir);
 				float3 low = (float3(-1, -1, -1) - pos) / vel;
@@ -78,15 +79,21 @@
 				float exit = min(end.x, min(end.y, end.z));
 				float distLeft = exit - entr;
 				float4 samp = float4(0.0,0.0,0.0,0.0);
-				float4 vox;
+				float4 color;
+				float4 surface;
+
 				bool hit = false;
 				float dist = length(i.dir);
 
 				while (distLeft >= 0.0 && !hit) {
-					stepSize = max(dist, 1.0) / texWidth;
-					level = floor(log2(length(i.dir) / 1.0));
-					vox = tex3Dlod(_Data,float4(pos*0.5 + 0.5,level));
-					samp = step(samp, vox, stepSize, hit);
+					stepSize = max(dist, 0.5) / texWidth;
+					color = tex3Dlod(ColorData,float4(pos*0.5 + 0.5,0));
+					surface = tex3Dlod(SurfaceData, float4(pos*0.5 + 0.5,0));
+					if (color.w > 0) {
+						color.xyz *= surface.y*0.5 + 0.5;
+						color.w = 128;
+					}
+					samp = step(samp, color, stepSize, hit);
 					if (samp.w >= 0.99) {
 						break;
 					}
@@ -95,14 +102,14 @@
 					dist += stepSize;
 				}
 
-				fixed4 col;
+				fixed4 result;
 				if (samp.w > 0.0) {
-					col = float4(samp.xyz / samp.w, samp.w); // float4(i.color,1.0);
+					result = float4(samp.xyz / samp.w, samp.w); // float4(i.color,1.0);
 				}
 				else {
-					col = float4(0.0, 0.0, 0.0, 0.0);
+					result = float4(0.0, 0.0, 0.0, 0.0);
 				}
-				return col;
+				return result;
 			}
 			ENDHLSL
 		}

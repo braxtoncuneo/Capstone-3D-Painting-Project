@@ -8,6 +8,7 @@ public class Brush : MonoBehaviour
 
     Matrix4x4 lastTransform;
     public ComputeShader CurrentBrush;
+    public ComputeShader WipeBrush;
 
     public ComputeShader BasicBrush;
     public List<Block> blocks;
@@ -23,6 +24,7 @@ public class Brush : MonoBehaviour
         setVector4(BasicBrush, "sliders", new Vector4(0, 0, 0, 0));
         transform.SetPositionAndRotation(new Vector3(0, 0, 0), new Quaternion());
         transform.localScale = new Vector3(0, 0, 0);
+        Wipe(new Vector4(0,0,0,0),new Vector4(0,0,0,0));
     }
 
 
@@ -62,10 +64,6 @@ public class Brush : MonoBehaviour
         {
             PerformBrush(CurrentBrush, color0, color1, sliders, lastTransform, transform.worldToLocalMatrix);
         }
-        else
-        {
-            Debug.Log("Impossible missing brush");
-        }
         lastTransform = transform.worldToLocalMatrix;
     }
 
@@ -79,7 +77,6 @@ public class Brush : MonoBehaviour
     public void PerformBrush(  ComputeShader brush, Vector4 color0, Vector4 color1, Vector4 sliders,
                         Matrix4x4 startTransform, Matrix4x4 endTransform)
     {
-        Debug.Log("Performing Brush");
         int kInd = BasicBrush.FindKernel("main");
         float[] offset = new float[3];
 
@@ -98,6 +95,13 @@ public class Brush : MonoBehaviour
             BasicBrush.SetFloats("baseOffset", offset);
             b.BrushOperation(BasicBrush, kInd);
         }
-
     }
+
+
+    public void Wipe( Vector4 color0, Vector4 color1 )
+    {
+        PerformBrush(WipeBrush, color0, color1, new Vector4(0, 0, 0), new Matrix4x4(), new Matrix4x4());        
+    }
+
+
 }

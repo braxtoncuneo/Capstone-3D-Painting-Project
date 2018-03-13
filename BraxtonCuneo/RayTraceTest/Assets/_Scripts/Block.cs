@@ -10,20 +10,22 @@ public class Block : MonoBehaviour
 {
 
     public Material RayTracer;
-    public RenderTexture VoxelData;
+    public RenderTexture ColorData;
+    public RenderTexture SurfaceData;
 
 
     public Mesh Model;
-    public const int width = 64;
+    public const int width = 32;
     const int layers = 1;
     const bool doesMipMapping = true;
-    const int groupWidth = 4;
+    const int groupWidth = 8;
 
 
     // Use this for initialization
     void Start()
     {
-        VoxelData = null;
+        ColorData = null;
+        SurfaceData = null;
         RayTracer = GetComponent<MeshRenderer>().material;
         Model = new Mesh();
         MeshFilter filter = GetComponent<MeshFilter>();
@@ -66,29 +68,53 @@ public class Block : MonoBehaviour
 
     }
 
+    RenderTexture makeDataGrid(int width, int height, int depth)
+    {
+        RenderTexture result = new RenderTexture(width, height, 0);
+        result.dimension = UnityEngine.Rendering.TextureDimension.Tex3D;
+        result.width = width;
+        result.height = height;
+        result.volumeDepth = depth;
+        result.enableRandomWrite = true;
+        result.filterMode = FilterMode.Point;
+        result.format = RenderTextureFormat.ARGBFloat;
+        result.autoGenerateMips = false;
+        result.useMipMap = false;
+        result.Create();
+        return result;
+    }
+
+    RenderTexture makeSeekGrid(int width, int height, int depth)
+    {
+        RenderTexture result = new RenderTexture(width, height, 0);
+        result.dimension = UnityEngine.Rendering.TextureDimension.Tex3D;
+        result.width = width;
+        result.height = height;
+        result.volumeDepth = depth;
+        result.enableRandomWrite = true;
+        result.filterMode = FilterMode.Point;
+        result.format = RenderTextureFormat.R8;
+        result.autoGenerateMips = false;
+        result.useMipMap = false;
+        result.Create();
+        return result;
+    }
+
 
     public void BrushOperation(ComputeShader brushShader, int kernelIndex)
     {
-        if (VoxelData == null)
+        if (ColorData == null)
         {
-            VoxelData = new RenderTexture(width, width, 0);
-            VoxelData.dimension = UnityEngine.Rendering.TextureDimension.Tex3D;
-            VoxelData.width = width * layers;
-            VoxelData.width = width;
-            VoxelData.volumeDepth = width;
-            VoxelData.enableRandomWrite = true;
-            VoxelData.filterMode = FilterMode.Point;
-            VoxelData.format = RenderTextureFormat.ARGBFloat;
-            VoxelData.Create();
-            RayTracer.SetTexture("_Data", VoxelData);
+            ColorData = makeDataGrid(width, width, width);
+            RayTracer.SetTexture("ColorData", ColorData);
+
+            SurfaceData = makeDataGrid(width, width, width);
+            RayTracer.SetTexture("SurfaceData", SurfaceData);
+
             RayTracer.SetFloat("texWidth", width);
-            Debug.Log("Made RenderTex");
         }
-        else
-        {
-            Debug.Log("Not missing RenderTex?");
-        }
-        brushShader.SetTexture(0, "_Data", VoxelData);
+        brushShader.SetTexture(kernelIndex, "ColorData", ColorData);
+        brushShader.SetTexture(kernelIndex, "SurfaceData", SurfaceData);
         brushShader.Dispatch(kernelIndex, width / groupWidth, width / groupWidth, width / groupWidth);
     }
     

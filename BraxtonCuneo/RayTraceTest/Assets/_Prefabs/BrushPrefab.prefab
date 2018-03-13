@@ -52,5 +52,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   CurrentBrush: {fileID: 0}
+  WipeBrush: {fileID: 7200000, guid: 6ece15fe3da36584fb9ab7a471a64fb6, type: 3}
   BasicBrush: {fileID: 7200000, guid: 15bb8bc6a213e6146b7f3615fb1cd6ad, type: 3}
   blocks: []
