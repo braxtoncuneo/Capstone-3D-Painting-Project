@@ -1,0 +1,80 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel main
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWTexture3D<float4> ColorData;
+RWTexture3D<float4> SurfaceData;
+
+float3 baseOffset;
+float4 color0;
+float4 color1;
+float4 sliders;
+
+int texWidth;
+
+float4x4 start;
+float4x4 end;
+
+[numthreads(8,8,8)]
+void main (uint3 id : SV_DispatchThreadID)
+{
+	float4 worldPos = float4((id + 0.5) / ((float)texWidth) + baseOffset,1.0);
+	float3 relStart = mul(start,worldPos).xyz;
+	float3 relEnd =  mul(end,worldPos).xyz;
+	float3 brushDir = normalize(relEnd - relStart);
+	float before = dot(relStart, brushDir);
+	float after = dot(relEnd, brushDir);
+	float3 pos;
+	float3x3 normMat;
+	float4 norm;
+	if (before >= 0) {
+		pos = relStart;
+		normMat = transpose(start);
+	}
+	else if (after <= 0) {
+		pos = relEnd;
+		normMat = transpose(end);
+	}
+	else if (before == after){
+		pos = relStart;
+		normMat = transpose(start);
+	}
+	else{
+		pos = lerp(relStart, relEnd, 1.0 - (after) / (after - before));
+		normMat = transpose(lerp(start, end, 1.0 - (after) / (after - before)));
+	}
+
+	if (length(pos) <= 1.0) {
+		ColorData[id] = lerp(color0, color1, 1.0 - (after) / (after - before));
+		SurfaceData[id] = float4(normalize(mul(normMat, normalize(pos))),0.0);
+	}
+	/*
+	int lim = max(id.x, max(id.y, id.z));
+	float4 samp;
+	float4 colAcc;
+	int4 coord = int4(id, 0) * 2;
+	int accCount;
+	for (int lvl = texWidth / 2; lim < lvl; lvl = lvl / 2) {
+		colAcc = float4(0, 0, 0, 0);
+		nrmAcc = float4(0, 0, 0, 0);
+		accCount = 0;
+		for (int x = 0; x < 2; x++) {
+			for (int y = 0; y < 2; y++) {
+				for (int z = 0; z < 2; z++) {
+					samp = ColorData.Load(coord + int4(x,y,z,0));
+					if (samp.w != 0) {
+						colAcc += samp;
+						samp = SurfaceData.Load(coord + int4(x, y, z, 0));
+						nrmAcc += samp;
+						accCount++;
+					}
+				}
+			}
+		}
+		SurfaceData.Store();
+		coord.w++;
+	}
+	*/
+
+}

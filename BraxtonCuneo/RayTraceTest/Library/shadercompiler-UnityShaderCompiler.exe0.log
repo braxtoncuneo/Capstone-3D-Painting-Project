@@ -1,0 +1,12 @@
+Base path: C:/Program Files/Unity/Editor/Data
+Cmd: initializeCompiler
+Cmd: compileComputeKernel
+  error: 1 plat 4 at BasicBrush.compute(33): implicit truncation of vector type
+  error: 1 plat 4 at BasicBrush.compute(37): implicit truncation of vector type
+  error: 1 plat 4 at BasicBrush.compute(41): implicit truncation of vector type
+  error: 1 plat 4 at BasicBrush.compute(45): implicit truncation of vector type
+  api=4 insize=2008 outsize=2549 ok=1
+Cmd: preprocess
+  insize=2801 outsize=330 ok=1
+Cmd: compileComputeKernel
+  api=4 insize=510 outsize=509 ok=1
