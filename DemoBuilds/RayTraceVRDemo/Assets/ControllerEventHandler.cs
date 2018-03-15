@@ -4,13 +4,18 @@
 
     public class ControllerEventHandler : MonoBehaviour
     {
+        public Block prefab;
+        public SteamVR_TrackedObject target;
         public ChangeState worldState;
         public Brush brush;
         private bool brushDown = false;
         private Vector4 color = new Vector4(1, 0, 0, .5f);
 
+
         private void Update()
         {
+            brush.transform.position = target.transform.position;
+            brush.transform.rotation = target.transform.rotation;
             if (brushDown)
             {
                 Debug.Log("Brush is down");
@@ -26,6 +31,8 @@
                 return;
             }
 
+            brush.transform.localScale = new Vector3(0.1f,0.1f,0.1f);
+            initGrid(3);
 
 
             //Setup controller event listeners
@@ -285,5 +292,26 @@
         {
             DebugLogger(e.controllerIndex, "CONTROLLER STATE", "INDEX CHANGED", e);
         }
+
+
+        private void initGrid(int width)
+        {
+            for(int z = 0; z < width; z++)
+            {
+                for (int y = 0; y < width; y++)
+                {
+                    for (int x = 0; x < width; x++)
+                    {
+                        Block b = Instantiate(prefab);
+                        b.transform.SetPositionAndRotation(
+                            new Vector3(x+4, y+4, z+4),
+                            new Quaternion()
+                        );
+                        brush.blocks.Add(b);
+                    }
+                }
+            }
+        }
+
     }
 }

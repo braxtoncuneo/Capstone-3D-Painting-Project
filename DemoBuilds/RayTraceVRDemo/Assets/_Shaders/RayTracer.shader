@@ -68,7 +68,7 @@
 			
 			fixed4 frag (v2f i) : SV_Target
 			{
-				float stepSize = max(length(i.dir), 0.5) / texWidth;
+				float stepSize = /*max(length(i.dir),*/ 0.125/*)*/ / texWidth;
 				float3 pos = (i.color-0.5)*2.0;
 				float3 vel = normalize(i.dir);
 				float3 low = (float3(-1, -1, -1) - pos) / vel;
@@ -86,7 +86,7 @@
 				float dist = length(i.dir);
 
 				while (distLeft >= 0.0 && !hit) {
-					stepSize = max(dist, 0.5) / texWidth;
+					stepSize = /*max(dist,*/ 0.125/*)*/ / texWidth;
 					color = tex3Dlod(ColorData,float4(pos*0.5 + 0.5,0));
 					surface = tex3Dlod(SurfaceData, float4(pos*0.5 + 0.5,0));
 					if (color.w > 0) {

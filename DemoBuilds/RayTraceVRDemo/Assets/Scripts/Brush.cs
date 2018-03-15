@@ -23,7 +23,6 @@ public class Brush : MonoBehaviour
         setVector4(BasicBrush, "color1",new Vector4(0, 0, 0, 0));
         setVector4(BasicBrush, "sliders", new Vector4(0, 0, 0, 0));
         transform.SetPositionAndRotation(new Vector3(0, 0, 0), new Quaternion());
-        transform.localScale = new Vector3(0, 0, 0);
         Wipe(new Vector4(0,0,0,0),new Vector4(0,0,0,0));
     }
 
