@@ -9,6 +9,7 @@ public class ColorWheel : MonoBehaviour {
 	public GameObject colorCube;
 	private float hue, saturation, value = 1f;
     private float normalAngle;
+    public Vector3 colorV = new Vector3();
 
 
     private GameObject blackWheel;
@@ -77,6 +78,7 @@ public class ColorWheel : MonoBehaviour {
 
 	private void UpdateColor() {
 		Color color = Color.HSVToRGB(this.hue, this.saturation, this.value);
+        colorV = new Vector3(color.r, color.b, color.g);
 		colorCube.GetComponent<Renderer>().material.color = color;
 	}
 }

@@ -18,7 +18,10 @@ public class Block : MonoBehaviour
     public const int width = 32;
     const int layers = 1;
     const bool doesMipMapping = true;
-    const int groupWidth = 8;
+    const int groupWidthX = 8;
+    const int groupWidthY = 8;
+    const int groupWidthZ = 8;
+    public const float blockWidth = 3f;
 
 
     // Use this for initialization
@@ -36,7 +39,7 @@ public class Block : MonoBehaviour
 
         for (int i = 0; i < 8; i++)
         {
-            Pos.Add(new Vector3(i % 2, (i % 4) / 2, i / 4));
+            Pos.Add((new Vector3(i % 2, (i % 4) / 2, i / 4))*blockWidth);
             Col.Add(new Color(i % 2, (i % 4) / 2, i / 4, 1.0f));
         }
 
@@ -57,6 +60,7 @@ public class Block : MonoBehaviour
         Model.SetColors(Col);
         Model.SetIndices(Ind.ToArray(), MeshTopology.Triangles, 0);
         filter.mesh = Model;
+        Model.RecalculateBounds();
 
     }
 
@@ -112,10 +116,12 @@ public class Block : MonoBehaviour
             RayTracer.SetTexture("SurfaceData", SurfaceData);
 
             RayTracer.SetFloat("texWidth", width);
+            RayTracer.SetFloat("blockWidth", blockWidth);
         }
         brushShader.SetTexture(kernelIndex, "ColorData", ColorData);
         brushShader.SetTexture(kernelIndex, "SurfaceData", SurfaceData);
-        brushShader.Dispatch(kernelIndex, width / groupWidth, width / groupWidth, width / groupWidth);
+        brushShader.SetFloat("blockWidth", blockWidth);
+        brushShader.Dispatch(kernelIndex, width / groupWidthX, width / groupWidthY, width / groupWidthZ);
     }
     
 

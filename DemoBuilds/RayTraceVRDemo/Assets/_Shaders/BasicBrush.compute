@@ -12,6 +12,7 @@ float4 color1;
 float4 sliders;
 
 int texWidth;
+float blockWidth;
 
 float4x4 start;
 float4x4 end;
@@ -19,7 +20,7 @@ float4x4 end;
 [numthreads(8,8,8)]
 void main (uint3 id : SV_DispatchThreadID)
 {
-	float4 worldPos = float4((id + 0.5) / ((float)texWidth) + baseOffset,1.0);
+	float4 worldPos = float4((id + 0.5) * blockWidth / ((float)texWidth) + baseOffset,1.0);
 	float3 relStart = mul(start,worldPos).xyz;
 	float3 relEnd =  mul(end,worldPos).xyz;
 	float3 brushDir = normalize(relEnd - relStart);

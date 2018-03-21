@@ -1,6 +1,7 @@
 ﻿namespace VRTK.Examples
 {
     using UnityEngine;
+    using System.IO;
 
     public class ControllerEventHandler : MonoBehaviour
     {
@@ -8,18 +9,65 @@
         public SteamVR_TrackedObject target;
         public ChangeState worldState;
         public Brush brush;
+        public GameObject colorWheel;
         private bool brushDown = false;
-        private Vector4 color = new Vector4(1, 0, 0, .5f);
+        private Vector4 color = new Vector4(0.0f, 0f, 1.0f, 128.0f);
+        private string save = "";
 
+        private void loadFile()
+        {
+            float posX, posY, posZ, cX, cY, cZ, cA;
+            Vector4 tempColor;
+            string f = "save.txt";
+            string line;
+            System.IO.StreamReader file = new System.IO.StreamReader(f);
+            while ((line = file.ReadLine()) != null)
+            {
+                string[] subLine = line.Split();
+                if ("d" == subLine[0])
+                {
+                    posX = float.Parse(subLine[1]);
+                    posY = float.Parse(subLine[2]);
+                    posZ = float.Parse(subLine[3]);
+                    brush.transform.position = new Vector3(posX, posY, posZ);
+                    brush.Down(null);
+                }
+                else if ("u" == subLine[0])
+                {
+                    posX = float.Parse(subLine[1]);
+                    posY = float.Parse(subLine[2]);
+                    posZ = float.Parse(subLine[3]);
+                    brush.transform.position = new Vector3(posX, posY, posZ);
+                    brush.Up();
+                }
+                else
+                {
+                    cX = float.Parse(subLine[0]);
+                    cY = float.Parse(subLine[1]);
+                    cZ = float.Parse(subLine[2]);
+                    cA = float.Parse(subLine[3]);
+                    posX = float.Parse(subLine[4]);
+                    posY = float.Parse(subLine[5]);
+                    posZ = float.Parse(subLine[6]);
+                    tempColor = new Vector4(cX, cY, cZ, cA);
+                    brush.transform.position = new Vector3(posX, posY, posZ);
+                    brush.Stroke(tempColor, tempColor, new Vector4(0, 0, 0, 0));
+                }
+            }
+        }
 
         private void Update()
         {
+            color = colorWheel.GetComponent<ColorWheel>().colorV;
+            color.w = 128;
+            Debug.Log("Color is " + color);
             brush.transform.position = target.transform.position;
             brush.transform.rotation = target.transform.rotation;
             if (brushDown)
             {
                 Debug.Log("Brush is down");
                 brush.Stroke(color, color, new Vector4(0, 0, 0, 0));
+                save += color.x + " " + color.y + " " + color.z + " " + color.w + " " + brush.transform.position.x + " " + brush.transform.position.y + " " + brush.transform.position.z + "\n";
             }
         }
 
@@ -32,7 +80,7 @@
             }
 
             brush.transform.localScale = new Vector3(0.1f,0.1f,0.1f);
-            initGrid(3);
+            initGrid(4);
 
 
             //Setup controller event listeners
@@ -104,6 +152,7 @@
             DebugLogger(e.controllerIndex, "TRIGGER", "pressed", e);
             brushDown = true;
             brush.Down(null);
+            save += "d " + brush.transform.position.x + " " + brush.transform.position.y + " " + brush.transform.position.z + "\n";
             //worldState.trigger = true;
             //worldState.changeState((int)(controller.transform.position.x * 10) + 12, (int)(controller.transform.position.y * 10) -1, (int)(controller.transform.position.z * 10) + 12, 1,1);
         }
@@ -113,6 +162,7 @@
             DebugLogger(e.controllerIndex, "TRIGGER", "released", e);
             brush.Up();
             brushDown = false;
+            save += "u " + brush.transform.position.x + " " + brush.transform.position.y + " " + brush.transform.position.z + "\n";
             //worldState.trigger = false;
         }
 
@@ -225,9 +275,9 @@
         private void DoButtonOnePressed(object sender, ControllerInteractionEventArgs e)
         {
             DebugLogger(e.controllerIndex, "BUTTON ONE", "pressed down", e);
-           // worldState.color++;
-            //if (worldState.color > 4)
-               // worldState.color = 1;
+            File.WriteAllText("save.txt", save);
+            Debug.Log("Save = " + save);
+
         }
 
         private void DoButtonOneReleased(object sender, ControllerInteractionEventArgs e)
@@ -248,9 +298,7 @@
         private void DoButtonTwoPressed(object sender, ControllerInteractionEventArgs e)
         {
             DebugLogger(e.controllerIndex, "BUTTON TWO", "pressed down", e);
-            //worldState.weight++;
-            //if (worldState.weight > 4)
-                //worldState.weight = 1;
+            loadFile();
         }
 
         private void DoButtonTwoReleased(object sender, ControllerInteractionEventArgs e)
@@ -304,7 +352,7 @@
                     {
                         Block b = Instantiate(prefab);
                         b.transform.SetPositionAndRotation(
-                            new Vector3(x+4, y+4, z+4),
+                            new Vector3(x * Block.blockWidth, y * Block.blockWidth, z * Block.blockWidth),
                             new Quaternion()
                         );
                         brush.blocks.Add(b);

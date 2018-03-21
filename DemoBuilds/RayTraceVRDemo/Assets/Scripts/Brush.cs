@@ -23,7 +23,7 @@ public class Brush : MonoBehaviour
         setVector4(BasicBrush, "color1",new Vector4(0, 0, 0, 0));
         setVector4(BasicBrush, "sliders", new Vector4(0, 0, 0, 0));
         transform.SetPositionAndRotation(new Vector3(0, 0, 0), new Quaternion());
-        Wipe(new Vector4(0,0,0,0),new Vector4(0,0,0,0));
+        //Wipe(new Vector4(0,0,0,0),new Vector4(0,0,0,0));
     }
 
 
@@ -78,6 +78,7 @@ public class Brush : MonoBehaviour
     {
         int kInd = BasicBrush.FindKernel("main");
         float[] offset = new float[3];
+        float extraRoom = 1.0f;
 
         setVector4(brush,"color0", color0);
         setVector4(brush, "color1", color1);
@@ -88,11 +89,18 @@ public class Brush : MonoBehaviour
 
         foreach (Block b in blocks)
         {
-            offset[0] = b.transform.position.x;
-            offset[1] = b.transform.position.y;
-            offset[2] = b.transform.position.z;
-            BasicBrush.SetFloats("baseOffset", offset);
-            b.BrushOperation(BasicBrush, kInd);
+            Bounds bnd = b.Model.bounds;
+            bnd.Expand(extraRoom);
+            bnd.center = bnd.center + b.transform.position;
+            //Debug.Log(bnd);
+            if (bnd.Contains(transform.position))
+            {
+                offset[0] = b.transform.position.x;
+                offset[1] = b.transform.position.y;
+                offset[2] = b.transform.position.z;
+                BasicBrush.SetFloats("baseOffset", offset);
+                b.BrushOperation(BasicBrush, kInd);
+            }
         }
     }
 

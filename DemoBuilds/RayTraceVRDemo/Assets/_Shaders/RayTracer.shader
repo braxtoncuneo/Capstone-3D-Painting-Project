@@ -40,6 +40,7 @@
 			sampler3D ColorData;
 			sampler3D SurfaceData;
 			int texWidth;
+			float blockWidth;
 
 
 			float4 _MainTex_ST;
@@ -68,7 +69,7 @@
 			
 			fixed4 frag (v2f i) : SV_Target
 			{
-				float stepSize = /*max(length(i.dir),*/ 0.125/*)*/ / texWidth;
+				float stepSize = max(length(i.dir), (float) blockWidth * 0.5f) / texWidth;
 				float3 pos = (i.color-0.5)*2.0;
 				float3 vel = normalize(i.dir);
 				float3 low = (float3(-1, -1, -1) - pos) / vel;
@@ -84,14 +85,13 @@
 
 				bool hit = false;
 				float dist = length(i.dir);
-
+				int safe = 100;
 				while (distLeft >= 0.0 && !hit) {
-					stepSize = /*max(dist,*/ 0.125/*)*/ / texWidth;
+					stepSize = /*(log2(length(i.dir)))*/((float)blockWidth*0.125f) / texWidth;
 					color = tex3Dlod(ColorData,float4(pos*0.5 + 0.5,0));
 					surface = tex3Dlod(SurfaceData, float4(pos*0.5 + 0.5,0));
 					if (color.w > 0) {
 						color.xyz *= surface.y*0.5 + 0.5;
-						color.w = 128;
 					}
 					samp = step(samp, color, stepSize, hit);
 					if (samp.w >= 0.99) {
@@ -100,6 +100,10 @@
 					pos -= stepSize * vel;
 					distLeft -= stepSize;
 					dist += stepSize;
+					safe--;
+					if (safe < 0) {
+						break;
+					}
 				}
 
 				fixed4 result;
