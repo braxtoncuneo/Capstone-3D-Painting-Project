@@ -11,7 +11,7 @@
         public Brush brush;
         public GameObject colorWheel;
         private bool brushDown = false;
-        private Vector4 color = new Vector4(0.0f, 0f, 1.0f, 128.0f);
+        private Vector4 color = new Vector4(0.0f, 0f, 1.0f, 0.0f);
         private string save = "";
 
         private void loadFile()
@@ -59,7 +59,7 @@
         private void Update()
         {
             color = colorWheel.GetComponent<ColorWheel>().colorV;
-            color.w = 128;
+            color.w = 1;
             Debug.Log("Color is " + color);
             brush.transform.position = target.transform.position;
             brush.transform.rotation = target.transform.rotation;
