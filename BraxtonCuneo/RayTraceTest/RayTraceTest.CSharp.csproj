@@ -290,9 +290,11 @@
   <ItemGroup>
     <Compile Include="Assets\_Scripts\Block.cs" />
     <Compile Include="Assets\_Scripts\Brush.cs" />
+    <Compile Include="Assets\_Scripts\CamController.cs" />
     <Compile Include="Assets\_Scripts\DemoController.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Assets\_Shaders\BallShader.shader" />
     <None Include="Assets\_Shaders\BasicBrush.compute" />
     <None Include="Assets\_Shaders\RayTracer.shader" />
     <None Include="Assets\_Shaders\WipeBrush.compute" />

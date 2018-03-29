@@ -5,7 +5,10 @@ licenseType: Free
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
-  defaultReferences: []
+  defaultReferences:
+  - blockPrefab: {fileID: 114702679751778084, guid: 12cba290b98a1b849ba0f395f7fb7cbb,
+      type: 2}
+  - controlledBrush: {instanceID: 0}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 

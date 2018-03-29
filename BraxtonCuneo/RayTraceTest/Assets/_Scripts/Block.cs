@@ -12,13 +12,17 @@ public class Block : MonoBehaviour
     public Material RayTracer;
     public RenderTexture ColorData;
     public RenderTexture SurfaceData;
+    public RenderTexture SkipData;
 
 
     public Mesh Model;
     public const int width = 32;
     const int layers = 1;
     const bool doesMipMapping = true;
-    const int groupWidth = 8;
+    const int groupWidthX = 8;
+    const int groupWidthY = 8;
+    const int groupWidthZ = 8;
+    public const float blockWidth = 1f;
 
 
     // Use this for initialization
@@ -36,7 +40,7 @@ public class Block : MonoBehaviour
 
         for (int i = 0; i < 8; i++)
         {
-            Pos.Add(new Vector3(i % 2, (i % 4) / 2, i / 4));
+            Pos.Add((new Vector3(i % 2, (i % 4) / 2, i / 4)) * blockWidth);
             Col.Add(new Color(i % 2, (i % 4) / 2, i / 4, 1.0f));
         }
 
@@ -57,6 +61,7 @@ public class Block : MonoBehaviour
         Model.SetColors(Col);
         Model.SetIndices(Ind.ToArray(), MeshTopology.Triangles, 0);
         filter.mesh = Model;
+        Model.RecalculateBounds();
 
     }
 
@@ -84,16 +89,16 @@ public class Block : MonoBehaviour
         return result;
     }
 
-    RenderTexture makeSeekGrid(int width, int height, int depth)
+    RenderTexture makeSkipGrid(int width, int height, int depth)
     {
         RenderTexture result = new RenderTexture(width, height, 0);
         result.dimension = UnityEngine.Rendering.TextureDimension.Tex3D;
-        result.width = width;
-        result.height = height;
-        result.volumeDepth = depth;
+        result.width = width / 2;
+        result.height = height / 2;
+        result.volumeDepth = depth / 2;
         result.enableRandomWrite = true;
         result.filterMode = FilterMode.Point;
-        result.format = RenderTextureFormat.R8;
+        result.format = RenderTextureFormat.RInt;
         result.autoGenerateMips = false;
         result.useMipMap = false;
         result.Create();
@@ -111,13 +116,19 @@ public class Block : MonoBehaviour
             SurfaceData = makeDataGrid(width, width, width);
             RayTracer.SetTexture("SurfaceData", SurfaceData);
 
+            SkipData = makeSkipGrid(width, width, width);
+            RayTracer.SetTexture("SkipData",SkipData);
+
             RayTracer.SetFloat("texWidth", width);
+            RayTracer.SetFloat("blockWidth", blockWidth);
         }
         brushShader.SetTexture(kernelIndex, "ColorData", ColorData);
         brushShader.SetTexture(kernelIndex, "SurfaceData", SurfaceData);
-        brushShader.Dispatch(kernelIndex, width / groupWidth, width / groupWidth, width / groupWidth);
+        brushShader.SetTexture(kernelIndex, "SkipData", SkipData);
+        brushShader.SetFloat("blockWidth", blockWidth);
+        brushShader.Dispatch(kernelIndex, width / groupWidthX, width / groupWidthY, width / groupWidthZ);
     }
-    
+
 
 
 }
