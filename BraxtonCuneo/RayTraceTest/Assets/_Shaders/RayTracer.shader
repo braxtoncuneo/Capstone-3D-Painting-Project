@@ -149,16 +149,14 @@
 				//cAvg = normalize(cAvg); samp = float4(cAvg, 1.0);
 				//samp = float4(fmod(dir * best,1.0), 1.0);
 				fOut result;
-				result.depth = ((abs(i.dir.z) + t * tToZ) - nearZ) / (farZ - nearZ);// t * blockWidth;
+				float outZ = i.vertex.z - (t * tToZ) / (farZ-nearZ);// t * blockWidth;
+				result.depth = outZ;
 				if (samp.w > 0.0) {
-					result.color = /* float4(float3(1,1,1)*result.depth,1.0);// */ float4(samp.xyz / samp.w, samp.w); // float4(i.color,1.0);
+					result.color = float4(samp.xyz / samp.w, samp.w); // */ float4(float3(1,1,1)*outZ,1.0);
 				}
 				else {
 					discard;
-					result.color = float4(0.0, 0.0, 0.0, 0.0);
 				}
-
-
 					
 				return result;
 				
