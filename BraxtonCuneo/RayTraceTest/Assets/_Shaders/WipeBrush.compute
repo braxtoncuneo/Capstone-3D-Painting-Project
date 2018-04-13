@@ -5,6 +5,7 @@
 // with cs.SetTexture
 RWTexture3D<float4> ColorData;
 RWTexture3D<float4> SurfaceData;
+RWTexture3D<int>	SkipData;
 
 float3 baseOffset;
 float4 color0;
@@ -16,11 +17,12 @@ int texWidth;
 float4x4 start;
 float4x4 end;
 
-[numthreads(4, 4, 4)]
+[numthreads(8, 8, 8)]
 void main(uint3 id : SV_DispatchThreadID)
 {
-
 	ColorData[id] = color0;
 	SurfaceData[id] = color1;
-
+	if (all(id < (texWidth >> 1))) {
+		SkipData[id] = (texWidth << 1) - 1;
+	}
 }

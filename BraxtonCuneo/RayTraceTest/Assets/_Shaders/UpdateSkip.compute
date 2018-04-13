@@ -1,0 +1,96 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel main
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+texture3D   ColorData : register(t1);
+texture3D SurfaceData : register(t2);
+globallycoherent RWTexture3D<int4>	SkipData : register(u3);
+globallycoherent RWStructuredBuffer<int4> SkipBuffer : register(u4);
+
+int texWidth;
+
+
+int toLin(int3 coords) {
+	return coords.x + coords.y * texWidth + coords.z * texWidth * texWidth;
+}
+
+[numthreads(8,8,8)]
+void main (uint3 id : SV_DispatchThreadID)
+{
+	
+
+	DeviceMemoryBarrier();
+
+	int itr = max(id.x, max(id.y, id.z));
+	float4 fCol = float4(0, 0, 0, 0);
+	float4 fSrf = float4(0, 0, 0, 0);
+	float4 samp = float4(0, 0, 0, 0);
+	int3 coord = id;
+
+	
+	int3 gCoord = id*2;
+	int span = texWidth >> 1;
+	int sSamp = 0;
+	int lastLvl;
+	bool matches;
+
+	for (int lvl = 1; lvl < (texWidth >> 1); lvl = lvl << 1) {
+		matches = true;
+		if (itr < span) {
+
+			fCol = ColorData[coord];
+			fSrf = SurfaceData[coord];
+			for (int z = 0; z < 2; z++) {
+				for (int y = 0; y < 2; y++) {
+					for (int x = 0; x < 2; x++) {
+						samp = ColorData[gCoord + int3(x, y, z)];
+						matches = matches && all(samp == fCol);
+						samp = SurfaceData[gCoord + int3(x, y, z)];
+						matches = matches && all(samp == fSrf);
+						if (lvl != 1) {
+							sSamp = SkipBuffer[toLin(gCoord + int3(x, y, z))].x;
+							matches = matches && ((sSamp & lastLvl) != 0);
+						}
+					}
+				}
+			}
+			
+			//DeviceMemoryBarrier();
+			if (lvl == 1) {
+				if (matches) {
+					sSamp = 1;
+				}
+				else {
+					sSamp = 0;
+				}
+			}
+			else {
+				sSamp = (SkipBuffer[toLin(coord)]).x;
+				if (matches) {
+					sSamp |= lvl;
+				}
+				else {
+					sSamp &= ~lvl;
+				}
+			}
+
+			SkipBuffer[toLin(coord)] = int4(sSamp, 0, 0, 0);
+		}
+		DeviceMemoryBarrier();
+		span = span / 2;
+		if (lvl != 1) {
+			lastLvl = lastLvl << 1;
+		}
+		else {
+			lastLvl = 1;
+		}
+		if (lvl == 2) {
+			break;
+		}
+	}
+	
+
+	SkipData[coord] = SkipBuffer[toLin(coord)];
+
+}

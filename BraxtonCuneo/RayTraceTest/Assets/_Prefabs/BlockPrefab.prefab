@@ -108,5 +108,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   RayTracer: {fileID: 0}
-  VoxelData: {fileID: 0}
+  UpdateSkip: {fileID: 7200000, guid: 3509f0fd9eb1d9341b7df850a499f70d, type: 3}
+  ColorData: {fileID: 0}
+  SurfaceData: {fileID: 0}
+  SkipData: {fileID: 0}
   Model: {fileID: 0}

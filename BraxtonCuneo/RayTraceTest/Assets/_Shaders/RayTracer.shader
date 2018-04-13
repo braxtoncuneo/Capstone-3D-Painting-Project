@@ -49,6 +49,7 @@
 
 	texture3D ColorData;
 	texture3D SurfaceData;
+	texture3D<int4> SkipData;
 	int texWidth;
 	float blockWidth;
 
@@ -100,6 +101,7 @@
 				int3 nocross;
 				float3 cAvg = float3(0,0,0);
 				float4 samp = float4(0.0, 0.0, 0.0, 0.0);
+				int sSamp;
 				float4 color;
 				float4 surface;
 				float t = 0;
@@ -119,16 +121,49 @@
 					nocross = int3(left != best);
 					cAvg += crosses;
 
+					// /*
 					color = ColorData[coord];
 					surface = SurfaceData[coord];
 					if (color.w > 0) {
 						color.xyz *= surface.y*0.5 + 0.5;
 					}
 					samp = stepSamp(samp, color, best / texWidth, hit);
-					if (samp.w >= 0.99) {
+
+					// */
+					
+					/*
+					int sLim = log2(texWidth);
+					int mask = 1;
+					int3 sCoord = coord >> 2;
+					float v = 0;
+					
+					
+					for (int i = 0; i < sLim; i++) {
+						sSamp = SkipData[sCoord];
+						if (sSamp & mask != 0) {
+							v += 1.0;
+						}
+						sCoord = sCoord >> 1;
+						mask = mask << 1;
 						break;
 					}
 					
+					
+					if (((SkipData[sCoord].x) & 2) == 0) {
+						v = 128.0;
+					}
+
+					
+					
+					float4 sSamp = float4(1.0, 0.0, 0.0, v);
+					samp = stepSamp(samp, sSamp, best / texWidth, hit);
+					
+					// */
+
+					if (samp.w >= 0.99) {
+						break;
+					}
+								
 
 					t += best;
 					coord += iSign * crosses;

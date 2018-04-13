@@ -10,6 +10,7 @@ public class Block : MonoBehaviour
 {
 
     public Material RayTracer;
+    public ComputeShader UpdateSkip;
     public RenderTexture ColorData;
     public RenderTexture SurfaceData;
     public RenderTexture SkipData;
@@ -23,6 +24,7 @@ public class Block : MonoBehaviour
     const int groupWidthY = 8;
     const int groupWidthZ = 8;
     public const float blockWidth = 1f;
+    int updInd;
 
 
     // Use this for initialization
@@ -30,6 +32,7 @@ public class Block : MonoBehaviour
     {
         ColorData = null;
         SurfaceData = null;
+        SkipData = null;
         RayTracer = GetComponent<MeshRenderer>().material;
         Model = new Mesh();
         MeshFilter filter = GetComponent<MeshFilter>();
@@ -63,6 +66,8 @@ public class Block : MonoBehaviour
         filter.mesh = Model;
         Model.RecalculateBounds();
 
+        updInd = UpdateSkip.FindKernel("main");
+
     }
 
     // Update is called once per frame
@@ -93,12 +98,12 @@ public class Block : MonoBehaviour
     {
         RenderTexture result = new RenderTexture(width, height, 0);
         result.dimension = UnityEngine.Rendering.TextureDimension.Tex3D;
-        result.width = width / 2;
-        result.height = height / 2;
-        result.volumeDepth = depth / 2;
+        result.width = width;
+        result.height = height;
+        result.volumeDepth = depth;
         result.enableRandomWrite = true;
         result.filterMode = FilterMode.Point;
-        result.format = RenderTextureFormat.RInt;
+        result.format = RenderTextureFormat.ARGBInt;
         result.autoGenerateMips = false;
         result.useMipMap = false;
         result.Create();
@@ -126,7 +131,20 @@ public class Block : MonoBehaviour
         brushShader.SetTexture(kernelIndex, "SurfaceData", SurfaceData);
         brushShader.SetTexture(kernelIndex, "SkipData", SkipData);
         brushShader.SetFloat("blockWidth", blockWidth);
+        brushShader.SetInt("texWidth", width);
         brushShader.Dispatch(kernelIndex, width / groupWidthX, width / groupWidthY, width / groupWidthZ);
+
+        ComputeBuffer SkipBuffer = new ComputeBuffer(width * width * width, sizeof(int) * 4);
+
+        UpdateSkip.SetTexture(updInd, "ColorData", ColorData);
+        UpdateSkip.SetTexture(updInd, "SurfaceData", SurfaceData);
+        UpdateSkip.SetTexture(updInd, "SkipData", SkipData);
+        UpdateSkip.SetBuffer(updInd, "SkipBuffer", SkipBuffer);
+        UpdateSkip.SetInt("texWidth", width);
+        UpdateSkip.Dispatch(kernelIndex, width / groupWidthX, width / groupWidthY, width / groupWidthZ);
+
+        SkipBuffer.Release();
+
     }
 
 

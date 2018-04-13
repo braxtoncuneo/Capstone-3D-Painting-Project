@@ -297,6 +297,7 @@
     <None Include="Assets\_Shaders\BallShader.shader" />
     <None Include="Assets\_Shaders\BasicBrush.compute" />
     <None Include="Assets\_Shaders\RayTracer.shader" />
+    <None Include="Assets\_Shaders\UpdateSkip.compute" />
     <None Include="Assets\_Shaders\WipeBrush.compute" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\SyntaxTree\UnityVS\2015\UnityVS.CSharp.targets" />
