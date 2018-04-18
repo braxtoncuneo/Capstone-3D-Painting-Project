@@ -3,13 +3,13 @@
     using UnityEngine;
     using System.IO;
 
-    public class ControllerEventHandler : MonoBehaviour
+    public class ControllerEventHandlerRight : MonoBehaviour
     {
         public Block prefab;
         public SteamVR_TrackedObject target;
         public ChangeState worldState;
         public Brush brush;
-        public GameObject colorWheel;
+        public GameObject colorPicker;
         private bool brushDown = false;
         private Vector4 color = new Vector4(0.0f, 0f, 1.0f, 0.0f);
         private string save = "";
@@ -60,9 +60,11 @@
 
         private void Update()
         {
-            color = colorWheel.GetComponent<ColorWheel>().colorV;
-            color.w = 1;
-            Debug.Log("Color is " + color);
+            color.x = colorPicker.GetComponent<ColorPicker>().GetValue(ColorValues.R);
+            color.y = colorPicker.GetComponent<ColorPicker>().GetValue(ColorValues.G);
+            color.z = colorPicker.GetComponent<ColorPicker>().GetValue(ColorValues.B);
+            color.w = colorPicker.GetComponent<ColorPicker>().GetValue(ColorValues.A) * 128f;
+            //Debug.Log("Color is " + color);
             brush.transform.position = target.transform.position;
             brush.transform.rotation = target.transform.rotation;
             if (brushDown)
