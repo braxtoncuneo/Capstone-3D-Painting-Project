@@ -15,8 +15,8 @@ public class MenuInputs : MonoBehaviour {
     public GameObject cube3_panel;
     public GameObject cube4_panel;
 
-    public bool isUp = false;
-    public int selectedPos = 2;
+    public bool isUp = true;
+    public int selectedPos = 1;
 
 	// Use this for initialization
 	void Start () {

@@ -133,7 +133,7 @@
         private void DoTriggerPressed(object sender, ControllerInteractionEventArgs e)
         {
             DebugLogger(e.controllerIndex, "TRIGGER", "pressed", e);
-            colorPicker.GetComponent<ColorPicker>().AssignColor(ColorValues.Saturation, .5f);
+            SteamVR.instance.overlay.ShowKeyboard(0, 0, "", 256, "", true, 0);
         }
 
         private void DoTriggerReleased(object sender, ControllerInteractionEventArgs e)
