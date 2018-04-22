@@ -1,16 +1,19 @@
 ﻿namespace VRTK.Examples
 {
     using UnityEngine;
+    using UnityEngine.Events;
     using System.IO;
+    using Valve.VR;
 
     public class ControllerEventHandlerLeft : MonoBehaviour
     {
         public SteamVR_TrackedObject target;
         public MenuInputs MenuManager;
-        public GameObject colorPicker;
+        public GameObject colorPicker, rightController;
 
-        private bool triggerDown = false, touchpadDown = false, gripDown = false;
+        private bool triggerDown = false, touchpadDown = false, gripDown = false, save = false, load = false;
         private float x, y, hue, sat, val, alpha;
+        string f = "";
 
         private void Update()
         {
@@ -122,6 +125,10 @@
             GetComponent<VRTK_ControllerEvents>().ControllerDisabled += new ControllerInteractionEventHandler(DoControllerDisabled);
 
             GetComponent<VRTK_ControllerEvents>().ControllerIndexChanged += new ControllerInteractionEventHandler(DoControllerIndexChanged);
+
+            //keyboard event listeners
+            SteamVR_Events.System(EVREventType.VREvent_KeyboardCharInput).Listen(OnKeyboardCharInput);
+            SteamVR_Events.System(EVREventType.VREvent_KeyboardClosed).Listen(OnKeyboardClosed);
         }
 
         private void DebugLogger(uint index, string button, string action, ControllerInteractionEventArgs e)
@@ -133,7 +140,6 @@
         private void DoTriggerPressed(object sender, ControllerInteractionEventArgs e)
         {
             DebugLogger(e.controllerIndex, "TRIGGER", "pressed", e);
-            SteamVR.instance.overlay.ShowKeyboard(0, 0, "", 256, "", true, 0);
         }
 
         private void DoTriggerReleased(object sender, ControllerInteractionEventArgs e)
@@ -256,10 +262,11 @@
 
         private void DoButtonOnePressed(object sender, ControllerInteractionEventArgs e)
         {
-            MenuManager.isUp = !MenuManager.isUp;
-
             DebugLogger(e.controllerIndex, "BUTTON ONE", "pressed down", e);
 
+            //MenuManager.isUp = !MenuManager.isUp;
+            SteamVR.instance.overlay.ShowKeyboard(0, 0, "Test", 256, "", true, 0);
+            save = true;
         }
 
         private void DoButtonOneReleased(object sender, ControllerInteractionEventArgs e)
@@ -280,6 +287,9 @@
         private void DoButtonTwoPressed(object sender, ControllerInteractionEventArgs e)
         {
             DebugLogger(e.controllerIndex, "BUTTON TWO", "pressed down", e);
+
+            SteamVR.instance.overlay.ShowKeyboard(0, 0, "Test", 256, "", true, 0);
+            load = true;
         }
 
         private void DoButtonTwoReleased(object sender, ControllerInteractionEventArgs e)
@@ -322,5 +332,26 @@
             DebugLogger(e.controllerIndex, "CONTROLLER STATE", "INDEX CHANGED", e);
         }
 
+        private void OnKeyboardCharInput(VREvent_t ev)
+        {
+            Debug.Log("Keyboard receiving input");
+            f += (char)ev.data.keyboard.cNewInput0;
+        }
+
+        private void OnKeyboardClosed(VREvent_t ev)
+        {
+            Debug.Log("Keyboard closing");
+            if(save)
+            {
+                rightController.GetComponent<ControllerEventHandlerRight>().saveFile(f);
+                save = false;
+            }
+            else if(load)
+            {
+                rightController.GetComponent<ControllerEventHandlerRight>().loadFile(f);
+                load = false;
+            }
+            f = "";
+        }
     }
 }

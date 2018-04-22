@@ -10,17 +10,26 @@
         public ChangeState worldState;
         public Brush brush;
         public GameObject colorPicker;
-        private bool brushDown = false;
+
+        private bool brushDown = false, gripDown = false;
         private Vector4 color = new Vector4(0.0f, 0f, 1.0f, 0.0f);
-        private string save = "";
+        public string save = "";
 
         public MenuInputs MenuManager;
 
-        private void loadFile()
+        public void saveFile(string f)
+        {
+            f += ".txt";
+            //NOTE: Commenting out save function for current build. Will remove code once menu-controlled saving is implemented
+            File.WriteAllText(f, save);
+            Debug.Log("Save = " + save);
+        }
+
+        public void loadFile(string f)
         {
             float posX, posY, posZ, cX, cY, cZ, cA;
             Vector4 tempColor;
-            string f = "save.txt";
+            f += ".txt";
             string line;
             System.IO.StreamReader file = new System.IO.StreamReader(f);
             while ((line = file.ReadLine()) != null)
@@ -71,6 +80,12 @@
             {
                 Debug.Log("Brush is down");
                 brush.Stroke(color, color, new Vector4(0, 0, 0, 0));
+                save += color.x + " " + color.y + " " + color.z + " " + color.w + " " + brush.transform.position.x + " " + brush.transform.position.y + " " + brush.transform.position.z + "\n";
+            }
+            else if (gripDown)
+            {
+                Debug.Log("Eraser is down");
+                brush.Stroke(new Vector4(0,0,0,0), new Vector4(0, 0, 0, 0), new Vector4(0, 0, 0, 0));
                 save += color.x + " " + color.y + " " + color.z + " " + color.w + " " + brush.transform.position.x + " " + brush.transform.position.y + " " + brush.transform.position.z + "\n";
             }
         }
@@ -208,12 +223,15 @@
         private void DoGripPressed(object sender, ControllerInteractionEventArgs e)
         {
             DebugLogger(e.controllerIndex, "GRIP", "pressed", e);
-            //worldState.color = 0;
+            gripDown = true;
+            brush.Down(null);
         }
 
         private void DoGripReleased(object sender, ControllerInteractionEventArgs e)
         {
             DebugLogger(e.controllerIndex, "GRIP", "released", e);
+            gripDown = false;
+            brush.Up();
         }
 
         private void DoGripTouchStart(object sender, ControllerInteractionEventArgs e)
@@ -278,11 +296,7 @@
 
         private void DoButtonOnePressed(object sender, ControllerInteractionEventArgs e)
         {
-            MenuManager.isUp = !MenuManager.isUp;
-
             DebugLogger(e.controllerIndex, "BUTTON ONE", "pressed down", e);
-            File.WriteAllText("save.txt", save);
-            Debug.Log("Save = " + save);
 
         }
 
@@ -304,7 +318,7 @@
         private void DoButtonTwoPressed(object sender, ControllerInteractionEventArgs e)
         {
             DebugLogger(e.controllerIndex, "BUTTON TWO", "pressed down", e);
-            loadFile();
+            //loadFile("save");
         }
 
         private void DoButtonTwoReleased(object sender, ControllerInteractionEventArgs e)
