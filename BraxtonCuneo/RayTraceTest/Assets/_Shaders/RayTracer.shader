@@ -66,10 +66,9 @@
 			}
 
 
-			float4 stepSamp(float4 samp, float4 curr,float stepSize, inout bool hit) {
+			float4 stepSamp(float4 samp, float4 curr,float stepSize) {
 				float4 result;
 				if (curr.w >= 127) {
-					hit = true;
 					result = float4(samp.xyz + curr.xyz * (1 - samp.w), 1);
 				}
 				else {
@@ -79,110 +78,100 @@
 				return result;
 			}
 			
+			void findLevel(in int3 coord, inout int3 sCoord, out float mag) {
+				int i;
+				mag = texWidth;
+				for (i = texWidth; i > 1; i >>= 1) {
+					if ((SkipData[coord/i].x & (i>>1)) != 0) {
+						break;
+					}
+					mag = mag / 2;
+				}
+				if (i == 0) {
+					sCoord = coord;
+				}
+				else {
+					sCoord = coord & (i-1);
+				}
+			}
+
+			void processStep(inout float4 samp, in float3 sCoord, in float dist) {
+				float4 color = ColorData[sCoord];
+				float4 surface = SurfaceData[sCoord];
+				if (color.w > 0) {
+					color.xyz *= surface.y*0.5 + 0.5;
+				}
+				samp = stepSamp(samp, color, dist / texWidth);
+			}
 			
 			fOut frag (v2f i)
 			{
 
-				int stepMax = /* 1;// */texWidth * 3;
-				int3 pos = i.color * texWidth;
+				float stepMax = /* 3;// */sqrt(texWidth*texWidth * 3);
+				int iterMax = 300;
+				float stepTotal = 0;
+
 				float3 dir = abs(normalize(i.dir));
-				float dist = length(i.dir);
 				float3 fSign = 0 - sign(i.dir);
 				int3 iSign = int3(fSign);
-				float3 diff = 0.5 + fSign * (0.5 - fmod(i.color * texWidth * 0.9999999 , 1.0) );
-				float3 rem =  (0.5 + fSign * (0.5 - i.color) ) * texWidth;
-				int3 stepsLeft = ceil(rem);
-				int stepCount = min(stepsLeft.x + stepsLeft.y + stepsLeft.z,stepMax);
-				int3 coord = i.color * texWidth * 0.9999999;
-				int step = 0;
+				float3 fCoord = i.color * texWidth * 0.9999999;
+				float3 diff = 0.5 + fSign * (0.5 - fmod(fCoord, 1.0));
+				//float3 diff = 0.5 + fSign * (0.5 - fmod(i.color * texWidth * 0.9999999 , 1.0) );
+				int3 sCoord;
+				int3 coord = fCoord;
 				float3 left;
-				float3 best;
-				int3 crosses;
-				int3 nocross;
+				float3 deltaTime;
 				float3 cAvg = float3(0,0,0);
 				float4 samp = float4(0.0, 0.0, 0.0, 0.0);
 				int sSamp;
-				float4 color;
-				float4 surface;
 				float t = 0;
 
 				float nearZ = _ProjectionParams.y;
 				float farZ	= _ProjectionParams.z;
 				float tToZ = blockWidth / texWidth;
+				int vMin = 128;
+				float mag = 1;
 
 				bool hit = false;
-					
-				while (step < stepCount) {
-					//break;
+				int iter = 0;
 
+				while ( (stepTotal < stepMax) && (iter < iterMax) ) {
+					
+					findLevel(coord, sCoord, mag);
+					
 					left = diff / dir;
-					best = min(left.x, min(left.y, left.z));
-					crosses = int3(left == best);
-					nocross = int3(left != best);
-					cAvg += crosses;
+					deltaTime = min(left.x, min(left.y, left.z));
 
-					// /*
-					color = ColorData[coord];
-					surface = SurfaceData[coord];
-					if (color.w > 0) {
-						color.xyz *= surface.y*0.5 + 0.5;
-					}
-					samp = stepSamp(samp, color, best / texWidth, hit);
-
-					// */
-					
-					/*
-					int sLim = log2(texWidth);
-					int mask = 1;
-					int3 sCoord = coord >> 2;
-					float v = 0;
-					
-					
-					for (int i = 0; i < sLim; i++) {
-						sSamp = SkipData[sCoord];
-						if (sSamp & mask != 0) {
-							v += 1.0;
-						}
-						sCoord = sCoord >> 1;
-						mask = mask << 1;
-						break;
-					}
-					
-					
-					if (((SkipData[sCoord].x) & 2) == 0) {
-						v = 128.0;
-					}
-
-					
-					
-					float4 sSamp = float4(1.0, 0.0, 0.0, v);
-					samp = stepSamp(samp, sSamp, best / texWidth, hit);
-					
-					// */
+					processStep(samp, coord, deltaTime);
 
 					if (samp.w >= 0.99) {
 						break;
 					}
-								
+					
+					t += deltaTime;
+					stepTotal  += deltaTime;
+					fCoord = fCoord + dir * (deltaTime*mag+0.001) * fSign;
+					coord = fCoord;
+					diff = 0.5 + fSign * (0.5 - fmod(fCoord, 1.0*mag) / mag);
 
-					t += best;
-					coord += iSign * crosses;
-					step  += crosses.x + crosses.y + crosses.z;
-					diff  = (diff - dir * best) + crosses;
-					if (any(coord < int3(0,0,0)) || any(coord > int3(texWidth,texWidth,texWidth))) {
+					if (any(fCoord < float3(0, 0, 0)) || any(fCoord > float3(texWidth, texWidth, texWidth))) {
 						break;
 					}
+					iter++;
 				}
+
 				//samp = float4(float3(coord)/texWidth,1.0);
 				//samp = float4(coord % 2, 1.0);
 				//samp = float4(diff ,1.0);
-				//samp = float4(rem, 1.0);
+				//samp = float4(fmod(fCoord, 1.0),1.0);
 				//samp = float4(left, 1.0);
 				//samp = float4( float3(t, t, t) / stepMax, 1.0);
-				//samp = float4(dir, 1.0);
+				//samp = float4(dir*deltaTime, 1.0);
 				//samp = float4((float3(1,1,1)*stepCount)/stepMax,1.0);
 				//cAvg = normalize(cAvg); samp = float4(cAvg, 1.0);
 				//samp = float4(fmod(dir * best,1.0), 1.0);
+				//samp = float4(log2(iter+0.001) / 8.0, 0.0, 0.0, 1.0);
+
 				fOut result;
 				float outZ = i.vertex.z - (t * tToZ) / (farZ-nearZ);// t * blockWidth;
 				result.depth = outZ;
