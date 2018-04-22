@@ -1,5 +1,5 @@
 ﻿
-
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -141,7 +141,19 @@ public class Block : MonoBehaviour
         UpdateSkip.SetTexture(updInd, "SkipData", SkipData);
         UpdateSkip.SetBuffer(updInd, "SkipBuffer", SkipBuffer);
         UpdateSkip.SetInt("texWidth", width);
-        UpdateSkip.Dispatch(kernelIndex, width / groupWidthX, width / groupWidthY, width / groupWidthZ);
+
+        int lim = width >> 1;
+        int s = 2;
+        for (int i = 1; i < lim; i = i << 1)
+        {
+            UpdateSkip.SetInt("startLevel", i);
+            UpdateSkip.SetInt("endLevel", i);
+            int x = Math.Max(width / (groupWidthX * s), groupWidthX);
+            int y = Math.Max(width / (groupWidthY * s), groupWidthY);
+            int z = Math.Max(width / (groupWidthZ * s), groupWidthZ);
+            UpdateSkip.Dispatch(kernelIndex,x,y,z);
+            s = s << 1;
+        }
 
         SkipBuffer.Release();
 
