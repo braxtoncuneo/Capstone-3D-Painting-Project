@@ -1,1 +1,0 @@
-# unity-vrtk-example
