@@ -107,7 +107,7 @@
 			fOut frag (v2f i)
 			{
 
-				float stepMax = /* 3;// */sqrt(texWidth*texWidth * 3);
+				float stepMax = /* 1;// */sqrt(texWidth*texWidth * 3);
 				int iterMax = 300;
 				float stepTotal = 0;
 
@@ -138,7 +138,8 @@
 				while ( (stepTotal < stepMax) && (iter < iterMax) ) {
 					
 					findLevel(coord, sCoord, mag);
-					
+
+					diff = 0.5 + fSign * (0.5 - fmod(fCoord, 1.0*mag) / mag);
 					left = diff / dir;
 					deltaTime = min(left.x, min(left.y, left.z));
 
@@ -150,9 +151,8 @@
 					
 					t += deltaTime;
 					stepTotal  += deltaTime;
-					fCoord = fCoord + dir * (deltaTime*mag+0.001) * fSign;
+					fCoord = fCoord + dir * (deltaTime*mag+0.0001) * fSign;
 					coord = fCoord;
-					diff = 0.5 + fSign * (0.5 - fmod(fCoord, 1.0*mag) / mag);
 
 					if (any(fCoord < float3(0, 0, 0)) || any(fCoord > float3(texWidth, texWidth, texWidth))) {
 						break;
@@ -160,7 +160,7 @@
 					iter++;
 				}
 
-				//samp = float4(float3(coord)/texWidth,1.0);
+				//samp = float4(float3(fCoord)/texWidth,1.0);
 				//samp = float4(coord % 2, 1.0);
 				//samp = float4(diff ,1.0);
 				//samp = float4(fmod(fCoord, 1.0),1.0);
