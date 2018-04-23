@@ -1,0 +1,97 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel main
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+texture3D   ColorData : register(t1);
+texture3D SurfaceData : register(t2);
+globallycoherent RWTexture3D<int4>	SkipData : register(u3);
+globallycoherent RWStructuredBuffer<int4> SkipBuffer : register(u4);
+
+int texWidth;
+int lastStart;
+int startLevel;
+int endLevel;
+
+
+int toLin(int3 coords) {
+	return coords.x + coords.y * texWidth + coords.z * texWidth * texWidth;
+}
+
+[numthreads(8,8,8)]
+void main (uint3 id : SV_DispatchThreadID)
+{
+
+	int itr;
+	int span;
+	float4 fCol = float4(0, 0, 0, 0);
+	float4 fSrf = float4(0, 0, 0, 0);
+	float4 samp = float4(0, 0, 0, 0);
+	
+	int3 gCoord;
+	int3 sCoord;
+	int sSamp;
+	bool matches;
+	/*
+	if (startLevel != 1) {
+		int mask;
+		gCoord = id + int3(level, level, level);
+		mask = (lastStart << 1) - 1;
+		sSamp = SkipBuffer[toLin(gCoord)];
+
+
+		AllMemoryBarrierWithGroupSync();
+	}
+	*/
+
+	for (int level = startLevel; level <= endLevel; level++) {
+
+		itr = max(id.x, max(id.y, id.z));
+		span = texWidth >> 1;
+		gCoord = id * (level << 1);
+		sCoord = id << 1;
+		matches = true;
+
+		if (itr < span) {
+
+			fCol = ColorData[gCoord];
+			fSrf = SurfaceData[gCoord];
+			for (int z = 0; z < 2; z++) {
+				for (int y = 0; y < 2; y++) {
+					for (int x = 0; x < 2; x++) {
+						samp = ColorData[gCoord + int3(x, y, z)*level];
+						matches = matches && all(samp == fCol);
+						samp = SurfaceData[gCoord + int3(x, y, z)*level];
+						matches = matches && all(samp == fSrf);
+
+						if (level != 1) {
+							sSamp = SkipBuffer[toLin(sCoord + int3(x, y, z))].x;
+							matches = matches && ((sSamp & (level >> 1)) != 0);
+						}
+					}
+				}
+			}
+
+			if (level == 1) {
+				sSamp = 0;
+			}
+			else {
+				sSamp = (SkipBuffer[toLin(id)]).x;
+			}
+
+			if (matches) {
+				sSamp |= level;
+			}
+			else {
+				sSamp &= ~level;
+			}
+			SkipBuffer[toLin(id)] = int4(sSamp, 0, 0, 0);
+
+		}
+		AllMemoryBarrierWithGroupSync();
+
+	}
+
+	SkipData[id] = SkipBuffer[toLin(id)];
+
+}

@@ -15,7 +15,7 @@ public class Block : MonoBehaviour
 
 
     public Mesh Model;
-    public const int width = 32;
+    public const int width = 64;
     const int layers = 1;
     const bool doesMipMapping = true;
     const int groupWidthX = 8;
