@@ -1,0 +1,59 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel main
+#pragma target 5
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+globallycoherent RWTexture3D<float4>	ColorData : register(u1);
+globallycoherent RWTexture3D<float4> SurfaceData : register(u2);
+
+float3 baseOffset;
+float4 color0;
+float4 color1;
+float4 sliders;
+
+int texWidth;
+float blockWidth;
+
+float4x4 start;
+float4x4 end;
+
+
+
+
+[numthreads(8, 8, 8)]
+void main(uint3 id : SV_DispatchThreadID)
+{
+	float4 worldPos = float4((id + 0.5) * blockWidth / ((float)texWidth) + baseOffset, 1.0);
+	float3 relStart = mul(start, worldPos).xyz;
+	float3 relEnd = mul(end, worldPos).xyz;
+	float3 brushDir = normalize(relEnd - relStart);
+	float before = dot(relStart, brushDir);
+	float after = dot(relEnd, brushDir);
+	float3 pos;
+	float3x3 normMat;
+	float4 norm;
+
+	if (before >= 0) {
+		pos = relStart;
+		normMat = transpose(start);
+	}
+	else if (after <= 0) {
+		pos = relEnd;
+		normMat = transpose(end);
+	}
+	else if (before == after) {
+		pos = relStart;
+		normMat = transpose(start);
+	}
+	else {
+		pos = lerp(relStart, relEnd, 1.0 - (after) / (after - before));
+		normMat = transpose(lerp(start, end, 1.0 - (after) / (after - before)));
+	}
+
+	if (length(pos) <= 1.0) {
+		ColorData[id] = lerp(color0, color1, 1.0 - (after) / (after - before));
+		SurfaceData[id] = float4(normalize(mul(normMat, normalize(pos))), 0.0);
+	}
+
+}
