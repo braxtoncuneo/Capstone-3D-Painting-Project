@@ -8,7 +8,7 @@
 	}
 		SubShader
 	{
-		Tags{ "Queue" = "AlphaTest"  "RenderType" = "AlphaTest" }
+		Tags{ "Queue" = "Transparent"  "RenderType" = "AlphaTest" }
 		LOD 100
 		Blend SrcAlpha OneMinusSrcAlpha
 		ZWrite On
@@ -68,11 +68,13 @@
 
 			float4 stepSamp(float4 samp, float4 curr,float stepSize) {
 				float4 result;
-				if (curr.w >= 127) {
+				if (curr.w >= 1024) {
 					result = float4(samp.xyz + curr.xyz * (1 - samp.w), 1);
 				}
 				else {
-					result = float4(samp.xyz + curr.xyz * (1 - samp.w) * curr.w  * stepSize, samp.w + (1 - samp.w)* curr.w  * stepSize );
+					float adjTrans = 1.0 - pow(1.0 - curr.w, stepSize);
+					//float adjTrans = curr.w*stepSize;
+					result = float4(samp.xyz + curr.xyz * (1 - samp.w) * adjTrans, samp.w + (1 - samp.w)* adjTrans );
 					result.w = clamp(result.w,0.0, 1.0);
 				}
 				return result;
@@ -91,7 +93,7 @@
 					sCoord = coord;
 				}
 				else {
-					sCoord = coord & (i-1);
+					sCoord = coord & (~(i-1));
 				}
 			}
 
@@ -108,15 +110,15 @@
 			{
 
 				float stepMax = /* 1;// */sqrt(texWidth*texWidth * 3);
-				int iterMax = 300;
 				float stepTotal = 0;
+				int iterMax = texWidth * 3;
+				int iter = 0;
 
 				float3 dir = abs(normalize(i.dir));
 				float3 fSign = 0 - sign(i.dir);
 				int3 iSign = int3(fSign);
 				float3 fCoord = i.color * texWidth * 0.9999999;
 				float3 diff = 0.5 + fSign * (0.5 - fmod(fCoord, 1.0));
-				//float3 diff = 0.5 + fSign * (0.5 - fmod(i.color * texWidth * 0.9999999 , 1.0) );
 				int3 sCoord;
 				int3 coord = fCoord;
 				float3 left;
@@ -124,7 +126,6 @@
 				float3 cAvg = float3(0,0,0);
 				float4 samp = float4(0.0, 0.0, 0.0, 0.0);
 				int sSamp;
-				float t = 0;
 
 				float nearZ = _ProjectionParams.y;
 				float farZ	= _ProjectionParams.z;
@@ -133,9 +134,8 @@
 				float mag = 1;
 
 				bool hit = false;
-				int iter = 0;
 
-				while ( (stepTotal < stepMax) && (iter < iterMax) ) {
+				while ( (stepTotal < stepMax) && (iter<iterMax) ) {
 					
 					findLevel(coord, sCoord, mag);
 
@@ -143,15 +143,14 @@
 					left = diff / dir;
 					deltaTime = min(left.x, min(left.y, left.z));
 
-					processStep(samp, coord, deltaTime);
+					processStep(samp, sCoord, deltaTime*mag);
 
 					if (samp.w >= 0.99) {
 						break;
 					}
 					
-					t += deltaTime;
-					stepTotal  += deltaTime;
-					fCoord = fCoord + dir * (deltaTime*mag+0.0001) * fSign;
+					stepTotal += deltaTime*mag + 0.01;
+					fCoord = fCoord + dir * (deltaTime*mag+0.01) * fSign;
 					coord = fCoord;
 
 					if (any(fCoord < float3(0, 0, 0)) || any(fCoord > float3(texWidth, texWidth, texWidth))) {
@@ -170,10 +169,18 @@
 				//samp = float4((float3(1,1,1)*stepCount)/stepMax,1.0);
 				//cAvg = normalize(cAvg); samp = float4(cAvg, 1.0);
 				//samp = float4(fmod(dir * best,1.0), 1.0);
-				//samp = float4(log2(iter+0.001) / 8.0, 0.0, 0.0, 1.0);
+				//samp = float4(log2(iter + 0.001) / 8.0, 0.0, 0.0, 1.0);
+				/*
+				if (iter > iterMax * 0.6) {
+					samp = float4(1.0, 0.0, 0.0, 1.0);
+				}
+				else {
+					samp = float4(0.0, 0.0, 0.0, 1.0);
+				}
+				*/
 
 				fOut result;
-				float outZ = i.vertex.z - (t * tToZ) / (farZ-nearZ);// t * blockWidth;
+				float outZ = i.vertex.z - (stepTotal * tToZ) / (farZ-nearZ);// t * blockWidth;
 				result.depth = outZ;
 				if (samp.w > 0.0) {
 					result.color = float4(samp.xyz / samp.w, samp.w); // */ float4(float3(1,1,1)*outZ,1.0);

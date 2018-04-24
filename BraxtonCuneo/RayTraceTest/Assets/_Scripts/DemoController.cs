@@ -8,6 +8,7 @@ public class DemoController : MonoBehaviour {
     public Block blockPrefab;
     public Brush controlledBrush;
     Vector4 lastColor;
+    bool done;
 
     // Use this for initialization
     void Start () {
@@ -15,6 +16,7 @@ public class DemoController : MonoBehaviour {
         makeGrid(2);
         controlledBrush.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
         controlledBrush.Down(null);
+        done = false;
 	}
 	
 	// Update is called once per frame
@@ -27,7 +29,7 @@ public class DemoController : MonoBehaviour {
             Vector4 nowColor = new Vector4((float)Math.Sin(Time.time * 2.3),
                                                 (float)Math.Sin(Time.time * 1.3),
                                                 (float)Math.Sin(Time.time * 1.7),
-                                                128.0f);
+                                                1.0f);
 
             controlledBrush.transform.SetPositionAndRotation(
 
@@ -55,9 +57,10 @@ public class DemoController : MonoBehaviour {
             controlledBrush.Stroke(lastColor, nowColor, new Vector4(0, 0, 0, 0));
             lastColor = nowColor;
         }
-        else
+        else if(!done)
         {
             controlledBrush.Up();
+            done = true;
         }
     }
 
