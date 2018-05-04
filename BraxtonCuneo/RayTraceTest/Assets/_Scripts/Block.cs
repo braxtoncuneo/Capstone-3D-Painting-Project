@@ -9,6 +9,8 @@ using UnityEngine;
 public class Block : MonoBehaviour
 {
 
+    static List<Block> blockRegistry = new List<Block>();//$
+
     public Material RayTracer;
     public ComputeShader UpdateSkip;
     public RenderTexture ColorData;
@@ -67,6 +69,8 @@ public class Block : MonoBehaviour
         Model.RecalculateBounds();
 
         updInd = UpdateSkip.FindKernel("main");
+
+        blockRegistry.Add(this);//$
 
     }
 
@@ -159,7 +163,27 @@ public class Block : MonoBehaviour
 
     }
 
+    public static void Scale(  Vector3 leftBefore, Vector3 rightBefore,
+                        Vector3 leftAfter, Vector3 rightAfter)
+    {
+        Vector3 center = Vector3.Lerp(
+                            Vector3.Lerp(leftBefore, rightBefore, 0.5f),
+                            Vector3.Lerp(leftAfter,  rightAfter,  0.5f),
+                            0.5f
+                        );
+        float scaleDelta = Vector3.Distance(leftAfter, rightAfter) / Vector3.Distance(leftBefore, rightBefore);
+        Debug.Log(scaleDelta);
 
+        foreach(Block b in blockRegistry)
+        {
+            Vector3 newPos = b.transform.position + (b.transform.position - center) * ( scaleDelta - 1 );
+            Vector3 newScale = Vector3.Scale(b.transform.localScale, new Vector3(scaleDelta,scaleDelta,scaleDelta));
+            b.transform.position = newPos;
+            b.transform.localScale = newScale;
+            b.RayTracer.SetFloat("blockWidth", blockWidth*newScale.x);
+        }
+
+    }
 
 }
 
