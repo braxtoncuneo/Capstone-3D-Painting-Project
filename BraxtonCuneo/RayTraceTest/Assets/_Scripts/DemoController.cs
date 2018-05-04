@@ -29,7 +29,7 @@ public class DemoController : MonoBehaviour {
             Vector4 nowColor = new Vector4((float)Math.Sin(Time.time * 2.3),
                                                 (float)Math.Sin(Time.time * 1.3),
                                                 (float)Math.Sin(Time.time * 1.7),
-                                                1.0f);
+                                                0.01f);
 
             controlledBrush.transform.SetPositionAndRotation(
 
@@ -47,7 +47,7 @@ public class DemoController : MonoBehaviour {
 
 
             );
-            controlledBrush.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
+            //controlledBrush.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
             
             controlledBrush.transform.localScale = 
                     new Vector3(    ((float)Math.Cos(Time.time * 0.73 * m) + 1.0f) * 0.1f,

@@ -87,7 +87,7 @@ public class Block : MonoBehaviour
         result.volumeDepth = depth;
         result.enableRandomWrite = true;
         result.filterMode = FilterMode.Point;
-        result.format = RenderTextureFormat.ARGBFloat;
+        result.format = RenderTextureFormat.ARGBHalf;
         result.autoGenerateMips = false;
         result.useMipMap = false;
         result.Create();
@@ -103,7 +103,7 @@ public class Block : MonoBehaviour
         result.volumeDepth = depth;
         result.enableRandomWrite = true;
         result.filterMode = FilterMode.Point;
-        result.format = RenderTextureFormat.ARGBInt;
+        result.format = RenderTextureFormat.RInt;
         result.autoGenerateMips = false;
         result.useMipMap = false;
         result.Create();
@@ -134,7 +134,7 @@ public class Block : MonoBehaviour
         brushShader.SetInt("texWidth", width);
         brushShader.Dispatch(kernelIndex, width / groupWidthX, width / groupWidthY, width / groupWidthZ);
 
-        ComputeBuffer SkipBuffer = new ComputeBuffer(width * width * width, sizeof(int) * 4);
+        ComputeBuffer SkipBuffer = new ComputeBuffer(width * width * width, sizeof(int));
 
         UpdateSkip.SetTexture(updInd, "ColorData", ColorData);
         UpdateSkip.SetTexture(updInd, "SurfaceData", SurfaceData);

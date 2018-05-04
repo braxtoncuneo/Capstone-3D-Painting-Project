@@ -4,8 +4,8 @@
 
 // Create a RenderTexture with enableRandomWrite flag and set it
 // with cs.SetTexture
-globallycoherent RWTexture3D<float4>	ColorData : register(u1);
-globallycoherent RWTexture3D<float4> SurfaceData : register(u2);
+globallycoherent RWTexture3D<half4>	ColorData : register(u1);
+globallycoherent RWTexture3D<half4> SurfaceData : register(u2);
 
 float3 baseOffset;
 float4 color0;

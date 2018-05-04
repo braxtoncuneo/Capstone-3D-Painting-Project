@@ -49,7 +49,7 @@
 
 	texture3D ColorData;
 	texture3D SurfaceData;
-	texture3D<int4> SkipData;
+	texture3D<int> SkipData;
 	int texWidth;
 	float blockWidth;
 
@@ -103,7 +103,7 @@
 				if (color.w > 0) {
 					color.xyz *= surface.y*0.5 + 0.5;
 				}
-				samp = stepSamp(samp, color, dist / texWidth);
+				samp = stepSamp(samp, color, dist);
 			}
 			
 			fOut frag (v2f i)

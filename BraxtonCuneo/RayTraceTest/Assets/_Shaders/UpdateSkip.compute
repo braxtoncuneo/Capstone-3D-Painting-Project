@@ -5,8 +5,8 @@
 // with cs.SetTexture
 texture3D   ColorData : register(t1);
 texture3D SurfaceData : register(t2);
-globallycoherent RWTexture3D<int4>	SkipData : register(u3);
-globallycoherent RWStructuredBuffer<int4> SkipBuffer : register(u4);
+globallycoherent RWTexture3D<int>	SkipData : register(u3);
+globallycoherent RWStructuredBuffer<int> SkipBuffer : register(u4);
 
 int texWidth;
 int lastStart;
@@ -30,12 +30,15 @@ void main (uint3 id : SV_DispatchThreadID)
 	
 	int3 gCoord;
 	int3 sCoord;
+	bool3 outer;
 	int sSamp;
 	bool matches;
+	
 	/*
 	if (startLevel != 1) {
 		int mask;
-		gCoord = id + int3(level, level, level);
+		outer = (id%(startLevel))
+		gCoord = id + int3(startLevel, startLevel, startLevel)*(id%startLevel);
 		mask = (lastStart << 1) - 1;
 		sSamp = SkipBuffer[toLin(gCoord)];
 
