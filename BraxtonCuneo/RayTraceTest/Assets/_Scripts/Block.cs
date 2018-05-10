@@ -16,6 +16,7 @@ public class Block : MonoBehaviour
     public RenderTexture ColorData;
     public RenderTexture SurfaceData;
     public RenderTexture SkipData;
+    public Brush theBrush;
 
 
     public Mesh Model;
@@ -78,7 +79,8 @@ public class Block : MonoBehaviour
     void Update()
     {
 
-
+        RayTracer.SetMatrix("brush_transform", theBrush.transform.worldToLocalMatrix);
+        RayTracer.SetColor("brush_color", theBrush.lastColor);
 
     }
 

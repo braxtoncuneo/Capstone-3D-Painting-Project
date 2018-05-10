@@ -39,6 +39,7 @@
 		float3 color : COLOR0;
 		//float2 st : TEXCOORD1;
 		float4 vertex : SV_POSITION;
+		float4 world: POSITION2;
 		float3 dir: O_DIRECTION;
 	};
 
@@ -53,15 +54,20 @@
 	int texWidth;
 	float blockWidth;
 
+	float4x4 brush_transform;
+	float4 brush_color;
+
 
 	float4 _MainTex_ST;
 			
 			v2f vert (appdata v)
 			{
 				v2f result;
-				result.vertex = UnityObjectToClipPos(v.vertex);
-				result.dir = ObjSpaceViewDir(v.vertex);
+				result.uv = float2(0, 0);
 				result.color = v.color;
+				result.vertex = UnityObjectToClipPos(v.vertex);
+				result.world = mul(unity_ObjectToWorld, v.vertex );
+				result.dir = ObjSpaceViewDir(v.vertex);
 				return result;
 			}
 
@@ -81,7 +87,7 @@
 			}
 			
 			void findLevel(in int3 coord, inout int3 sCoord, out float mag) {
-				int i;
+				uint i;
 				mag = texWidth;
 				for (i = texWidth; i > 1; i >>= 1) {
 					if ((SkipData[coord/i].x & (i>>1)) != 0) {
@@ -105,10 +111,25 @@
 				}
 				samp = stepSamp(samp, color, dist);
 			}
+
+			float getBrushDepth(in float4 worldCoord, in float4 projCoord) {
+				float3 bFrag = mul(brush_transform, worldCoord ).xyz;
+				float3 bCam = mul(brush_transform, float4(_WorldSpaceCameraPos,1.0) ).xyz;
+				float3 bDir = normalize(bFrag - bCam);
+				float  bIntr = dot(float3(0, 0, 0) - bCam,bDir);
+				float3 bNear = bCam + bDir * bIntr;
+				if (length(bNear) < 1.5000) {
+					return projCoord.z * bIntr / length(bDir);
+				}
+				else {
+					return 10000;
+				}
+			}
 			
 			fOut frag (v2f i)
 			{
 
+				float brushDepth = getBrushDepth(i.world,i.vertex);
 				float stepMax = /* 1;// */sqrt(texWidth*texWidth * 3);
 				float stepTotal = 0;
 				int iterMax = texWidth * 3;
@@ -182,12 +203,21 @@
 				fOut result;
 				float outZ = i.vertex.z - (stepTotal * tToZ) / (farZ-nearZ);// t * blockWidth;
 				result.depth = outZ;
-				if (samp.w > 0.0) {
-					result.color = float4(samp.xyz / samp.w, samp.w); // */ float4(float3(1,1,1)*outZ,1.0);
+				result.color = float4(0, 0, 0, 0);
+
+				if (brushDepth < 100) {
+					result.depth = brushDepth;
+					result.color = float4((result.depth-brushDepth).xxx,1.0);// float4(brush_color);
 				}
-				else {
+				if (samp.w > 0.0) {
+					result.color = float4(  result.color.xyz + (1 - result.color.w) * samp.xyz / samp.w,
+											result.color.w + (1 - result.color.w) * samp.w );
+				}
+				if(result.color.w <= 0){
 					discard;
 				}
+
+				
 					
 				return result;
 				

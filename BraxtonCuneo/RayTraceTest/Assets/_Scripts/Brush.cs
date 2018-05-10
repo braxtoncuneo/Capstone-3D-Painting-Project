@@ -7,6 +7,7 @@ public class Brush : MonoBehaviour
 {
 
     Matrix4x4 lastTransform;
+    public Color lastColor;
     public ComputeShader CurrentBrush;
     public ComputeShader WipeBrush;
 
@@ -28,13 +29,19 @@ public class Brush : MonoBehaviour
     }
 
 
+    float[] arrFromVec4(Vector4 value)
+    {
+        float[] result = new float[4];
+        result[0] = value.x;
+        result[1] = value.y;
+        result[2] = value.z;
+        result[3] = value.w;
+        return result;
+    }
+
     void setVector4(ComputeShader brush, string name, Vector4 value)
     {
-        float[] val = new float[4];
-        val[0] = value.x;
-        val[1] = value.y;
-        val[2] = value.z;
-        val[3] = value.w;
+        float[] val = arrFromVec4(value);
         brush.SetFloats(name, val);
     }
 
@@ -77,6 +84,7 @@ public class Brush : MonoBehaviour
     public void PerformBrush(  ComputeShader brush, Vector4 color0, Vector4 color1, Vector4 sliders,
                         Matrix4x4 startTransform, Matrix4x4 endTransform)
     {
+        lastColor = new Color(color1.x, color1.y, color1.z, color1.w);
         int kInd = BasicBrush.FindKernel("main");
         float[] offset = new float[3];
 

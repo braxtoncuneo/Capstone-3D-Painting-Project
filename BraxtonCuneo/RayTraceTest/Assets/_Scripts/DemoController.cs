@@ -62,7 +62,7 @@ public class DemoController : MonoBehaviour {
         }
         else if(Time.time < 20)
         {
-            Block.Scale(org, lastBrush, org, controlledBrush.transform.position);
+            
         }
         else if(!done)
         {
@@ -85,6 +85,7 @@ public class DemoController : MonoBehaviour {
                     b = Instantiate<Block>(blockPrefab);
                     b.transform.position = new Vector3(x*w,y*w,z*w);
                     controlledBrush.blocks.Add(b);
+                    b.theBrush = controlledBrush;
                 }
             }
         }
