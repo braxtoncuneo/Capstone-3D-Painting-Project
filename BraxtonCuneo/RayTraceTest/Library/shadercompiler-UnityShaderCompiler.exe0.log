@@ -1,2 +1,19 @@
 Base path: C:/Program Files/Unity/Editor/Data
 Cmd: initializeCompiler
+Cmd: compileComputeKernel
+  error: 1 plat 4 at BasicBrush.compute(3): 'target' : unknown pragma ignored
+  error: 1 plat 4 at BasicBrush.compute(39): implicit truncation of vector type
+  error: 1 plat 4 at BasicBrush.compute(43): implicit truncation of vector type
+  error: 1 plat 4 at BasicBrush.compute(47): implicit truncation of vector type
+  error: 1 plat 4 at BasicBrush.compute(51): implicit truncation of vector type
+  api=4 insize=1494 outsize=2617 ok=1
+Cmd: compileComputeKernel
+  error: 1 plat 4 at UpdateSkip.compute(91): implicit truncation of vector type
+  api=4 insize=2228 outsize=2557 ok=1
+Cmd: preprocess
+  insize=1186 outsize=278 ok=1
+Cmd: preprocess
+  insize=4753 outsize=396 ok=1
+Cmd: compileComputeKernel
+  error: 1 plat 4 at WipeBrush.compute(25): signed/unsigned mismatch, unsigned assumed
+  api=4 insize=612 outsize=817 ok=1

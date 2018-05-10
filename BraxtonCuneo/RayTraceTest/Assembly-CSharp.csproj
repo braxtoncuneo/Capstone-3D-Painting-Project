@@ -53,9 +53,12 @@
   <ItemGroup>
      <Compile Include="Assets\_Scripts\Block.cs" />
      <Compile Include="Assets\_Scripts\Brush.cs" />
+     <Compile Include="Assets\_Scripts\CamController.cs" />
      <Compile Include="Assets\_Scripts\DemoController.cs" />
      <None Include="Assets\_Shaders\RayTracer.shader" />
      <None Include="Assets\_Shaders\BasicBrush.compute" />
+     <None Include="Assets\_Shaders\BallShader.shader" />
+     <None Include="Assets\_Shaders\UpdateSkip.compute" />
      <None Include="Assets\_Shaders\WipeBrush.compute" />
  <Reference Include="UnityEngine.UI">
  <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/GUISystem/UnityEngine.UI.dll</HintPath>
