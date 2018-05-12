@@ -5,15 +5,16 @@
 // with cs.SetTexture
 texture3D   ColorData : register(t1);
 texture3D SurfaceData : register(t2);
-globallycoherent RWTexture3D<int>	SkipData : register(u3);
-globallycoherent RWStructuredBuffer<int> SkipBuffer : register(u4);
+RWTexture3D<int>	SkipData : register(u3);
+RWStructuredBuffer<int> SkipBuffer : register(u4);
 
 int texWidth;
 int lastStart;
 int startLevel;
 int endLevel;
 
-
+// Converts 3-dimensional coordinates to linear coordinates for the
+// skip buffer
 int toLin(int3 coords) {
 	return coords.x + coords.y * texWidth + coords.z * texWidth * texWidth;
 }
@@ -32,8 +33,11 @@ void main (uint3 id : SV_DispatchThreadID)
 	int3 sCoord;
 	bool3 outer;
 	int sSamp;
+	int coverMask;
 	bool matches;
 	
+	// This block of code is for an eventual future feature and should not be
+	// deleted or uncommented for the time being
 	/*
 	if (startLevel != 1) {
 		int mask;
@@ -47,34 +51,82 @@ void main (uint3 id : SV_DispatchThreadID)
 	}
 	*/
 
+	// /*
+	bool colorMatch;
+	bool surfaceMatch;
+	bool covered;
+	// This calculates if the voxels associated with each position in the
+	// first level of the skip grid are covered
+	if (startLevel == 1) {
+		covered = true;
+		gCoord = id * 2;
+		fCol = ColorData[gCoord];
+		for (int z = 0; z < 4; z++) {
+			for (int y = 0; y < 4; y++) {
+				for (int x = 0; x < 4; x++) {
+					samp = ColorData[gCoord + int3(x, y, z) - int3(1,1,1)];
+					covered = covered && all(samp == fCol);
+				}
+			}
+		}
+	}
+	// */
+
+	// As it stands, this loop should only execute once. This loop is in place
+	// for the eventual inclusion of a future feature.
 	for (int level = startLevel; level <= endLevel; level++) {
 
+		// The largest component of twice the voxel's position
 		itr = max(id.x, max(id.y, id.z));
+		// How far apart voxels should be sampled
 		span = texWidth >> 1;
+		// Coordinates for the section of voxels to be gathered from
 		gCoord = id * (level << 1);
 		sCoord = id << 1;
 		matches = true;
+		colorMatch = true;
+		surfaceMatch = true;
+		covered = true;
 
-		if (itr < span) {
-
+		// A section of a level-one component always has similarity
+		// if covered is true.
+		if (level == 1 && covered) {
+			SkipBuffer[toLin(id)] = 0x80000001;
+		}
+		// Limits processing to work groups that have something to
+		// process for the given level
+		else if (itr < span) {
+			// Sample one of the voxels in the grouping
 			fCol = ColorData[gCoord];
 			fSrf = SurfaceData[gCoord];
+
+			// Sample each voxel in the grouping in turn and, if any do
+			// not match, then similarity does not hold
 			for (int z = 0; z < 2; z++) {
 				for (int y = 0; y < 2; y++) {
 					for (int x = 0; x < 2; x++) {
 						samp = ColorData[gCoord + int3(x, y, z)*level];
-						matches = matches && all(samp == fCol);
+						colorMatch = colorMatch && all(samp == fCol);
 						samp = SurfaceData[gCoord + int3(x, y, z)*level];
-						matches = matches && all(samp == fSrf);
+						surfaceMatch = surfaceMatch && all(samp == fSrf);
 
+						// Should this be a 2+ level element, similarity and cover
+						// are also checked and only transferred if true for all
+						// components
 						if (level != 1) {
 							sSamp = SkipBuffer[toLin(sCoord + int3(x, y, z))].x;
+							covered = covered && ((sSamp & (0x80000000 >> (level-2))) != 0);
 							matches = matches && ((sSamp & (level >> 1)) != 0);
 						}
 					}
 				}
 			}
 
+			// A group matches if all have the same colors and either
+			// the same surface or universal coverage
+			matches = matches && colorMatch && (surfaceMatch || covered);
+
+			// Establishes previous state of the element
 			if (level == 1) {
 				sSamp = 0;
 			}
@@ -82,19 +134,29 @@ void main (uint3 id : SV_DispatchThreadID)
 				sSamp = (SkipBuffer[toLin(id)]).x;
 			}
 
-			if (matches) {
-				sSamp |= level;
+			// Creates bitmask indicating coverage for the current level
+			if (covered) {
+				coverMask = 0x80000000 >> (level-1);
 			}
 			else {
-				sSamp &= ~level;
+				coverMask = 0;
 			}
-			SkipBuffer[toLin(id)] = int4(sSamp, 0, 0, 0);
+
+			// Adds masks to the element
+			if (matches) {
+				sSamp |= level | coverMask;
+			}
+			else {
+				sSamp &= ~(level | coverMask);
+			}
+			// Stores masks back into the element
+			SkipBuffer[toLin(id)] = sSamp;
 
 		}
-		AllMemoryBarrierWithGroupSync();
+		//AllMemoryBarrierWithGroupSync();
 
 	}
-
+	// Stores SkipBuffer data into the actual SkipData texure
 	SkipData[id] = SkipBuffer[toLin(id)];
 
 }

@@ -2,19 +2,26 @@
 #pragma kernel main
 #pragma target 5
 
-// Create a RenderTexture with enableRandomWrite flag and set it
-// with cs.SetTexture
-globallycoherent RWTexture3D<half4>	ColorData : register(u1);
-globallycoherent RWTexture3D<half4> SurfaceData : register(u2);
+// The data associated with the ColorGrid and SurfaceGrid
+RWTexture3D<half4>	ColorData : register(u1);
+RWTexture3D<half4> SurfaceData : register(u2);
 
+// The offset of the block in space
 float3 baseOffset;
+
+// The initial color of the brush
 float4 color0;
+// The ending color of the brush
 float4 color1;
+// Slider values that could be used at a later date
 float4 sliders;
 
+// The number of voxels in the 3D texture
 int texWidth;
+// The width of the block in unity units
 float blockWidth;
 
+// The starting and ending transforms of the brush
 float4x4 start;
 float4x4 end;
 
@@ -24,16 +31,25 @@ float4x4 end;
 [numthreads(8, 8, 8)]
 void main(uint3 id : SV_DispatchThreadID)
 {
+	// The world-space position of the voxel for the work item
 	float4 worldPos = float4((id + 0.5) * blockWidth / ((float)texWidth) + baseOffset, 1.0);
+
+	// Calculates relative start and finish for the voxel's relative position to the brush
 	float3 relStart = mul(start, worldPos).xyz;
 	float3 relEnd = mul(end, worldPos).xyz;
+
+	// The normalized direction of travel for the brush stroke
 	float3 brushDir = normalize(relEnd - relStart);
+
+	// Calculates the parametric time associated with the intersection with the brush tip
 	float before = dot(relStart, brushDir);
 	float after = dot(relEnd, brushDir);
 	float3 pos;
 	float3x3 normMat;
 	float4 norm;
 
+	// If the brush lies before or after the stroke bounds, use the space of the closest
+	// end, otherwise interpolate to the closest point
 	if (before >= 0) {
 		pos = relStart;
 		normMat = transpose(start);
@@ -51,6 +67,8 @@ void main(uint3 id : SV_DispatchThreadID)
 		normMat = transpose(lerp(start, end, 1.0 - (after) / (after - before)));
 	}
 
+	// If the voxel falls into the space of the brush stroke at its closest point
+	// of intersection, it is affected by the brush
 	if (length(pos) <= 1.0) {
 		ColorData[id] = lerp(color0, color1, 1.0 - (after) / (after - before));
 		SurfaceData[id] = float4(normalize(mul(normMat, normalize(pos))), 0.0);

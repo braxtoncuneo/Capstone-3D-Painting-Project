@@ -11,7 +11,7 @@ public class DemoController : MonoBehaviour {
     Vector3 lastBrush;
     bool done;
 
-    // Use this for initialization
+    
     void Start () {
         lastColor = new Vector4(0, 0, 0, 0);
         makeGrid(2);
@@ -27,7 +27,7 @@ public class DemoController : MonoBehaviour {
         float m = 1.0f;
         Vector3 org = new Vector3(0, 0, 0);
 
-        Vector4 nowColor = new Vector4((float)Math.Sin(Time.time * 2.3),
+        Vector4 nowColor = new Vector4(     (float)Math.Sin(Time.time * 2.3),
                                             (float)Math.Sin(Time.time * 1.3),
                                             (float)Math.Sin(Time.time * 1.7),
                                             1.0f);
@@ -55,12 +55,12 @@ public class DemoController : MonoBehaviour {
                                 ((float)Math.Cos(Time.time * 1.42 * m) + 1.0f) * 0.1f,
                                 ((float)Math.Cos(Time.time * 1.05 * m) + 1.0f) * 0.1f
                 );
-        if (Time.time < 10)
+        if (Time.time < 30)
         {
             controlledBrush.Stroke(lastColor, nowColor, new Vector4(0, 0, 0, 0));
             lastColor = nowColor;
         }
-        else if(Time.time < 20)
+        else if(Time.time < 35)
         {
             
         }

@@ -5,19 +5,23 @@ using System;
 
 public class Brush : MonoBehaviour
 {
-
+    // Stores the ending state of the previous stroke
     Matrix4x4 lastTransform;
     public Color lastColor;
+
+    // Stores shaders for use in brush strokes
     public ComputeShader CurrentBrush;
     public ComputeShader WipeBrush;
-
     public ComputeShader BasicBrush;
+
+    // Stores the blocks affected by this brush
     public List<Block> blocks;
     // public Color brushColor;
 
     // Use this for initialization
     void Start()
     {
+        // Initializes the default brush
         lastTransform = transform.worldToLocalMatrix;
         BasicBrush.SetInt("texWidth", Block.width);
         setVector4(BasicBrush,"color0",new Vector4(0, 0, 0, 0));
@@ -28,7 +32,7 @@ public class Brush : MonoBehaviour
         Wipe(new Vector4(0,0,0,0),new Vector4(0,0,0,0));
     }
 
-
+    // Used for conversion when assigning shader variables
     float[] arrFromVec4(Vector4 value)
     {
         float[] result = new float[4];
@@ -51,7 +55,7 @@ public class Brush : MonoBehaviour
 
     }
 
-
+    // Records current position of brush and primes for strokes
     public void Down(ComputeShader brush)
     {
         if(brush != null)
@@ -65,6 +69,7 @@ public class Brush : MonoBehaviour
         lastTransform = transform.worldToLocalMatrix;
     }
 
+    // Performs brush stroke given current and previous state of brush
     public void Stroke(Vector4 color0, Vector4 color1, Vector4 sliders)
     {
         if(CurrentBrush != null)
@@ -74,13 +79,14 @@ public class Brush : MonoBehaviour
         lastTransform = transform.worldToLocalMatrix;
     }
 
+    // Ceases to perform brush strokes until the next "Down"
     public void Up()
     {
         CurrentBrush = null;
     }
 
 
-
+    // Assigns all necessary variables to perform a brush stroke and then does so
     public void PerformBrush(  ComputeShader brush, Vector4 color0, Vector4 color1, Vector4 sliders,
                         Matrix4x4 startTransform, Matrix4x4 endTransform)
     {
@@ -95,6 +101,8 @@ public class Brush : MonoBehaviour
         brush.SetMatrix("start", startTransform);
         brush.SetMatrix("end", endTransform);
 
+        // Sets up and executes the stroke shader across all blocks under the
+        // control of the brush
         foreach (Block b in blocks)
         {
             offset[0] = b.transform.position.x;
@@ -105,7 +113,7 @@ public class Brush : MonoBehaviour
         }
     }
 
-
+    // Wipes all blocks clean
     public void Wipe( Vector4 color0, Vector4 color1 )
     {
         PerformBrush(WipeBrush, color0, color1, new Vector4(0, 0, 0), new Matrix4x4(), new Matrix4x4());        

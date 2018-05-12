@@ -10,6 +10,7 @@ public class CamController : MonoBehaviour {
     Camera cam;
 	// Use this for initialization
 	void Start () {
+        // Creates initial camera position and initializes members
         center = new Vector3(1f, 1f, 1f);
         radius = 3.0f;
         cam = GetComponent<Camera>();
@@ -18,6 +19,7 @@ public class CamController : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
+        // Slowly rotates camera around the blocks in the scene
         transform.position = new Vector3((float)Math.Cos(Time.time),0.0f, (float)Math.Sin(Time.time)) * radius + center;
         transform.LookAt(center);
 	}
