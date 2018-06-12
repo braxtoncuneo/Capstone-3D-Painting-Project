@@ -151,8 +151,257 @@ PUT ABSTRACT HERE
 
 
 
-
+\pagebreak
 \section{Requirements Document}
+
+\subsection{Original Document}
+
+\subsubsection{Introduction}
+\threesection{Purpose}
+This document defines the technical requirements for the 3D Painting Project for the 2017 Oregon State University Computer Science Capstone class.
+Once this requirement document is reviewed by the project clients (Dr. Mike Bailey and Dr. Kirsten Winters) and the class instructor (Dr. Kevin McGrath) it will serve as a contract defining the deliverables to be produced by team PolyVox (Christopher Bokkam, Richard Cunard and Braxton Cuneo).
+\threesection{Scope}
+The project will be solely comprised of designing and constructing PolyVox, a virtual reality art program.
+PolyVox will allow the user to create, modify and remove three dimensional geometry, color existing geometry, save and load configurations of geometry, and accomplish all of the above in near-real time through the use of motion controls.
+The goal of the project is to allow for ease of use in developing virtual paintings and sculptures. The software is to act as a virtual ‘canvas’ for the creation of three dimensional art; the user will be able to create and view art created by themselves and others in three dimensional virtual space. 
+\threesection{Definitions}
+\begin{longtable}{ | l | p{12cm} | }
+ \hline			
+Adding geometry & Altering the environment such that it contains additional geometry without the exclusion of any geometry extant immediately prior to this alteration.  \\ \hline 
+Attribute & A class of value representable as an integer or floating point number  \\ \hline
+Attribute datum & A specific instance of an attribute  \\ \hline
+Color & A set of four attribute data, all represented by a floating point value, corresponding to red, green, and blue color channels, as well as an alpha (transparency) channel.  \\ \hline
+CPU & Central Processing Unit; The component of the computer that runs and operates the programs being run, and performs the necessary computations to do so.  \\ \hline
+Environment & The state of every instance of a geometric element explicitly represented by the system during a given instant. This includes the transformation of each particular geometric element, the size of each geometric element along each of its three axes, and the states of all attribute data present in each voxel of each geometric element. \\ \hline
+Framerate & The measure of time between each temporally consecutive instance of a new image rendered by the system being displayed to the user. \\ \hline 
+Grid &  Specifically, a finite three dimensional cartesian regular grid which is oriented relative to a three-dimensional origin by a transformation representable by a quaternion. \\ \hline
+Geometric element & A set of all voxels contained within a grid.  \\ \hline
+Geometry & One or more instances of a geometric element.  \\ \hline
+GPU & Graphics Processing Unit; a processor specifically designed to perform the computations used to render three-dimensional computer graphics.  \\ \hline
+HMD & Head Mounted Display; A wearable display system placed over the user’s head and face with a display placed directly in front of the user’s eyes. The HMD also tracks the user’s head movements and sends movement data to the program.  \\ \hline
+Latency & The measure of time between a user manipulating the devices they are interfacing with and the effects of these manipulations being conveyed by the output of these interfacing devices. \\ \hline
+Modifying geometry & Altering the environment such that the state of attribute data contained by geometry in the environment has been altered without the addition or removal of geometry.  \\ \hline
+Motion Control & The practice of manipulating devices which measure and convey to a computer their position and orientation relative to a reference point.  \\ \hline
+Removing geometry & Altering the environment such that it excludes geometry without the inclusion of any geometry not extant immediately prior to this alteration.  \\ \hline
+Resolution & The number of columns and rows of pixels used in a display. In the case of  VR headset, resolution is the effective resolution experienced by one eye using the headset. \\ \hline
+Virtual Reality & The practice of placing a display in front of each eye of an individual and displaying images for each eye which, through binocular vision, convey, to the individual looking into said displays, a scene with the illusion of depth.  \\ \hline
+Voxel & An element of a grid with an associated set of attribute data including at least one instance of color.  \\ \hline
+ 
+\hline 
+\end{longtable}
+\threesection{Gantt Chart}
+\begin{ganttchart}{1}{20}
+	
+	\gantttitle{PolyVox: Task list work flow}{20} \\
+	
+	%Project Tasks
+	\ganttbar{Research}{1}{1}\\
+	\ganttbar{Design}{2}{3}\\
+	\ganttbar{User interface}{4}{8}\\
+	\ganttbar{3D editor}{6}{11}\\
+	\ganttbar{Creation Tools}{9}{11}\\
+	\ganttbar{HMD and motion controls capture}{2}{3} \ganttbar{}{10}{14}\\
+	\ganttbar{Desktop applicaiton}{12}{14}\\
+	\ganttbar{VR application}{15}{17}\\
+	\ganttbar{User tests}{18}{19}\\
+	\ganttbar{Software Limitation tests}{19}{19}\\
+	\ganttbar{Demo Preperation}{20}{20}\\
+	
+	%Links
+	\ganttlink{elem0}{elem5}
+	\ganttlink{elem0}{elem1}
+	
+	\ganttlink{elem1}{elem2}
+	\ganttlink{elem1}{elem3}
+	\ganttlink{elem1}{elem4}
+	\ganttlink{elem1}{elem6}
+	
+	\ganttlink{elem3}{elem4}
+	
+	\ganttlink{elem2}{elem7}
+	\ganttlink{elem3}{elem7}
+	\ganttlink{elem4}{elem7}
+	
+	\ganttlink{elem6}{elem8}
+	\ganttlink{elem7}{elem8}
+	
+	\ganttlink{elem8}{elem9}
+	\ganttlink{elem8}{elem10}
+	\ganttlink{elem8}{elem11}
+	
+	%MILESTONES
+	\ganttmilestone{MILESTONES}{3}
+	\ganttmilestone{}{8}
+	\ganttmilestone{}{12}
+	\ganttmilestone{}{17}\\
+	
+	\gantttitle{Planning}{3}
+	\gantttitle{Basic platform}{5}
+	\gantttitle{Toolset}{4}
+	\gantttitle{Application}{5}
+	\gantttitle{Finalize}{3}
+
+\end{ganttchart}
+
+\threesection{References}
+\bibliographystyle{IEEEtran}
+\bibliography{Bibliography}{}
+\threesection{Overview}
+The remainder of this document consists of two chapters, an appendix, and an index.
+
+In the first of these chapters, the nature and characteristics of PolyVox will be described, including the state of the field PolyVox occupies, the basic functions of PolyVox, the characteristics of the prototypical user of PolyVox, assumptions made in this document, as well as the constraints and dependencies of Polyvox.
+
+In the second chapter, the requirements of the proposed project are detailed, including requirements regarding external interfaces, system features, performance, and software system attributes.
+\subsubsection{Overall Description}
+\threesection{Product Perspective}
+Virtual reality is a young and rapidly developing medium. As of yet, there has been little research into its possible applications.
+Until recently, nearly every virtual art program has been designed with a conventional screen as its interface.
+The advent of VR and precision motion controls allows for a different design paradigm.
+Recently, some developers have begun experimenting with different implementations of this technology, and game engines, such as Unreal and Unity, have been increasing support for VR.\cite{unity}\cite{unreal} Google has developed the Tilt Brush program, which allows for creation of art using two dimensional planes.
+Brown University developed a motion based system known as CavePainting, which employs motion sensors to detect movement on a large whiteboard.
+PolyVox, however, differentiates itself through its focus on three dimensional art.
+Unlike either previously mentioned example, PolyVox will be capable of rapid generation of three dimensional objects.\cite{cave}\cite{tilt}
+\threesection{Product Functions}
+To be considered functionally complete, the system must be able to: add, modify and remove three dimensional geometry in the virtual environment; altering the color of geometry extant in the current environment; saving and loading the state of the geometry and its coloration in the scene.
+\threesection{User Characteristics}
+The program is targeted towards users with an interest in creating visual art, such as sculpting and painting.
+Users are not expected to have technical knowledge or experience beyond the level required to operate a consumer gaming console.
+\threesection{Constraints}
+The primary constraints of the project stem from a necessary minimum program performance and system latency.
+The program must be capable of operating to spec using a computer meeting a minimum system specification (as defined by the HTC Vive recommended technical specifications).
+This affects not only the stability of the program, but user safety, as reduced frame rate or increased latency can result in physical discomfort and sickness to the user, and may limit certain technical features, such as maximum polygon count and draw distance.
+Additionally, measurement precision of the system’s controls will be limited to that of whatever motion tracking system is chosen for the project.
+\threesection{Assumptions and Dependencies}
+The current software specifications are dependent on the availability of the following:
+\begin{enumerate}
+	\item A VR system capable of head mounted tracking
+	\item Motion control hardware capable of measuring movement the level of required precision as defined in this document
+	\item A computer with CPU and GPU hardware meeting the HTC Vive technical specifications [3] running either Windows 8.1 or Windows 10
+	\item Access to a game development toolkit (such as a game engine) with VR support
+\end{enumerate}
+\subsubsection{Specific Requirements}
+\threesection{External Interfaces}
+\foursection{User Interfaces}
+\textbf{VR Motion Tracking Headset:}
+\newline
+A headset used for tracking user movement and displaying the program and the user interface.
+The headset will interface with the computer running the program, receiving render data and outputting motion tracking data.
+The headset must act within range of whatever external hardware motion tracking relies upon.
+The headset motion tracking must be accurate to under 1 millimeter of positional precision, under 1 degree of rotational precision, and with a maximum latency of 16 milliseconds.
+The headset acts as both an output display for the computer and user controller for acting within the program. 
+\newline
+\textbf{Motion/Button based controllers:}
+\newline
+A set of motion controls equipped with buttons will be the primary means of operating the program.
+Motion controllers will be used to interact with the user interface, such as altering geometry and accessing the save/load functionality. 
+The controllers will receive input from the computer to inform the haptic output they provide and will send motion tracking data and button inputs to the computer running the program.
+The controllers will operate within the range specified by whatever external motion tracking hardware is chosen for the project, and must be accurate to under 1 millimeter of precision, under 1 degree of rotational precision, and with a maximum latency of 16 milliseconds.
+The controllers will not operate with or upon any other element of the system than the computer running the program.
+\foursection{Hardware Interfaces}
+\textbf{Computer meeting minimum Hardware Specifications:}
+A computer with sufficient hardware specifications is needed to run both the VR hardware and program software.
+The project will define the specifications as the hardware recommended of the HTC Vive.
+[Reference here] The computer will serve as the primary source of input for the user display (VR headset), based on data received from motion tracking devices and user input.
+The computer must be able to process user inputs, graphical rendering, and produce output to the user display at a rate such that it will not increase latency beyond the maximum threshold (16 milliseconds).
+\foursection{Software Interfaces}
+\textbf{Core Program (PolyVox):}
+\newline
+The program will act as the central point of connection and processing for all data in the system.
+Its main purpose within the system is to direct information throughout the hardware, allowing the user to interact with the system as a whole.
+\threesection{System Features} 
+\textbf{Addition and Removal of Geometry by User:}
+\newline
+In order to be able to meet the basic sentiment of the project, allowing the user to create three-dimensional media, the system, by user interaction with the motion control interface, should be able to add and remove geometry from the environment.
+This feature will be considered fulfilled if at least five people, given five minutes of instruction while in the environment, add geometry in nine out of ten attempts and remove geometry in nine out of ten attempts.
+\newline 
+\textbf{Modification of Geometry by User:}
+\newline
+As with addition and removal of geometry, the sentiment of the project necessitates that the system, by user interaction with the motion control interface, should be capable of altering the shape and color of existing geometry from the environment.
+This feature will be considered fulfilled if at least five people, given five minutes of instruction while in the environment, change geometry in nine out of ten attempts.
+\newline 
+\textbf{Saving of the Current Environment by User:}
+\newline
+As the intent of the project is to allow the creation of art, users should have some way of storing and retrieving projects for future viewing and editing.
+The system, by user interaction with the motion control interface, should be capable of saving or loading an existing environment to a hard drive or other non-volatile system memory.
+This feature will be considered complete when nine out of ten unique environments may be saved successfully.
+\newline 
+\textbf{Ability to Change User Camera Position within a Scene:}
+\newline
+To allow locomotive freedom when developing their art, users should have some mechanism by which they navigate the environment.
+The system, should be capable of altering the position and rotation of the user's point of view in the environment in accordance with the position and rotation of the user's headset, relative to some point of reference.
+This feature will be considered fulfilled if at least five people, given five minutes of instruction while in the environment, are able to move their user camera position and rotation by moving and rotating their headset in nine out of ten attempts.
+\newline 
+\textbf{Ability to Scale View of Environment:}
+\newline
+In order to allow creative freedom for the user to develop larger and elaborate projects by allowing to change the scale on which the user is working.
+The system, by user interaction with the motion control interface, should be capable of proportionally changing the size at which the system displays the entirety of the environment geometry.
+This feature will be considered fulfilled if at least five people, given five minutes of instruction while in the environment, are able to successfully change the size of the environment geometry in nine out of ten attempts.
+\threesection{Performance requirements}
+\textbf{Visual Updates}
+\newline
+The software must be able to update the visuals presented on the HMD.
+This requires a reasonable amount of time between the update position and what is displayed to the user. This update time must be equal to or less than one sixtieth of a second.
+This value will help the system reduce the amount of dizziness, or motion sickness that virtual reality may cause.
+It also allows the system to be presented in an aesthetically pleasing way.
+\newline
+\textbf{Headset Tracking}
+\newline
+The viewing space must be able to update with the movement of the user.
+This is the essential in programs design, because it allows the user to have a full three dimensional viewing space specified by their movement.
+This movement must be mapped to the software so it can place the user viewing space in the right location.
+The accuracy of the procedure must be less than one millimeter of positional accuracy and less than one degree of rotational accuracy, relative to the outward facing normal vector, difference in rotation.
+\newline
+\textbf{Display Resolution:}
+\newline
+To maintain user comfort and the clarity of the program display, the system must be able to render at an adequate resolution.
+The rendering resolution will be set at a minimum of of 1080 by 1200 pixels for each of the HMD’s two display screens (technically considered to be a 2160 by 1200 resolution).
+This standard is based on the native resolution of both the Oculus Rift and the HTC Vive.
+Maintaining a minimum resolution will aid in reducing user discomfort.
+\threesection{Software System Attributes}
+\textbf{Performance:}
+\newline
+One of the primary attributes of focus for the project is performance; VR programs require consistently reliable performance in order to function.
+Significant and/or frequent performance drops are not only highly disruptive to the use of the system, but potentially physically uncomfortable for the user.
+\newline
+\textbf{Scalability:}
+\newline
+The aim of the project is to allow for the creation large and complex art projects.
+As such, scalability is a priority when designing the program in order to allow the user freedom in developing a sculpture or painting.
+\newline
+\textbf{User Experience/Usability:}
+\newline
+User experience is a significant element of any interactive program.
+The program should be designed with usability as a major factor, to allow for a greater number and diversity of users.
+\newline
+\textbf{Reliability:}
+\newline
+Critical errors or system crashes would be be at best a major inconvenience for users, and, at worst, would render the program unusable.
+The system should be built with reliability in mind, as a failure of the program can lead to hours of lost work for the user.
+\newline
+\textbf{Maintainability:}
+\newline
+The ability to add or modify the program, while not the first priority, would be beneficial to the project and the program as a whole.
+Should the project be completed ahead of time, or become open source, maintainable code will be easier to add features to.
+\subsubsection{Appendix}
+\textbf{HTC Vive Reccomended Hardware Specifications:}
+\begin{description}
+ \item[$\bullet$  Processor: Intel Core™ i5-4590 or AMD FX 8350, equivalent or better]
+ \item[$\bullet$  Graphics: NVIDIA GeForce GTX 1060 or AMD Radeon RX 480, equivalent or better]
+ \item[$\bullet$  RAM: 4 Gigabytes of RAM or more]
+\item[$\bullet$  Video Output: 1x HDMI 1.4 port, or DisplayPort 1.2 or newer]
+\item[$\bullet$  USB: 1x USB 2.0 port or newer]
+\item[$\bullet$  Operating System: Windows 7 SP1, Windows 8.1 or later or Windows 10]
+\end{description}
+\cite{vive}
+
+\subsection{Amendments}
+
+\subsection{Gantt Chart}
+
+
+
+\pagebreak
+\section{Design Document}
 
 \subsection{Original Document}
 
@@ -206,7 +455,8 @@ Yggdrasil & A collection of GPU programs which collectively manage the voxel sta
 \subsubsection{Stakeholders}
 
 \threesection{Dr. Mike Bailey}
-Dr. Bailey was brought onto the project after being approached by Dr. Kirsten Winters, who inquired about designing a three-dimensional art program in VR. Dr. Bailey’s primary stake in the project is the development of VR and graphical technology, with less concern for specific feature sets.
+Dr. Bailey was brought onto the project after being approached by Dr. Kirsten Winters, who inquired about designing a three-dimensional art program in VR.
+Dr. Bailey’s primary stake in the project is the development of VR and graphical technology, with less concern for specific feature sets.
 His primary design concern is development of a stable and sufficiently robust graphics engine compatible with VR.
 \threesection{Dr. Kirsten Winters}
 Dr. Winters is responsible for the inception of the program, and brought the concept of a 3D art program to Dr. Mike Bailey.
@@ -231,11 +481,18 @@ The Voxel State is the representation of the virtual environment the user is int
 The primary design concerns pertaining to the Voxel State are efficiency of space, speed of manipulation, and versatility. 
 
 The overall system is intended for an art program, which implies extreme freedom of manipulation. 
-As such, one cannot assume a maximum limit upon the amount of data required to represent what the user is creating. Therefore, the best way to meet the potential memory demands of the user is to be efficient with whatever amount of memory is at the disposal of the GPU. Additionally, because of the high refresh rate expected from PolyVox, it is necessary to enable fast parallel access to the data within the Voxel Sate. The speed offered by a GPU is limited if operations require serial access to data. Thus, representing data in a distributed fashion that allows multiple agents to operate on different data at the same time is crucial. Lastly, given that the nature of this project is exploratory, little is known about the specific methods which would be applied to PolyVox as a whole. In order to best meet such uncertainty, versatility in use must be incorporated into how the Voxel State represents geometry.
+As such, one cannot assume a maximum limit upon the amount of data required to represent what the user is creating.
+Therefore, the best way to meet the potential memory demands of the user is to be efficient with whatever amount of memory is at the disposal of the GPU.
+Additionally, because of the high refresh rate expected from PolyVox, it is necessary to enable fast parallel access to the data within the Voxel Sate.
+The speed offered by a GPU is limited if operations require serial access to data.
+Thus, representing data in a distributed fashion that allows multiple agents to operate on different data at the same time is crucial.
+Lastly, given that the nature of this project is exploratory, little is known about the specific methods which would be applied to PolyVox as a whole.
+In order to best meet such uncertainty, versatility in use must be incorporated into how the Voxel State represents geometry.
 
 \foursection{The Data Buffer} 
 
-The Data Buffer, as the name implies, is an array used to hold the data representing the Voxel State. The Data Buffer is broken up into segments of contiguous, non-overlapping sections of memory known as nodes.
+The Data Buffer, as the name implies, is an array used to hold the data representing the Voxel State.
+The Data Buffer is broken up into segments of contiguous, non-overlapping sections of memory known as nodes.
 
 \foursection{Node}
 A node represents the state of a voxel and the index of its children in memory. The layout of data within a node is as follows: \\
@@ -260,12 +517,17 @@ The purpose of each of these fields is as follows:
 
 \foursection{The Head Buffer}
 
-The Head Buffer is an array which stores the head node of each sparse voxel octree resident to the Voxel State. This buffer exists to provide a means of simply indexing into the head nodes of each SVO, which is a necessary initial operation for manipulating or tracing through an SVO.\\
+The Head Buffer is an array which stores the head node of each sparse voxel octree resident to the Voxel State.
+This buffer exists to provide a means of simply indexing into the head nodes of each SVO, which is a necessary initial operation for manipulating or tracing through an SVO.\\
 
 
 \foursection{The Heap Buffer}
 
-The Heap Buffer is where references to free nodes in the Data Buffer are stored for retrieval by Yggdrasil as need for more memory arises. The Heap Buffer houses an array of integers, grouped into sets of four, with a number of sets equivalent to the number of processor units present on the GPU. When a process from Yggdrasil intending to manipulate the Voxel State runs on the GPU, it must necessarily be the only manipulating process running on the GPU at the time. This is because each work item run during these jobs uses its global identification number to determine which of these sets of integers to use in order to get free memory. See figure 2 for diagram.
+The Heap Buffer is where references to free nodes in the Data Buffer are stored for retrieval by Yggdrasil as need for more memory arises.
+The Heap Buffer houses an array of integers, grouped into sets of four, with a number of sets equivalent to the number of processor units present on the GPU.
+When a process from Yggdrasil intending to manipulate the Voxel State runs on the GPU, it must necessarily be the only manipulating process running on the GPU at the time.
+This is because each work item run during these jobs uses its global identification number to determine which of these sets of integers to use in order to get free memory.
+See figure 2 for diagram.
 
 \begin{figure}[H]
 \begin{center}
@@ -274,43 +536,72 @@ The Heap Buffer is where references to free nodes in the Data Buffer are stored 
 \end{center}
 \end{figure}
 
-The first integer of these groups is the index of a node not used in the Data Buffer. This node forms the head of a linked list of other nodes, with each node using the child 0 and child 1 fields of each node to link it to its headward and tailward neighbors. Should the work unit corresponding to this triplet be in need of a free node, it retrieves the node from this index.
+The first integer of these groups is the index of a node not used in the Data Buffer.
+This node forms the head of a linked list of other nodes, with each node using the child 0 and child 1 fields of each node to link it to its headward and tailward neighbors.
+Should the work unit corresponding to this triplet be in need of a free node, it retrieves the node from this index.
 
-The second integer of these groups is the index of a node roughly in the center of the linked list indexed by the first integer. This is done for list balancing, which is discussed in the Yggdrasil section.
+The second integer of these groups is the index of a node roughly in the center of the linked list indexed by the first integer.
+This is done for list balancing, which is discussed in the Yggdrasil section.
 
-The third integer indicates the number of links in the list pointed to by the first integer, whereas the fourth integer indicates the number of links following the link indexed by the second integer. These are also used for list balancing.
+The third integer indicates the number of links in the list pointed to by the first integer, whereas the fourth integer indicates the number of links following the link indexed by the second integer.
+These are also used for list balancing.
 
-When properly managed by Yggdrasil, the Heap Buffer provides constant-time access to each thread in the GPU and with no fragmentation among allocated memory, since allocating one node simply costs one nodes worth of memory. This means that not only is adding and removing items from the octree quick regardless of how much memory is being used, but only the memory that is needed is allocated from the Data Buffer.
+When properly managed by Yggdrasil, the Heap Buffer provides constant-time access to each thread in the GPU and with no fragmentation among allocated memory, since allocating one node simply costs one nodes worth of memory.
+This means that not only is adding and removing items from the octree quick regardless of how much memory is being used, but only the memory that is needed is allocated from the Data Buffer.
 
 \threesection{Components of the graphics engine (Yggdrasil)}
 
-Yggdrasil, named for the cosmic world tree of Norse mythology, is the framework of GPU-native programs that are in charge of managing and rendering the Voxel State for PolyVox. As with the Voxel State, efficiency of memory usage as well as speed are strong design concerns. For this reason, reducing function runtime per input as well as memory footprint required for operations is key.
+Yggdrasil, named for the cosmic world tree of Norse mythology, is the framework of GPU-native programs that are in charge of managing and rendering the Voxel State for PolyVox.
+As with the Voxel State, efficiency of memory usage as well as speed are strong design concerns.
+For this reason, reducing function runtime per input as well as memory footprint required for operations is key.
 
 \foursection{The Data Buffer}
-The Data Buffer holds all of the nodes that PolyVox uses to represent the voxels being viewed and interacted with by the user. Yggdrasil uses the position of a node in the Data Buffer when referencing it during Yggdrasil’s regular operation.
+The Data Buffer holds all of the nodes that PolyVox uses to represent the voxels being viewed and interacted with by the user.
+Yggdrasil uses the position of a node in the Data Buffer when referencing it during Yggdrasil’s regular operation.
 \foursection{The Head Buffer}
-The Head Buffer is an array holding the index of the root of all SVOs present in the Data Buffer. This is used to uniquely identify every SVO in the Voxel State and is used at the beginning of each operation to begin tree traversals.
+The Head Buffer is an array holding the index of the root of all SVOs present in the Data Buffer.
+This is used to uniquely identify every SVO in the Voxel State and is used at the beginning of each operation to begin tree traversals.
 \foursection{The Heap Buffer}
-The Heap Buffer is an array holding references to the heads of a series of linked lists composed of nodes. Additionally, next to each list reference is a reference to a link somewhere in the middle of the list, the number of links in the list, and the number of links between the second reference and the tail. This additional data is used to keep the length of the lists in the Heap Buffer close to one another, ensuring heavily used lists do not quickly run out of links.
+The Heap Buffer is an array holding references to the heads of a series of linked lists composed of nodes.
+Additionally, next to each list reference is a reference to a link somewhere in the middle of the list, the number of links in the list, and the number of links between the second reference and the tail.
+This additional data is used to keep the length of the lists in the Heap Buffer close to one another, ensuring heavily used lists do not quickly run out of links.
 \foursection{The Tool Executer}
-The Tool Executer is a general-purpose OpenCL program template for the application of arbitrary operations to the Voxel State according to the user’s brush strokes and the currently selected tool. Whenever a new tool is loaded into PolyVox by the Interchange, the OpenCL code specific to that tool is injected into the template, which is then compiled into a tool executer. Regardless of what code is injected, much of the operation of the tool executer is the same.
+The Tool Executer is a general-purpose OpenCL program template for the application of arbitrary operations to the Voxel State according to the user’s brush strokes and the currently selected tool.
+Whenever a new tool is loaded into PolyVox by the Interchange, the OpenCL code specific to that tool is injected into the template, which is then compiled into a tool executer.
+Regardless of what code is injected, much of the operation of the tool executer is the same.
 
-The Tool Executer is passed a number of inputs based off the state of the brush stroke being performed by the user. This state includes what part of the stroke (beginning, middle, end) the operation is in, the line segment representing the path the stroke just made, the selected height, width, and depth of the brush tip used, the weight of the stroke, and the speed of the stroke.
+The Tool Executer is passed a number of inputs based off the state of the brush stroke being performed by the user.
+This state includes what part of the stroke (beginning, middle, end) the operation is in, the line segment representing the path the stroke just made, the selected height, width, and depth of the brush tip used, the weight of the stroke, and the speed of the stroke.
 
-Based on of the dimensions of the brush tip as well as the line segment representing the section of brush stroke just made, the Tool Executer traverses the SVO being actively edited, finding the smallest voxel in the octree which completely contains the bounds of the stroke section. Once this voxel is found, the voxel is given to the first section of injected tool code, which determines how much further the Tool Executer traverses into the octee. The code may either report that no more traversal is needed, or request further traversal. This request will be refused if the maximum resolution depth has been reached. If not, the Tool Executer allocates and attaches any missing child nodes, if necessary, then traverses into the nodes. This process is repeated until all traversals have reached bottom.
+Based on of the dimensions of the brush tip as well as the line segment representing the section of brush stroke just made, the Tool Executer traverses the SVO being actively edited, finding the smallest voxel in the octree which completely contains the bounds of the stroke section.
+Once this voxel is found, the voxel is given to the first section of injected tool code, which determines how much further the Tool Executer traverses into the octee.
+The code may either report that no more traversal is needed, or request further traversal.
+This request will be refused if the maximum resolution depth has been reached.
+If not, the Tool Executer allocates and attaches any missing child nodes, if necessary, then traverses into the nodes. This process is repeated until all traversals have reached bottom.
 
-Once all Tool Executer traversals have reached their final depth, the voxels at the end of each trace are handed to a different set of injected code, which evaluates what the new state of each voxel should be. Once the new states are assigned and the injected code passes back execution, the Tool Executer reverses its traversals, applying a third piece of injected code to each parent voxel, ensuring that each one has a high-level representation of its children.
+Once all Tool Executer traversals have reached their final depth, the voxels at the end of each trace are handed to a different set of injected code, which evaluates what the new state of each voxel should be.
+Once the new states are assigned and the injected code passes back execution, the Tool Executer reverses its traversals, applying a third piece of injected code to each parent voxel, ensuring that each one has a high-level representation of its children.
 
 Once all traversals have been reversed, the Tool Executer terminates.
 \foursection{The Renderer}
 
-The Renderer is the OpenGL program executed in order to create the imagery that appears to the user in their HMD. The Renderer receives a set of triangles from the Interchange corresponding to the bounds of the SVO volumes visible to the user. This means that SVOs which do not intersect with the near plane of the user’s vision would be represented as boxes. Those SVOs that do intersect with the user’s near plane of vision would be represented as boxes truncated along the user’s near plane of vision.
+The Renderer is the OpenGL program executed in order to create the imagery that appears to the user in their HMD.
+The Renderer receives a set of triangles from the Interchange corresponding to the bounds of the SVO volumes visible to the user.
+This means that SVOs which do not intersect with the near plane of the user’s vision would be represented as boxes.
+Those SVOs that do intersect with the user’s near plane of vision would be represented as boxes truncated along the user’s near plane of vision.
 
-Each of the vertices are given their corresponding position in the SVO as well as the index in the Head Buffer where the head of the box’s corresponding SVO is stored. Using this data, the fragment shader traverses the SVO as a voxel cone trace. As this trace is performed, for any given voxel it traces through, it will trace through its child nodes instead if that voxel has a cross section in the view projection larger than the fragment. This trace is performed until the contribution of samples to the final value of the trace drops below the smallest nonzero value representable by the trace's alpha component. Once the final value for a trace has been rendered, it is used as the color value for the fragment corresponding to that trace.\\
+Each of the vertices are given their corresponding position in the SVO as well as the index in the Head Buffer where the head of the box’s corresponding SVO is stored.
+Using this data, the fragment shader traverses the SVO as a voxel cone trace.
+As this trace is performed, for any given voxel it traces through, it will trace through its child nodes instead if that voxel has a cross section in the view projection larger than the fragment.
+This trace is performed until the contribution of samples to the final value of the trace drops below the smallest nonzero value representable by the trace's alpha component.
+Once the final value for a trace has been rendered, it is used as the color value for the fragment corresponding to that trace.\\
 
 \foursection{The Memory Manager}
 
-The Memory Manager is an OpenCL program which serves two purposes. Firstly, it performs balancing operations upon the Heap Buffer, alleviating imbalances in how much memory is available to each work group. Secondly, it provides information regarding the availability of memory in PolyVox to the Interchange, allowing the Interchange to take necessary action, such as calling for more memory, culling excess detail, or providing a warning to the user. See figure 3 for diagram.
+The Memory Manager is an OpenCL program which serves two purposes.
+Firstly, it performs balancing operations upon the Heap Buffer, alleviating imbalances in how much memory is available to each work group.
+Secondly, it provides information regarding the availability of memory in PolyVox to the Interchange, allowing the Interchange to take necessary action, such as calling for more memory, culling excess detail, or providing a warning to the user.
+See figure 3 for diagram.
 
 
 
@@ -322,14 +613,25 @@ The Memory Manager is an OpenCL program which serves two purposes. Firstly, it p
 \end{figure}
 
 
-The balancing procedure performed is relatively simple, each work item is given one of the linked lists. These work items then establish their position in a binary tree, where work items with a global id, n, have work items n*2 and n*2+1 as children. Work items at even depths in the tree inspect the data in its left child, retrieving the data member referencing a link in the middle of its linked list. Using this reference as well as the reference to a link in the middle of its own linked list, the acting working group switches the links across the two lists, causing all trailing links to also be appended to the other list. The link count members as well as the reference to the middle link for each work item are updated accordingly.
+The balancing procedure performed is relatively simple, each work item is given one of the linked lists.
+These work items then establish their position in a binary tree, where work items with a global id, n, have work items n*2 and n*2+1 as children.
+Work items at even depths in the tree inspect the data in its left child, retrieving the data member referencing a link in the middle of its linked list.
+Using this reference as well as the reference to a link in the middle of its own linked list, the acting working group switches the links across the two lists, causing all trailing links to also be appended to the other list.
+The link count members as well as the reference to the middle link for each work item are updated accordingly.
 
-As stated previously, the middle links referenced for each linked list must be generally towards the center of the linked list. This is why the reference is traversed up or down the linked list up to sixteen links in order to begin approaching the halfway point for each list. This process is applied by the acting work groups to their right children, and these two processes are repeated by working groups at odd depths. Repeating this process multiple times, exchanging the tail half of each list, rebalancing halfway link references, then exchanging again, causes links to be more evenly distributed across the Heap Buffer.
+As stated previously, the middle links referenced for each linked list must be generally towards the center of the linked list.
+This is why the reference is traversed up or down the linked list up to sixteen links in order to begin approaching the halfway point for each list.
+This process is applied by the acting work groups to their right children, and these two processes are repeated by working groups at odd depths.
+Repeating this process multiple times, exchanging the tail half of each list, rebalancing halfway link references, then exchanging again, causes links to be more evenly distributed across the Heap Buffer.
 
-Once these exchanges occur the number of times requested by the Interchange, the minimum and maximum linked list size is calculated through reduction and returned to the Interchange. This gives the Interchange a measure of how balanced the linked lists became as a result of the operation.
+Once these exchanges occur the number of times requested by the Interchange, the minimum and maximum linked list size is calculated through reduction and returned to the Interchange.
+This gives the Interchange a measure of how balanced the linked lists became as a result of the operation.
 
 \threesection{Interactions between the hardware and the Interchange}
-The VR HMD and motion controls act as the source of input for the user. The VR hardware will primarily interact with the system using pre-built drivers for the Unity engine, which are both easily available and open source. With such widely available device drivers, hardware implementation is, for the most part, a solved problem. The primary challenge from a design standpoint is how signals sent from, and received by the program are handled.
+The VR HMD and motion controls act as the source of input for the user.
+The VR hardware will primarily interact with the system using pre-built drivers for the Unity engine, which are both easily available and open source.
+With such widely available device drivers, hardware implementation is, for the most part, a solved problem.
+The primary challenge from a design standpoint is how signals sent from, and received by the program are handled.
 
 \foursection{Design Entities}
 \textbf{Vive HMD} \\
@@ -391,22 +693,300 @@ While the operations of the Interchange are primarily just in service to other e
 
 \subsection{Amendments}
 
-\subsection{Gantt Chart}
 
-
-
-\section{Design Document}
-
-\subsection{Original Document}
-
-\subsection{Amendments}
-
-
-
+\pagebreak
 \section{Technology Review}
 
+\subsection{Christopher Bakkom}
+\subsubsection{User Interface}
+This project will be using a game engine to help produce the final product. The game engines we have chosen, based on popularity, documentation, and VR integration, are Unity, Unreal and the CryEngine. Each of these has their own way of creating a user interface. Important things to keep in mind is how they can be interacted with. Since we are using virtual reality, it will be important that these UI's be flexible enough to use the input from a wide variety of sources. All three of the game engines referenced in this section are free to use for our type of project.
+
+\threesection{Unity}
+Unity uses a custom game object inheritance to define it's user interface models. The objects created can have custom visuals and interaction. Each button in the toolkit has an onClick even, that can give custom commands. There is also support for all kinds of screen manipulation and custom animations. This will be useful in provide support for tools that may not be as precise. Unity has full support for built in VR user interfaces. There are clear definitions for non-dietetic UI, that can overlay menus that do not exists in the world. This will be very useful when a heads-up display for editing functions.
+
+This infrastructure provides some easy support for what we are trying to do. It would be the optimal choice for minimizing the time we spend on creating the user interface. With the open integration of VR interfaces, the Unity engine is my top choice for our UI. 
+
+\threesection{Unreal}
+While the Unreal Engine doesn't have direct support of a UI, it does have a supported toolkit layer called UMG that provides the necessary functions. This is similar to a UI toolkit like Qt or MFC. This layer integrates with Unreal Engine while having its own separate code for customizing widgets, animation and events. There are tools for non-dietetic UI and in world space UI, but current this is still experimental in version 4.8. Epic games is releasing their Dragonfly Project that will show how these features can be used, however, the best we can hope for at the moment is community driven development on integrating these features.
+
+Because of the short comings in Unreal's user interface it is probably not the best choice. It requires knowledge about this abstraction layer of UI and more work to do because it is not directly integrated into the engine. However, it is still a viable option for a user interface and could be used if the Unreal engine provides a benefit above the other engines in another way.
+
+\threesection{CryEngine}
+The CryEngine takes a similar approach to Unity in having all of its accessible features as close to the game engine as possible. UI elements are located in the game sdk files and all C++ source code is readily available. CryEngine has already solved some of the problems with the previous game engines by defining a UIEntity as a game object. This can be placed either in world space or non world space. This allows for custom UI interfaces that can be intractable as well as event driven in the world itself or outside of it in a 2D menu system.
+
+While the CryEngine does have some great flexibility in its user interface, the learning curve for the CryEngine is steeper than most models. If we do decide to use the CryEngine we will have support for any kind of interface we want. The would be the optimal choice if we are trying to define a UI that is very unique and difficult to implement in the other engines
+
+\subsubsection{VR Head Mounted Displays}
+This section looks at the different specifications for the head mounted display for our user. When using and HMD, it is important to note the available compatiblity with our game engine as well as accuracy of the tracking solution and performance. We are trying to create an editing environment so being able to display fully rendered environments will need to be carefully considered when judging game engine integration. The project defines a user tests to be conducted at the end so there needs to be a realistically high standard of accuracy for this type of display. Price, although not a prime goal of this project, will also be a consideration.
+
+\threesection{HTC Vive}
+The HTC Vive is one of the most popular and highly rated VR headsets on the market, priced with the tracking and controllers at six hundred dollars. It has 2160 x 1200 resolution at 90hz with 110 degree field of view. The tracking technology includes a gyroscope, accelerometer, front facing camera and lighthouse tracking solution. This tracking provides a space of 15 x 15 feet. The PC requirements include a NVIDIA GeForce GTX 970 or a Radeon 480 or better, Intel i5-4590 or better and 4GB of RAM. Vive has been working to integrate with Valve's Steam platform to create libraries for development. It has supporting plugins for all three of the game engines listed above.
+
+Because of the Vive's already integrated tracking, this is the most optimal solution for fast development. The plugins are readily available for every game engine, it has a great resolution and high refresh rate. What really puts it ahead of the Oculus Rift is the larger volume, which would help for a more immerse editing environment. This allows the user a greater amount of freedom.   
+
+\threesection{Oculus Rift}
+The Oculus Rift is priced at five hundred dollars with it's controllers. It has a resolution fo 2160 x 1200 at 90hz and a 110 degree field of view. It's tracking solution includes an accelerometer, gyroscope, and the Constellation camera tracking system providing up to an 8 x 8 feet environment. It requires an NVIDIA GeForce GTX 960 or a Radeon RX 470 or better, an Intel i3-6100 or better and 8GB of RAM. Oculus has been working to create a VR standard with WebVR and has support for many titles for its platform. It also has software plugins for all of the game engines listed above.
+
+Where the Oculus Rift does well is its lower machine requirements. A lot of the benefits are similar to the Vive, but it is slightly cheaper to produce a machine to run it. However, these are minor benefits and not the purpose of our project. It has a huge down fall in that it drastically cuts down the viewing environment. We would need to implement another tracking solutions to improve this, which undermines the Oculus benefits. We would only use this if we are really having trouble getting a high powered computer.
+
+\threesection{Gear VR}
+The gear VR is one of the cheapest solutions at 100 dollars, that is with out the galaxy note required to power it ranging from 200 to 500 dollars. It has a 96 degree field of view and the resolution depends on the phone running it, but the minim is 2560 x 1440 running at 60hz. The lower frequency and resolution might make computation thresholds easier to work with in our application. Since the gear VR has similar SDKs to the Oculus, all of the supported software so far is mostly compatible between the two. This might be important for creating a modular system for integrating furtherer editing tools. There is the down side of the limited tracking in which the system would have to piggy back off of another tracking solution.
+
+Because of the limited VR tracking for the Gear VR, this is probably not the best solution. If we were to implement the Gear VR, we would have to implement another tracking solutions that makes up for the lack of tracking in the Gear VR. This is do to the lack of position data given back by the Gear system. If we wanted to track only by motion capture, then we could consider this because of its low price and accessibility. 
+
+\subsubsection{Object Tracking}
+This section will look into the different ways this project can capture physical objects and represent them digitally. Our user will be able, at the minimum, interact with a user interface and create brush strokes in a 3D environment. These interactions are definable as operations take in the physical environment and then transfered to the editor. This section focuses on the established controllers provided by Oculus and HTC, motion capture and the DodecaPen presented by Oculus research. 
+
+\threesection{Integrated VR Tracking}
+The most obvious solution would be the controllers that the Oculus Rift and HTC Vive already provide. These controllers are tracked by the lighthouse and constellation tracking solutions. They also have their own analog and digital buttons that relay input to their respective SKDs. This would be the simplest solution because it would require much less compatibility modifications for the game engines. Because the SDKs already have the plugins established with the game engines, the digital inputs can already be accessed fairly easily.
+
+Because this tracking solution is already available to us if we choose the Vive or Oculus, this is the most optimal for fast development. The support for this kind of tracking is already integrated into the VR headset and game engines. This should be our choice, unless we decide that we want to track other kinds of objects in the volume. Even if we want to to support other tracking solutions for other objects, we can layer these kind of features on top of the integrated VR tracking solution.  
+
+\threesection{Motion Capture}
+Mocap or motion capture, is a tracking solution that requires cameras and a higher demand for volume preparation. It also requires a high computation standard and would likely need it's own system. It is also one of the most costly solution as a high end mocap system can cost more that 100,000 dollars. Despite the overhead, motion capture makes up for it by being on of the most accurate tracking solutions on the market. There are lots of options for tracking active and passive markers placed on the object and even HMDs, providing better head tracking that the integrated solutions. It also has the benefit of being enormously flexibly, allow us to capture and track any physical object we want. This could open up a variety of different features not limited to just the brush. 
+
+This is one of the most optimal tracking solutions as far as accuracy and flexibility. However, it requires huge amount of set up, access to a volume and it is very costly. We should only use if we already have access to all of these requirements and have time to integrate this kind of system. 
+
+\threesection{DodecaPen}
+The DodecaPen is a 6 dof tracking solution, research by the Media IC and System Lab at the National Taiwan University and the Vision and Learning Lab at the University of California at Merced. It uses geometric hexagon solid with QR codes to identify each face on the end of a pen to get 6 degree of freedom tracking. There has been some very promising results, stating high accuracy with only using a web cam costing less than 100 dollars to capture the solid. This research is still very experimental and there isn't a marketable solution yet. So integrating this piece of technology, despite the calculations being completely open, would not be an easy feature. It would require image processing and custom code to interpret the data. This could probably be a project on its own, but it is one of the most promising tracking solutions for our type of application to date. 
+
+This is great tracking solution because of its low cost and accuracy. The only downside to this is that we would have to figure out how to integrate it ourselves. The Dodecapen is still experimental and although the solutions is completely open, there is no available software for us to use. We would have to figure out how to capture frames, do image processing and then do the calculations for six degree of freedom for this object. This should only be used as a last resort if for whatever reason every other tracking solution fails or we have ample time to integrate such a complicated system.
+
+\newpage
+\subsubsection{References}
+~\\ 
+Interaction Components Unity Technologies - \\
+https://docs.unity3d.com/Manual/UIInteractionComponents.html \\ \\
+
+User Interfaces for VR\\
+https://unity3d.com/learn/tutorials/topics/virtual-reality/user-interfaces-vr\\ \\
 
 
+UMG UI Designer\\
+https://docs.unrealengine.com/latest/INT/Engine/UMG/index.html \\ \\
+
+
+Creating 3D Widgets \\
+https://docs.unrealengine.com/latest/INT/Engine/UMG/HowTo/Create3DWidgets/index.html \\ \\
+
+User Interface - Technical Documentation \\
+http://docs.cryengine.com/display/SDKDOC4/User+Interface \\
+
+Oculus Rift vs. HTC Vive: Prices are lower, but our favorite remains the same \\
+Digital Staff - https://www.digitaltrends.com/virtual-reality/oculus-rift-vs-htc-vive/ \\ \\
+
+DodecaPen: Accurate 6DoF Tracking of a Passive Stylus \\
+https://research.fb.com/publications/dodecapen-accurate-6dof-tracking-of-a-passive-stylus/ \\
+
+\pagebreak
+\subsection{Richard Cunard}
+
+
+\pagebreak
+\subsection{Braxton Cuneo}
+\subsubsection{Introduction}
+
+The PolyVox Team (Team 66), is expected to create a three-dimensional virtual reality environment where, through the use of a headset and motion control devices, a user may walk around and view the environment as well as manipulate this environment in a manner akin to painting or sculpting.
+Specifically, it is expected that a user may add or remove geometry from the scene as well as be able to modify the shape and material properties of geometry in the environment via the manipulation of their motion control devices.
+
+My role in this project is to design and implement the back end of this environment, the back end being the software which performs both the rendering of the environment as well as the manipulation of the data encoding the state of the environment.
+
+For the sake of clarity: It is assumed that the majority of this code will be executed on a graphics processing unit (GPU), although high-level management of this execution will be occurring CPU-side.
+This is because rendering and manipulating complex environments twice at 90 frames per second is impractical on any consumer hardware other than a GPU.
+
+Three important questions to ask regarding how the back end will operate are how elements in the virtual environment are geometrically represented, how the data describing the state of the environment is structured, and how the code that manipulates this data is given to the system.
+
+
+\subsubsection{Geometric Representation of Environment Elements}
+\threesection{Introduction}
+
+Prior to rendering, every computer-rendered image is a collection of shapes.
+The nature of these shapes is arbitrary.
+An elements may be used in rendering so long as it can be positioned and configured in a space as well as have its surface mapped onto a grid for eventual write to an image.
+Nonetheless, different shapes have different strengths and weaknesses when it comes to the usual tasks involved with rendering an image.
+
+\threesection{Criteria}
+
+Since the system created through this project is supposed to be an environment which emulates a three-dimensional analog to painting, it is expected that users would be able to manipulate elements in the scene by sweeping some three-dimensional tool tip over a swath of space. This means that whatever elements are used should be able to represent alterations to specific volumes in the virtual environment. Furthermore, in order to match minimum expectations regarding system performance, these element alteration operations must be quick to perform.
+
+\threesection{Non-uniform Rational B-splines (NURBS)}
+
+NURBS, in essence, are patches of surfaces defined by a two-dimensional grid of splines \cite{1}\cite{2}.
+For those that do not know, splines are curved line segments which have end positions and contours defined through an equation which relies upon a set of control points as parameters \cite{1}\cite{2}.
+By manipulating the position of these control points, the contours of a NURBS-based surface may be warped into arbitrary shapes \cite{1}\cite{2}.
+Hence, by connecting enough patches of NURBS together and properly setting their control points, any arbitrary surface may be represented \cite{1}\cite{2}.
+
+NURBS come with a number of advantages.
+First, because NURBS are based on continuous linear equations, their surfaces are differentiable and hence the normal of a section of a NURBS surface is inherently encoded into the element \cite{2}.
+Furthermore, this means that NURBS do not possess a maximum resolution, and so the appearance of any NURBS patch can be accurate, regardless of scale \cite{2}.
+Additionally, the functional nature of NURBS makes operations involving warping the contours of objects a quick task \cite{2}.
+
+Of course, there are drawbacks.
+For instance, the more complex a NURBS surface is, the more control points it must have and the harder it is to render \cite{2}.
+Plus, surfaces with non-continuous contours must use multiple NURBS surfaces to create an accurate representation \cite{1}.
+Furthermore, volumetric operations with NURBS are non-trivial, as NURBS only represent the surface of an object. 
+This means that, in order to perform such operations, the bounds of the input volumes must be calculated from the surface, the bounds of the resulting volumes must be calculated through the volumetric operation, then these new volumes must be translated back into NURBS \cite{1}\cite{2}. 
+Moreover, NURBS are not used as much for near real-time rendering applications compared to triangles or voxels, and so resources pertaining to their use will likely be more scarce \cite{1}.
+
+
+
+\threesection{Triangles}
+
+The only number of points guaranteed to lie upon exactly one plane in three-dimensional space is three \cite{1}.
+It is for this reason that most mainstream rendering applications rely upon triangles as a means of representing environments that are to be rendered \cite{1}.
+Unlike NURBS, triangles do not require processing parametric equations to establish the contours of their surface because they simply represent a segment of a plane \cite{1}.
+Furthermore, given that triangles need only be represented by three points, as opposed to the many points used for NURBS, they stand as a more spartan representation of surfaces \cite{1}.
+Of course, surfaces made of triangles cannot approximate smooth surfaces as easily as NURBS and also have a maximum resolution \cite{1}.
+As one looks more closely at a triangle-based surface, the individual facets composing the whole become recognizable \cite{1}.
+Additionally, executing volumetric operations with triangles is non-trivial. Just as with NURBS, triangles simply represent the surfaces of objects rather than their volumes \cite{1}.
+Nonetheless, triangles are arguably the most widespread geometric primitive used in computer graphics, so one could expect to have the most resources to work with (such as GPU capabilities) when working with triangles \cite{1}.
+
+
+
+\threesection{Voxels}
+
+Unlike NURBS or triangles, voxels represent a piece of volume in a space rather than a piece of surface \cite{1}.
+Voxels are axis-aligned cubes in a three-dimensional, regular cartesian grid \cite{1}.
+The main implications of this are that locality-based operations such as volumetric addition and subtraction are easier to perform whereas operations pertaining to transformation (translation, rotation, scaling) are much more difficult to perform \cite{1}.
+This is because all modifications to a voxel grid must be done by changing the values local to the affected voxels \cite{1}.
+So, removing a section of an object is simply a matter of overwriting the associated voxels with a value indicating transparency.
+Meanwhile, moving an object requires erasing its at its current position and writing them at its new transformation.
+Furthermore, voxels also have a maximum resolution and do not have the benefit of triangles, which may be oriented in any direction, leaving voxel-based surfaces that are not axis aligned to look jagged, unless the voxel grid is subdivided into a small enough resolution \cite{1}.
+
+
+
+\threesection{Decision}
+
+NURBS and triangles represent only the surfaces of rendered objects, and hence inherently add complexity to performing operations which manipulate the volumes of an object \cite{1}. With voxels, performing volume-based operations requires only the assignment of data to the voxels which occupy the volume in question \cite{1}. Given that the central criteria of this selection is based upon performance in volume-based operations, the clear choice in this matter is to use voxels. 
+
+
+\subsubsection{Organization of Environment Data}
+\threesection{Introduction}
+
+Data can be stored in a variety of ways, each of which is favors particular use cases. 
+By selecting an organization scheme for environment geometry which favors the use cases expected of the system, one can ensure better performance.
+
+
+\threesection{Criteria}
+
+Given that the system to be built is meant to act as a creative environment, there are few maximum bounds one can assume about the resources required by the user.
+The geometries created by the user could include large and complex scenes, and so it is necessary to ensure that the way geometric elements in the environment are stored is efficient.
+At the same time, speed of access and manipulation is important to matching expected performance.
+Therefore, a data organization scheme which is efficient both in memory footprint and speed is necessary.
+
+
+\threesection{Three-Dimensional Array}
+
+A three-dimensional array is arguably the simplest spatially-organized 3D data structure.
+Accessing a specific voxel in such an array is a simple matter of referencing the element in the array with subscripts corresponding to the location of the voxel.
+This means that retrieval of the data in any given voxel should happen in constant time.
+The trade off to this is that every section of the grid in question must be represented at the same resolution regardless of actual content.
+This can significantly impede processes which do not simply require one sample into the space but samples from swaths of contiguous voxels.
+For instance, a grid may contain only one "filled" voxel, with the rest representing only empty space, but a ray trace through the grid would nonetheless have to sample many empty voxels prior to determining whether it has hit anything or traced out of the grid.
+Furthermore, the manipulation of large sections of a scene would also require modifications on a voxel-by-voxel basis, regardless of the actual level of detail required by the task.
+Additionally, should the system be configured to remove or add elements to the data structure in response to how close the user is to them (which may be needed, should the user wish to paint in the volume that they just traveled into), every single point of culled data would have to be read out, and all remaining data would have to be erased and rewritten to their newly shifted position in the grid. 
+
+
+
+\threesection{Binary Space Partition (BSP) Tree}
+
+A BSP tree recursively segments the elements in an environment using planes \cite{5}. 
+First, the average location of every element in the environment is found, at which point a plane intersecting this point is used to divide the environment in half \cite{5}.
+Any orientation of this plane meets the requirements of a BSP, so long as it goes through this center point, although certain orientations are considered more optimal \cite{5}.
+For instance, planes which do not cut through any objects make matters generally easier to manage than planes that do \cite{5}.
+Once this initial cut is made, the process of finding a center point and segmenting along a plane is applied recursively on each side of this original cut \cite{5}.
+Once these sections have been subdivided enough ( “enough” meaning different criteria to different people, though this is generally some threshold involving the volume or number of objects in a section ), a binary tree is derived from the segments \cite{5}.
+The organization of this tree corresponds to how the scene was subdivided, with the content of the two branches extending from the root each containing the elements from one side of the initial cut and the other respectively \cite{5}.
+Likewise, branches extending from those branches have elements distributed between them corresponding to the segmentation performed on the second level of recursion \cite{5}.
+
+The advantage of segmenting an environment like this is that it is much easier to determine which elements are contained within a swath of space by traversing a BSP tree to the sections corresponding to that swath and checking the list of elements attached at the associated leaf nodes \cite{5}.
+This means sections of space not occupied by geometric elements can largely be ignored, as only non-empty content is represented in such a tree \cite{5}.
+Unfortunately, BSP trees are not optimal for operating with voxels, as voxels represent both empty and non-empty spaces, unlike triangles or NURBS \cite{1}.
+This means that the very space which a BSP tree is meant to remove from the representation of a scene will be represented anyway by the voxels contained within its leaf nodes.
+Even if each leaf node in a BSP tree stored only the minimum bounding box of non-empty voxels in its contents as a three-dimensional array, the BSP tree would not have much performance benefit over standard three-dimensional arrays except for environments with sparsely distributed clumps of geometry.
+Furthermore, should each leaf node store the non-empty voxels of its contents as a list, it would operate well with scenes that have very few voxels, regardless of distribution. Nonetheless, it would have increasingly poor performance for environments dense with geometry. 
+Thus, a BSP tree offers little advantage in storing voxels, unless one assumes unreasonable constraints regarding what geometries a user is creating through the system.
+
+
+\threesection{Sparse Voxel Octree}
+
+An sparse voxel octree uses many of the concepts behind a BSP tree, including recursive segmentation and location-based storage in a tree \cite{3}.
+It is also optimized for voxels \cite{3}.
+
+The concept is this: The space representing an environment is an axis-aligned cube. In turn, this cube represents the root of the octree \cite{3}.
+Furthermore, this cube is subdivided evenly into eight octants along each coordinate plane \cite{3}.
+Each of these octants are, themselves, cubes which are represented as the child nodes of the root of the octree \cite{3}.
+Should some voxel at some power-of-two resolution be written to this octree, the octant of the root cube containing that voxel will be recursively subdivided, where only octants containing the written voxel are expanded in the octree \cite{3}. 
+This recursion is performed until a node is added to the octree with the size and location of the written voxel, wherein the data associated with that voxel is stored \cite{3}.
+
+Should a voxel be written to the octant of a cube which renders the content of the cube uniform (for instance all empty, or all blue), that octant and its siblings are pruned from the octree and their data is represented in the parent cube \cite{3}.
+In this manner, only the resolution that is required to encode the content of a given branch is kept, ensuring that the memory footprint and retrieval time of the octree is kept low.
+Furthermore, the scattered nature of sparse voxel octrees makes the removal and shifting of data through the tree quicker, as shifting voxels is more a matter of shifting the pointers in the tree rather than the data the pointers link to \cite{3}.
+
+
+\threesection{Decision}
+
+While three-dimensional arrays likely achieve best random access speed for any given point in space, the access patterns expected of the system being built by this project do not include random read and write operations throughout a space.
+Instead, access and manipulation is expected to be performed in contiguous swaths of space, be they the paths of ray traces or the user's tool tip.
+BSP trees, while favoring access to contiguous sections of a space, generally favor access to geometric elements which do not explicitly represent empty space, such as triangles or NURBS \cite{5}.
+Of the above options, only sparse voxel octrees offer quick access to contiguous sections of voxels as well as efficiency in storing such voxels.
+Therefore, sparse voxel octrees will be used to store the data encoding the environment represented by the system.
+
+
+\subsubsection{Integration of Environment Manipulation Tools}
+\threesection{Introduction}
+
+Given the basic definition of the project, the user must be able to manipulate the content of the virtual environment in the system.
+In order to do this, the system needs to give the user an intuitive means of performing this manipulation as well as provide the necessary parameters and code to the GPU to execute this manipulation upon the data representing the scene.
+The code that describes what a GPU does is called a shader.
+Shaders can be compiled dynamically and sent to the GPU for execution, however it is important to consider the model that is used for providing this code to the GPU and who would be able to add code, should the demand for more tools arise \cite{4}.
+
+\threesection{Criteria}
+
+There are a number of factors to consider when deciding how tools are integrated into the system.
+The first of these factors is performance, which is integral to meeting project requirements.
+While secondary to meeting project requirements, the extensibility of the toolset the system uses would effect how useful the system is to the public at large and hence how many people would be willing to adopt it for their work.
+Additionally, the time and effort required by the PolyVox team to maintain this toolset is useful to consider because, the less time and effort is required, the more the team may use for other components of the project.
+
+
+\threesection{Statically Defined Tools}
+
+The simplest method of providing tools to the system is to hard code them and load them at the start-up of the system.
+This offers a number of advantages.
+First, since the team working on this project would be the only ones writing the code for tools, one can make guarantees about the performance of theses tools.
+Furthermore, this option means that users do not have to worry about the inner workings of the system in order to use it.
+This being said, two obvious downsides to this course of action is that the system itself is left a lot less flexible than it could be and it forces more responsibility upon the team to ensure all necessary tools are provided.
+
+
+\threesection{Dynamically Defined Tools}
+
+As stated above, the shader code that informs how a GPU could manipulate the data representing an environment may be compiled while the system is running \cite{4}.
+This means that users could provide their own shader code files to load into the system, enabling them to create new tools as needed.
+This stands as the most flexible solution, however the increased capabilities of the user means that the team can provide little guarantees about how the system can operate when using custom tools.
+
+Those who write tool code would need to know how the system works at an in-depth level in order to be able to write effective code.
+Furthermore, they would be responsible for directly manipulating the data structure representing the scene, which opens up several possibilities for creating large problems for the system.
+Additionally, this forces the team to supply in-depth documentation of the system as well as technical support for whatever problems that may arise from using custom code.
+Plus, changes in the inner-workings of the system could render some custom tools unusable in newer versions of the system.
+
+
+\threesection{Shader Code Injection}
+
+A middle ground between the two options is to allow users to write a limited set of functions which the system itself incorporates into template tool code that is then compiled and added to the list of tools available.
+While not as flexible as fully customizable tools, this allows the team to handle more of the difficult boilerplate procedures necessary to keeping the system running smoothly and does not force the user to learn about the in-depth operation of the system.
+Additionally, version compatibility would be easier to manage, as the team could ensure that the functions that users code could always map to whatever new functionalities are incorporated into the system.
+
+
+
+\threesection{Decision}
+
+Given that, on a broad level, most tools in this system operate the same and the operation of tools will largely be determined by code executed at small, key points of operation, it would make sense to use shader code injection.
+The team could benefit from operating via this method when developing tools for the system, as it would allow members to rely upon the pre-made template to handle system management.
+Furthermore, the option for user-defined tools offers a great deal of extensibility to the system and affords less responsibility to the team when it comes to keeping up with demand for new types of tools.
+\pagebreak
+\subsubsection{References}
+\bibliographystyle{IEEEtran}
+\bibliography{braxtonTechRev}{}
 
 
 \section{Weekly Blog Posts}
@@ -415,11 +995,12 @@ While the operations of the Interchange are primarily just in service to other e
 
 
 \section{Final Poster}
-
-
+\includegraphics[angle=90,width=\textwidth]{CapstonePoster}
 
 
 \section{Project Documentation}
+
+
 
 \subsection{Theory of Operation}
 
