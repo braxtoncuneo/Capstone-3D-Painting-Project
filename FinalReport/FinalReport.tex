@@ -2237,19 +2237,96 @@ Spring/11 & Braxton &
 
 \section{Project Documentation}
 
-
-
 \subsection{Theory of Operation}
 
 
 
 \subsection{System Requirements}
+\subsubsection{Minimal Requirements}
+\begin{itemize}
+\item HMD: Occulus Rift
+\item CPU: Intel i3-6100 / AMD FX4350 or greater
+\item RAM: 8GB
+\item Graphics Card: NIVDIA GTX 960 or Equivalent
+\item HDMI 1.3 video output
+\item 1 USB 3.0 and 2 USB 2.0 ports
+\item OS: Windows 8 or newer
+\end{itemize}
+\subsubsection{Optimizing Specifications for PolyVox}
 
 
 \subsection{Installation Process}
+\subsubsection{Required Supporting Software}
+Regardless of whether one is installing for development or release, the following need to be installed:
+\begin{itemize}
+\item Oculus VR drivers, available at \url{https://www.oculus.com/setup/}
+\item SteamVR client
+\end{itemize}
+\subsubsection{Installing for Development on Unity}
+\begin{itemize}
+\item Install the development program for the Unity Game Engine (version 2017 or later), available at \url{https://store.unity.com/} .
+\item Install git. A tutorial on installation is available at \url{https://git-scm.com/book/en/v2/Getting-Started-Installing-Git}
+\item Select or create a directory, hereby referred to as $<$dir$>$ , where one wishes to develop PolyVox. $<$dir$>$ must be an empty directory at this point.
+\item Perform the following command (replacing $<$dir$>$ with the true path of the chosen directory): \textbf{git clone https://github.com/braxtoncuneo/Capstone-3D-Painting-Project.git $<$dir$>$}
+\item Open \textbf{ $<$dir$>$ \\ReleaseBuilds\\Version 1.0} as a Unity Project
+\item Upon hitting the “play” button at the top of the Unity window, a debug version of PolyVox should begin to run.
+\end{itemize}
+
+\subsubsection{Installing for Release}
+It should be noted that there currently is no release or publishing mechanism for distributing PolyVox at this time. Therefore, the release build must be acquired through the development repository. Thus, this installation process will be similar to the development instructions.
+\begin{itemize}
+\item Install git. A tutorial on installation is available at \url{https://git-scm.com/book/en/v2/Getting-Started-Installing-Git}
+\item Select or create a directory, hereby referred to as $<$dir$>$, where one wishes to install PolyVox. $<$dir$>$ must be an empty directory at this point.
+\item Perform the following command (replacing $<$dir$>$ with the true path of the chosen directory): \textbf{git clone https://github.com/braxtoncuneo/Capstone-3D-Painting-Project.git $<$dir$>$}
+\item To execute the release build of PolyVox, run the executable with the highest version number in “$<$dir$>$\\ReleaseBuilds”. As of this writing, the one and only executable in this directory should be “Version-0.1-Executable.exe”.
+\end{itemize}
 
 
 \subsection{Usage Guide}
+\subsubsection{Controls}
+\threesection{Brush Stroke}
+Right Trigger Hold down the trigger and move your controller from one point to another creating a stroke of 'paint' through the air.
+
+\threesection{Change Saturation/Value}
+Left thumbstick/trackpad, Click Pointer Changes the saturation and value of the color that will be produced by a brush stroke.
+Directing the thumbstick/trackpad up and down increases and decreases the value, (i.e., lighter to darker color) respectively, and moving the input right or left increases and decreases the saturation, (i.e., greyscale to color) respectively.
+Alternatively, the user can select a specific saturation and opacity by directing to it with the pointer and clicking on it.
+
+\threesection{Change Hue/Opacity}
+Left Thumbstick/Trackpad + Grip, Click Pointer Changes the hue and opacity of the color that will be produced by a brush stroke.
+Directing the thumbstick/trackpad up and down increases and decreases hue, (i.e., the color chosen) respectively, and moving the input right or left increases and decreases the opacity, respectively.
+Alternatively, the user can select a specific hue or opacity by directing to it with the pointer and clicking on it.
+
+\threesection{Change Brush Scale}
+Right Thumbstick/Trackpad Changes the size and shape of the brush, which alters the amount of area covered in a brush stroke.
+Moving the input right and left increases and decreases the diameter of the brush, respectively, while moving it forward or back increases and decreases the hight of the brush, respectively.
+
+\threesection{Change Scene Scale/Position}
+Right Button 1 + Move Hands By holding button one on the right controller, and changing the distance between the controllers, the scale of the scene will change.
+Moving the controllers away from one another will increases the scene scale, and moving them closer will decrease it.
+Changing their position, but keeping the distance between them constant will move the scene relative the position of the controllers.
+
+\threesection{Toggle Pointer}
+Right Button 2 Turns the input pointer on and off.
+This is used to interact with the UI by pointing to it and clicking on it.
+
+\threesection{Pointer Click}
+Right Trigger when Pointer is set to On When the pointer is toggled on, it produces a beam which turns from red to green when it makes contact with a UI menu.
+When it is pointed at an interactable element, such as a button or the pallete, pressing the right trigger will interact with that UI element.
+
+\subsubsection{Saving and Loading}
+To save or load a scene configuration, use the UI to navigate to the save/load menu.
+When saving and loading, make sure to to be looking toward the horizon.
+Use the pointer to click on either the save or load button.
+A keyboard will appear.
+Using the controller pointers, type in the name of the file you wish to save or load.
+When you are finished typing, click the 'done' button.
+If a complexe scene is loaded, the program may take some time to load. 
+Simply wait for it to finish.
+Save files will be placed in the 'SaveFiles' folder.
+
+\subsubsection{User Notes}
+When the user's head is near a given region of the scene, voxels painted into that region will become invisible, as to not obscure user vision.
 
 
 
