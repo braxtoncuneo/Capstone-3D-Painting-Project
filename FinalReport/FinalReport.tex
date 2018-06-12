@@ -8,6 +8,8 @@
 \usepackage{pgfgantt}
 \usepackage{minted}
 \usepackage{geometry}
+\usepackage{cite}
+\usepackage{multibib}
 \geometry{textheight=9.5in, textwidth=7in}
 
 
@@ -143,6 +145,7 @@ PUT ABSTRACT HERE
 
 % 8. now you write!
 
+\bibliographystyle{IEEEtran}
 
 
 \section{Introduction}
@@ -245,7 +248,6 @@ Voxel & An element of a grid with an associated set of attribute data including 
 \end{ganttchart}
 
 \threesection{References}
-\bibliographystyle{IEEEtran}
 \bibliography{Bibliography}{}
 \threesection{Overview}
 The remainder of this document consists of two chapters, an appendix, and an index.
@@ -397,8 +399,63 @@ Should the project be completed ahead of time, or become open source, maintainab
 
 \subsection{Amendments}
 
-\subsection{Gantt Chart}
+-\$\$ No requirements have changed
 
+
+\subsection{Gantt Chart}
+\threesection{Gantt Chart}
+\begin{ganttchart}{1}{20}
+	
+	\gantttitle{PolyVox: Task list work flow}{20} \\
+	
+	%Project Tasks
+	\ganttbar{Research}{1}{1}\\
+	\ganttbar{Design}{2}{3}\\
+	\ganttbar{User interface}{4}{8}\\
+	\ganttbar{3D editor}{6}{11}\\
+	\ganttbar{Creation Tools}{9}{11}\\
+	\ganttbar{HMD and motion controls capture}{2}{3} \ganttbar{}{10}{14}\\
+	\ganttbar{Desktop applicaiton}{12}{14}\\
+	\ganttbar{VR application}{15}{17}\\
+	\ganttbar{User tests}{18}{19}\\
+	\ganttbar{Software Limitation tests}{19}{19}\\
+	\ganttbar{Demo Preperation}{20}{20}\\
+	
+	%Links
+	\ganttlink{elem0}{elem5}
+	\ganttlink{elem0}{elem1}
+	
+	\ganttlink{elem1}{elem2}
+	\ganttlink{elem1}{elem3}
+	\ganttlink{elem1}{elem4}
+	\ganttlink{elem1}{elem6}
+	
+	\ganttlink{elem3}{elem4}
+	
+	\ganttlink{elem2}{elem7}
+	\ganttlink{elem3}{elem7}
+	\ganttlink{elem4}{elem7}
+	
+	\ganttlink{elem6}{elem8}
+	\ganttlink{elem7}{elem8}
+	
+	\ganttlink{elem8}{elem9}
+	\ganttlink{elem8}{elem10}
+	\ganttlink{elem8}{elem11}
+	
+	%MILESTONES
+	\ganttmilestone{MILESTONES}{3}
+	\ganttmilestone{}{8}
+	\ganttmilestone{}{12}
+	\ganttmilestone{}{17}\\
+	
+	\gantttitle{Planning}{3}
+	\gantttitle{Basic platform}{5}
+	\gantttitle{Toolset}{4}
+	\gantttitle{Application}{5}
+	\gantttitle{Finalize}{3}
+
+\end{ganttchart}
 
 
 \pagebreak
@@ -450,7 +507,6 @@ Yggdrasil & A collection of GPU programs which collectively manage the voxel sta
 \end{longtable}
 
 \threesection{References}
-\bibliographystyle{IEEEtran}
 \bibliography{Bibliography}{}
 
 \subsubsection{Stakeholders}
@@ -665,24 +721,37 @@ The active UI design needs to be full capable of accessing all of the features i
 \end{figure}
 
 \threesection{Architecture of the Interchange}
-The Interchange will be the primary point of communication and manager for the disparate elements of the program. The Interchange must be able to receive information supplied via the user interface and interface hardware and relay the corresponding instruction to the Yggdrasil engine to properly render the scene, and is directly responsible for directing state transition of all other components. Due to the experimental nature of the project, the design of the Interchange must be kept at a high level. Specifics of functions and the processing of data will need to be determined in development. 
+The Interchange will be the primary point of communication and manager for the disparate elements of the program.
+The Interchange must be able to receive information supplied via the user interface and interface hardware and relay the corresponding instruction to the Yggdrasil engine to properly render the scene, and is directly responsible for directing state transition of all other components
+ Due to the experimental nature of the project, the design of the Interchange must be kept at a high level. Specifics of functions and the processing of data will need to be determined in development. 
 
 The Interchange must be capable of properly coordinating all other elements of PolyVox as a whole, and is a central element  in executing commands supplied via user interactions, implementing program features, and directing the graphics engine’s rendering operations. As such it is relevant to design concerns of all stakeholders involved in the project. In particular, it is central to the operation of the user interface and motion controls, from which it will receive user commands, and the operation of the graphics engine, which it will send commands to. As the Interchange will be the point at which the program’s toolset is constructed, it will also dictate the program’s available features.
 
 \foursection{Design Entities}
 \textbf{Unity Engine:}\\
-The Interchange will be built in and run on the Unity Game Engine. Unity has its own proprietary rendering and modeling systems, as well as native compatibility with motion tracking systems and dual rendering used in VR. Additionally, Unity has native scripting compatibility and will serve as the platform for developing the program tools and features.\cite{unity}\\
+The Interchange will be built in and run on the Unity Game Engine.
+Unity has its own proprietary rendering and modeling systems, as well as native compatibility with motion tracking systems and dual rendering used in VR.
+Additionally, Unity has native scripting compatibility and will serve as the platform for developing the program tools and features.\cite{unity}\\
 \textbf{C\#:}\\
-C\# is one of the most frequently used languages for scripting in game engines, and is natively compatible with Unity. Most features and tools for the program will be constructed using C\#. 
+C\# is one of the most frequently used languages for scripting in game engines, and is natively compatible with Unity.
+Most features and tools for the program will be constructed using C\#. 
 
 \foursection{Design}
-When in operation, the Interchange will receive positional information from the user via both the HMD and VR motion controls in the form of four-element vector positional coordinates. Using Unity’s native VR drivers, the Interchange will translate these coordinates into a position relative to the voxel state.
+When in operation, the Interchange will receive positional information from the user via both the HMD and VR motion controls in the form of four-element vector positional coordinates.
+Using Unity’s native VR drivers, the Interchange will translate these coordinates into a position relative to the voxel state.
 
-Additionally, the data received from the user may or may not include a user-inputted command via a button press. When pressed, the button input will be sent to a function, which is also passed the current state of the UI (such as what ‘brush’ is selected, or what menu the user currently has open). The function will process the user command to determine any possible UI state changes, as well as any changes to the voxel state the user command will perform (such as creating or destroying a voxel) based on whatever tool or UI element is currently being operated. 
+Additionally, the data received from the user may or may not include a user-inputted command via a button press.
+When pressed, the button input will be sent to a function, which is also passed the current state of the UI (such as what ‘brush’ is selected, or what menu the user currently has open).
+The function will process the user command to determine any possible UI state changes, as well as any changes to the voxel state the user command will perform (such as creating or destroying a voxel) based on whatever tool or UI element is currently being operated. 
 
-Any changes in the state are returned by the function as a set of commands to the graphics engine. The graphics engine will then process the commands from the Interchange. Before the render is sent to the HMD, the graphics engine will return a flag that will determine if the Interchange needs to perform additional actions, such as sending a command to the GPU to allocate additional memory. If so, the Interchange will send the appropriate commands, and the graphics engine will reattempt the render. This repeats until the flag sent from the GPU is null. 
+Any changes in the state are returned by the function as a set of commands to the graphics engine.
+The graphics engine will then process the commands from the Interchange.
+Before the render is sent to the HMD, the graphics engine will return a flag that will determine if the Interchange needs to perform additional actions, such as sending a command to the GPU to allocate additional memory.
+If so, the Interchange will send the appropriate commands, and the graphics engine will reattempt the render. This repeats until the flag sent from the GPU is null. 
 
-While the operations of the Interchange are primarily just in service to other elements of the program, they are still vitally necessary to PolyVox’s operation. The Interchange effectively acts as the driver for the graphics engine and the motion control system, and is needed in order to develop a working feature set and comfortable user interface. See figure 5 for diagram.
+While the operations of the Interchange are primarily just in service to other elements of the program, they are still vitally necessary to PolyVox’s operation.
+The Interchange effectively acts as the driver for the graphics engine and the motion control system, and is needed in order to develop a working feature set and comfortable user interface. 
+See figure 5 for diagram.
 
 \begin{figure}[H]
 \begin{center}
@@ -692,8 +761,202 @@ While the operations of the Interchange are primarily just in service to other e
 \end{figure}
 
 
-\subsection{Amendments}
+\subsection{Current Design}
 
+\subsubsection{Introduction}
+
+\threesection{Purpose}
+This Software Design Description (SDD) specifies the design plan for the VR based 3D art program PolyVox as of June 12, 2018.
+This document expands upon the content of the PolyVox Software Requirements Specifications (SRS), and specifies how the elements of the SRS are incorporated into the program.
+
+\threesection{Scope}
+This document describes the structure of PolyVox and the implementation of its individual components.
+This document assumes that any reader is already familiar with the PolyVox SRS and the project as a whole.
+This document, in its creation, was intended to be included as part of a larger collection of works comprising a final report, including the original design document.
+Due to this, pieces of information that have already been included in the original design document which have not changed, such as the glossary of terms and project stake holders, have been omitted to reduce redundancy under the assumption this information has already been encountered.
+
+\threesection{Intended Audience}
+This document details the technical design of the PolyVox application, and, as such, is intended for readers with knowledge of programming and software development methods. 
+
+\subsubsection{The Front End}
+
+The application layer will be the primary point of communication and manager for the disparate elements of the program.
+This level of the system must be able to receive information supplied via the user interface and interface hardware and relay the corresponding instruction to the ray tracer to properly render the scene, and is directly responsible for directing state transition of all other components. 
+
+The application layer must be capable of properly coordinating all other elements of PolyVox as a whole, and is a central element in executing commands supplied via user interactions, implementing program features, and directing the graphics engines rendering operations.
+As such it is relevant to design concerns of all stakeholders involved in the project.
+In particular, it is central to the operation of the user interface and motion controls, from which it will receive user commands, and the operation of the graphics engine, which it will send commands to.
+As the Interchange will be the point at which the programs toolset is constructed, it will also dictate the programs available features.
+
+\threesection{Design Entities}
+\foursection{Unity Engine}
+ The Interchange will be built in and run on the Unity Game Engine.
+Unity has its own proprietary rendering and modeling systems, as well as native compatibility with motion tracking systems and dual rendering used in VR.
+Additionally, Unity has native scripting compatibility and will serve as the platform for developing the program tools and features.
+\foursection{C\#}
+ C\# is one of the most frequently used languages for scripting in game engines, and is natively compatible with Unity.
+ Most features and tools for the program will be constructed using C#. 
+
+\threesection{Design}
+When in operation, the application layer will receive positional information from the user via both the HMD and VR motion controls in the form of four-element vector positional coordinates.
+Using the SteamVR and OpenVR libraries, the application layer will translate these coordinates into a position relative to the voxel state.
+Additionally, the data received from the user may or may not include a user-input command via a button press. Unity handles VR controller input via scripting events.
+Our system implements event listeners which trigger handlers when input is detected.
+These event handlers will trigger functions, which alter the state of the program.
+This state would include factors such as the scale and color of the brush, or what menu the user currently has open.
+These functions will process the user command to determine any possible UI state changes, as well as any changes to the voxel state the user command will perform.
+Any changes in the state are returned by the function as a set of commands to the graphics engine.
+The graphics engine will then process the commands from the application layer.
+While the operations of the application layer are primarily just in service to other elements of the program, they are still vitally necessary to PolyVox’s operation.
+The application effectively acts as the driver for the ray tracer and the motion control systems, and is needed in order to develop a working feature set and comfortable user interface.
+
+
+\subsubsection{Interactions between the Hardware and Application Layer}
+
+The VR HMD and motion controls act as the source of input for the user.
+The VR hardware will primarily interact with the system using pre-built drivers for the Unity engine, which are both easily available and open source.
+With such widely available device drivers, hardware implementation is, for the most part, a solved problem.
+The primary challenge from a design standpoint is how signals sent from, and received by the program are handled. 
+
+\threesection{Design Entities}
+
+\foursection{Rift HMD} 
+The Oculus Rift needs to have its HDMI and USB 3.0 cables attached to the computer.
+This completes the connection between the HMD and the computer. 
+
+\foursection{Oculus Sensors}
+The sensors and the integrated VR tracking solution need to be mounted on the wall or with stands. 
+The first two connected must utilize USB 3.0 ports, while the third will use a USB 2.0 port.
+The first two sensors should be placed approximately seven feet apart, both facing toward the center of the ‘play space’.
+The third should be placed such that it is approximately seven feet from the rightmost sensor (when facing the first two sensors) and approximately ten feet from the leftmost sensor.
+
+\threesection{Design}
+The driver is operated by the SteamVR asset in the Unity add-on window.
+The driver takes in input through the HMD and uses the data to manipulate the camera rig object in Unity.
+The SteamVR library allows for controller input to be passed to the game engine.
+This input must then be mapped to a trackable object in Unity.
+This object can then be used by the application layer for processing.
+The same process is performed using data sent by the HMD.
+The packets sent by the controllers and HMD will be done through USB and sent to the Interchange.
+We will need position and orientation of the HMD and at least on of the Vive controllers.
+We will also need trackpad and trigger inputs from the controller.
+This will be sent to PolyVox and into the application layer.
+
+
+\subsubsection{The Back End}
+
+\threesection{Design Entities (Data Representation)}
+
+To meet the performance demands of PolyVox while still creating a worthwhile experience, including high resolution and flexibility, a framework was constructed that can efficiently process the actions required of PolyVox.
+This framework, given that it represents the lowest position in the hierarchy of abstraction the project deals with, was dubbed the back end.
+It was concluded that the back end should accomplish its duties through parallel processing in GPGPU programs because it includes both the manipulation and rendering of potentially vast amounts of data, which can stand to benefit from the parallelism offered by GPU processing.
+This decision means that the data associated with the world data of PolyVox is largely contained within the GPU itself and hence requires parallel-friendly means of access and manipulation.
+The operation of the back end is broadly encapsulated in three main roles: data representation, data manipulation, and rendering, as described below.
+
+\foursection{Voxels}
+
+The back end represents the state of the 3D space being manipulated with voxels, cubes of uniform size forming a regular grid, with each cube having a certain state associated with it that characterizes the cube’s contents.
+Voxels were chosen due to their ability to represent data volumetrically rather than by describing surfaces.
+Numerous other methods could be applied to represent painted material in a 3D space;
+however, using voxel representation means that volumetrically oriented operations, such as depositing or removing material in the space, which is likely to be frequently applied during the use of PolyVox, will be easier to perform.
+
+The material properties of a voxel are represented by color and surface.
+The color of the material represented by a voxel is encoded as a series of four floating point values, each respectively encoding a red, green, blue, and alpha channel.
+The first three of these channels indicate the color of a voxel, as expressed by three additive primary colors of human vision, whereas the last channel represents how opaque the voxel is to light transmission.
+
+The way an object’s contours are shaded depends upon the direction in which these contours face, otherwise known as their normals.
+The surface property of a voxel is an encoding of a normal and is a vital piece of information for calculating shading of the boundaries between different colors of voxels.
+This is because, the more a surface faces towards a light source, the more that surface is lit by that light source, assuming the incoming light is unobstructed.
+This surface normal is represented as series of three floating-point values, an X, a Y, and a Z, that are used to form  a normalized vector.
+
+
+\foursection{3D Textures}
+For the sake of simplicity and rapid data access, the data associated with voxels are stored in a 3D texture, thus allowing programs in the back end to reference the data of specific voxels by indexing into the texture the three dimensional coordinates of that voxel.
+The overall size of data associated with a 3D texture is limited. Thus, for the sake of increasing the number of voxels that may be referenced at a given time, the color and surface properties of voxels are broken into two separate 3D textures.
+In addition to these components, an additional 3D texture is used to encode metadata about the contents of the other two textures.
+More regarding this texture is discussed later in the data manipulation and rendering sections.
+
+\foursection{Blocks}
+The environment represented by PolyVox may not be small enough to fit on a single set of 3D textures because 3D textures can be limited in how much data they may contain effectively, the entirety of;
+therefore, the three types of 3D textures associated with a section of voxels are bundled together and encapsulated in an object class called a block.
+Thus, the geometry data of PolyVox is organized as a grid of grids, with the contents of individual blocks being operated upon independently during rendering and manipulation while the voxels encoded in a block encode the specific elementary units which the user may interact with. 
+Blocks collectively represent a continuous grid of voxels in the space, each containing a set of 3D textures, all of equal dimensions and, themselves, scaled and arranged in space as a grid of cubes.
+
+\threesection{Design: Data Manipulation}
+
+\foursection{Wiping}
+The first and also simplest form of data manipulation applied to blocks is what is referred to as a wipe operation.
+A wipe operation simply writes a preset color and surface value to all voxels in the block.
+Wiping is useful for clearing a texture either during the start of its use or just prior to loading in a saved state.
+
+\foursection{Brushing}
+The brush operation is what updates a block to reflect the stroke performed when the user paints in the space of PolyVox.
+A brush stroke is described by four main pieces of information: a starting transformation, an ending transformation, a starting color, and an ending color.
+The starting and ending transformations are each four-by-four matrices describing the transformation of the brush tip in the space of PolyVox, with the starting transformation indicating the transformation of the brush in the prior processing pass and the ending transformation indicating the transformation of the brush at the current processing pass.
+Likewise, the starting and ending colors are each a set of four floating point values encoding an RGBA quadruplet indicating the color and transparency of the material deposited by the brush at each endpoint in the stroke.
+
+Given the input transformations, the brush shader finds the point in time when each voxel is closest to the center of the brush, assuming that the start point of the brush is at a time 0 and the ending point of the brush is at a time of 1.
+Given this information, an interpolation between the starting and ending transformation is found using the time metric as an alpha value, thus rendering the the transformation along the stroke during which the voxel was closest to the center of the brush.
+Applying the inverse of this transformation on the position of the center of the voxel in question, one finds what is referred to as the voxel’s brush space coordinates.
+From there, the voxel is considered to be affected by the brush if it exists inside the unit circle of its brush space.
+
+The normal of the voxel, if it is determined to be affected by the stroke being processed, is then calculated by taking the normalized displacement of the voxel from the center of the brush.
+This brush-space normal is then converted to world-space coordinates through a normal matrix, which is found by applying the transpose of the interpolated brush transformation.
+This world space normal is what is ultimately stored because it makes consistent normal-based lighting simpler to carry out.
+
+Once the normal of a voxel has been found, it is stored in the voxel’s corresponding element in the surface texture of the voxel’s respective block.
+Likewise, the color of the voxel is found by interpolating between the starting and ending color by the time metric previously mentioned.
+Thus, the material properties of all voxels now account for the new brush stroke defined by this operation’s parameters.
+
+
+\foursection{Updating the Skip Grid}
+As mentioned previously, there is an additional 3D texture associated with each block, in addition to the two that respectively represent the color and surface properties of voxels.
+This texture, referred to as the Skip Grid, stores metadata describing patterns of similarity within the properties of regions of voxels.
+This set of data is included because it allows the program in charge of rendering for PolyVox to perform ray tracing operations to approach log(N) running time in most use cases, with N being the number of voxels between a trace’s start and eventual end.
+Generally speaking, the specific role of such a data structure as well as what information it represents would be mentioned in the data representation section, but the definition of the data has a degree of nuance and is best represented by describing the program in charge of calculating this data.
+Thus, the definition of the Skip Grid has been fully relegated to this section.
+
+In broad terms, a Skip Grid represents two concepts: whether or not regions of voxels are similar and whether or not regions of voxels are fully surrounded by a layer of voxels similar to its contents.
+Simply put, these properties are described as local similarity and coverage, respectively.
+To keep the runtime of calculating these properties small and the data layout easy to represent, the Skip Grid represents only the local similarity and coverage of cubic regions of voxels with power-of-two side lengths that have a minor corner offset from the origin by some integer multiple of this side length.
+By setting this restriction, the processing of this information can be performed through reduction, whereby every cube of side length two is tested for local similarity and coverage and every cube with a higher side length may have their local similarity and coverage calculated by checking if all smaller cubes contained within the bounds also have local similarity or coverage and possess the same color.
+
+Whether the surface properties of voxels are checked for similarity when evaluating local similarity is dependent upon the whether the cube currently being processed is covered.
+This caveat presents a challenge:
+If this cube is covered, surface properties are not checked because coverage effectively means that the cube under consideration is inside a region of similar material, and hence does not represent a surface to begin with.
+Otherwise, the surface properties of the cubes are checked for similarity.
+This addition to the process of generating a Skip Grid is useful because it finds larger regions of effective local similarity and hence can speed up ray tracing even more.
+
+
+\threesection{Design: Rendering}
+\foursection{Fragment Generation}
+The ray tracer is exposed to the user by incorporating the ray tracer into a specific material that is rasterized onto the scene.
+This method of fragment generation is applied because the voxels present in a PolyVox scene are not the only things visible to the user and that the other elements comprising the scene are rendered via raster graphics rather than ray tracing.
+This material is given to the models of block objects, which are simple cube models, and the initial position and direction of the ray trace relative to the contents of the block’s 3D textures is determined by the generated fragment’s color and worldspace coordinates, respectively.
+
+\foursection{Ray Trace Traversal}
+When designing the ray tracer, a central heuristic was to minimize required processing without degrading accuracy.
+Thus if a large set of redundant steps can be reduced to much fewer, slightly more complicated steps, the ray tracer should account for it.
+The result is a ray that traverses the set of voxels within a block is from boundary to boundary, where each step in the trace is as long as it can be without exceeding the bounds of a region of similarity.
+Thus, if a trace is traversing through a region of space with large pockets of completely transparent voxels,  the trace should travel faster through these pockets as the Skip Grid would inform the trace that it may extend the length of its steps to match the bounds of the similar regions.
+
+Generally speaking, most use cases for PolyVox likely involve large swaths of space with the same color mainly because many of the scenes or objects that most would wish to prevent would be surrounded by or filled with empty space or air, just as most things in the universe are. For instance, one would find it strange if the inside of a building, the space above a street, or the region above a landscape were not mostly air. It is for this reason, as well as the need for higher processing speed, that the Skip Grid and this mode of traversal were incorporated into PolyVox.
+
+
+\foursection{Processing Ray Trace Steps}
+As stated above, each step made by the ray tracer is guaranteed to travel only through regions of similar material properties, which means that the state of the trace can be be altered as though the regions were simply one voxel.
+Given this, a trace can be broken down into its individual steps and processed by calculating each step in order from the steps closest to the camera to those furthest away.
+As each step is processed, the color of the region being traversed is fetched from its place in the 3D texture representing color and is then multiplied by an ongoing alpha value.
+
+This alpha value starts at 1 at the start of the trace and decreases as time goes on, where the alpha is multiplied at each step by a factor of (1 - A)L where A is the alpha value of the material being traced through and L is the distance traversed in the step.
+Distance is accounted for in this process because the amount light is not occluded by a material of some transparency follows a decay curve as the distance traversed becomes greater.
+
+Additionally, if the ray tracer finds that a trace is traversing a region of space that is not considered covered, the color of the material, excluding the alpha, is divided by the dot product of the surface normal and the normalized displacement of this voxel from the light source. This essentially means that the ray tracer calculates a simple diffuse lighting effect for every voxel it encounters that is at a boundary of similarity, which can provide a greater sense of depth to the scene by giving objects shading.
+
+
+\foursection{Render Ordering}
+A final aspect of rendering voxels to consider is the ordering of rendering ray trace fragments to the screen.
+This is actually handled by Unity itself, because the material which the ray tracing shader is associated with is given flags to indicate that it has transparency and so indicates to Unity that it should apply the painter’s algorithm to the blocks, painting them from back to front.
 
 \pagebreak
 \section{Technology Review}
@@ -781,7 +1044,6 @@ https://research.fb.com/publications/dodecapen-accurate-6dof-tracking-of-a-passi
 
 \pagebreak
 \subsection{Richard Cunard}
-\bibliographystyle{IEEEtran}
 \bibliography{richardTechRev}{}
 
 \subsubsection{Scripting Language}
@@ -1067,9 +1329,7 @@ The team could benefit from operating via this method when developing tools for 
 Furthermore, the option for user-defined tools offers a great deal of extensibility to the system and affords less responsibility to the team when it comes to keeping up with demand for new types of tools.
 \pagebreak
 \subsubsection{References}
-\bibliographystyle{IEEEtran}
-\bibliography{braxtonTechRev}{}
-
+\bibliography{braxtonTechRev}
 
 \section{Weekly Blog Posts}
 
