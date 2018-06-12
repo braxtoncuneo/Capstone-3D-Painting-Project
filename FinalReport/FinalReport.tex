@@ -247,8 +247,8 @@ Voxel & An element of a grid with an associated set of attribute data including 
 
 \end{ganttchart}
 
-\threesection{References}
-\bibliography{Bibliography}{}
+%\threesection{References}
+%\bibliography{Bibliography}{}
 \threesection{Overview}
 The remainder of this document consists of two chapters, an appendix, and an index.
 
@@ -506,8 +506,8 @@ Voxel State & The state of every instance of a geometric element explicitly repr
 Yggdrasil & A collection of GPU programs which collectively manage the voxel state, including updating the data represented within and maintaining the associated resources on the GPU. These programs are called by the Interchange. \\ \hline
 \end{longtable}
 
-\threesection{References}
-\bibliography{Bibliography}{}
+%\subsubsection{References}
+%\bibliography{Bibliography}{}
 
 \subsubsection{Stakeholders}
 
@@ -795,7 +795,7 @@ Unity has its own proprietary rendering and modeling systems, as well as native 
 Additionally, Unity has native scripting compatibility and will serve as the platform for developing the program tools and features.
 \foursection{C\#}
  C\# is one of the most frequently used languages for scripting in game engines, and is natively compatible with Unity.
- Most features and tools for the program will be constructed using C#. 
+ Most features and tools for the program will be constructed using C\#. 
 
 \threesection{Design}
 When in operation, the application layer will receive positional information from the user via both the HMD and VR motion controls in the form of four-element vector positional coordinates.
@@ -1044,7 +1044,7 @@ https://research.fb.com/publications/dodecapen-accurate-6dof-tracking-of-a-passi
 
 \pagebreak
 \subsection{Richard Cunard}
-\bibliography{richardTechRev}{}
+%\bibliography{richardTechRev}{}
 
 \subsubsection{Scripting Language}
 
@@ -1058,10 +1058,10 @@ The primary factors each should be judged on are speed of code execution, robust
 With that in mind, the most viable options for use in the project ar C$++$, C\#, and JavaScript. Each of these are robust, heavily supported languages, with large selections of publicly available libraries. More importantly, each is used natively in at least one major game engine. Choosing which of the three languages will likely also inform what game engine is chosen for the project, given that certain languages are either poorly supported, or simply incompatible with specific engines.
 
 \foursection{C\#}
-C\#, similar to its predecessor C$++$, is a powerful object oriented language with extensive functionality and outside support. C\# is supported by most modern game engines, including Unreal, Unity and CryEngine, which would present the team with more flexibility for future development choices. As mentioned above, while C\# is interpreted, it has several optimization features. These include the ability to query machine specifications, perform runtime code optimizations that would not be possible with a compiled language, and perform heap more efficiently. While the team has very limited experience with C\#, this would not seriously affect development, as it is similar in syntax and design to C$++$, which the entire team has extensive experience working with. C\# would be a viable choice for any choice in game engine and design methodology.\cite{1}\cite{2}
+C\#, similar to its predecessor C$++$, is a powerful object oriented language with extensive functionality and outside support. C\# is supported by most modern game engines, including Unreal, Unity and CryEngine, which would present the team with more flexibility for future development choices. As mentioned above, while C\# is interpreted, it has several optimization features. These include the ability to query machine specifications, perform runtime code optimizations that would not be possible with a compiled language, and perform heap more efficiently. While the team has very limited experience with C\#, this would not seriously affect development, as it is similar in syntax and design to C$++$, which the entire team has extensive experience working with. C\# would be a viable choice for any choice in game engine and design methodology.\cite{richTech1}\cite{richTech2}
 
 \foursection{C$++$}
-C$++$ is a powerful language with extensive outside library support, and a fundamental compatibility with the Unreal Engine, given that it is what Unreal is primarily built with. However, barring use of outside applications, C$++$ is unavailable for use in the Unity engine, with the only major VR compatible engines that support its use being Unreal and CryEngine. C$++$ being compiled is situationally a positive or negative factor on performance. While it allows for higher general optimization upon compilation, it lacks the ability to perform runtime querying for hardware specific optimization. Additionally, the primary advantages of C$++$ in this project are predicated on the use of the Unreal Engine, as C\# shares its advantages when using CryEngine, but also includes features that would ease development, such as automated garbage collection.\cite{3}
+C$++$ is a powerful language with extensive outside library support, and a fundamental compatibility with the Unreal Engine, given that it is what Unreal is primarily built with. However, barring use of outside applications, C$++$ is unavailable for use in the Unity engine, with the only major VR compatible engines that support its use being Unreal and CryEngine. C$++$ being compiled is situationally a positive or negative factor on performance. While it allows for higher general optimization upon compilation, it lacks the ability to perform runtime querying for hardware specific optimization. Additionally, the primary advantages of C$++$ in this project are predicated on the use of the Unreal Engine, as C\# shares its advantages when using CryEngine, but also includes features that would ease development, such as automated garbage collection.\cite{richTech3}
 
 \foursection{JavaScript}
 JavaScript as a whole maintains a similar level of functionality and performance with C\#, but lacks several key features. C\# gives a finer level of control over process management, while JavaScript obscures this more with its function structure. Where C\# has native hardware querying, Javascript requires the use of separate libraries to perform the same action. One aspect that may hinder stability, but improve modularizability within code is that while C\# is strongly, statically typed, JavaScript is weekly and dynamically typed, allowing for more flexibility in the code. Additionally, javaScript would limit our choice in game engine to Unity.
@@ -1155,53 +1155,53 @@ Since the system created through this project is supposed to be an environment w
 
 \threesection{Non-uniform Rational B-splines (NURBS)}
 
-NURBS, in essence, are patches of surfaces defined by a two-dimensional grid of splines \cite{1}\cite{2}.
-For those that do not know, splines are curved line segments which have end positions and contours defined through an equation which relies upon a set of control points as parameters \cite{1}\cite{2}.
-By manipulating the position of these control points, the contours of a NURBS-based surface may be warped into arbitrary shapes \cite{1}\cite{2}.
-Hence, by connecting enough patches of NURBS together and properly setting their control points, any arbitrary surface may be represented \cite{1}\cite{2}.
+NURBS, in essence, are patches of surfaces defined by a two-dimensional grid of splines \cite{braxTech1}\cite{braxTech2}.
+For those that do not know, splines are curved line segments which have end positions and contours defined through an equation which relies upon a set of control points as parameters \cite{braxTech1}\cite{braxTech2}.
+By manipulating the position of these control points, the contours of a NURBS-based surface may be warped into arbitrary shapes \cite{braxTech1}\cite{braxTech2}.
+Hence, by connecting enough patches of NURBS together and properly setting their control points, any arbitrary surface may be represented \cite{braxTech1}\cite{braxTech2}.
 
 NURBS come with a number of advantages.
-First, because NURBS are based on continuous linear equations, their surfaces are differentiable and hence the normal of a section of a NURBS surface is inherently encoded into the element \cite{2}.
-Furthermore, this means that NURBS do not possess a maximum resolution, and so the appearance of any NURBS patch can be accurate, regardless of scale \cite{2}.
-Additionally, the functional nature of NURBS makes operations involving warping the contours of objects a quick task \cite{2}.
+First, because NURBS are based on continuous linear equations, their surfaces are differentiable and hence the normal of a section of a NURBS surface is inherently encoded into the element \cite{braxTech2}.
+Furthermore, this means that NURBS do not possess a maximum resolution, and so the appearance of any NURBS patch can be accurate, regardless of scale \cite{braxTech2}.
+Additionally, the functional nature of NURBS makes operations involving warping the contours of objects a quick task \cite{braxTech2}.
 
 Of course, there are drawbacks.
-For instance, the more complex a NURBS surface is, the more control points it must have and the harder it is to render \cite{2}.
-Plus, surfaces with non-continuous contours must use multiple NURBS surfaces to create an accurate representation \cite{1}.
+For instance, the more complex a NURBS surface is, the more control points it must have and the harder it is to render \cite{braxTech2}.
+Plus, surfaces with non-continuous contours must use multiple NURBS surfaces to create an accurate representation \cite{braxTech1}.
 Furthermore, volumetric operations with NURBS are non-trivial, as NURBS only represent the surface of an object. 
-This means that, in order to perform such operations, the bounds of the input volumes must be calculated from the surface, the bounds of the resulting volumes must be calculated through the volumetric operation, then these new volumes must be translated back into NURBS \cite{1}\cite{2}. 
-Moreover, NURBS are not used as much for near real-time rendering applications compared to triangles or voxels, and so resources pertaining to their use will likely be more scarce \cite{1}.
+This means that, in order to perform such operations, the bounds of the input volumes must be calculated from the surface, the bounds of the resulting volumes must be calculated through the volumetric operation, then these new volumes must be translated back into NURBS \cite{braxTech1}\cite{braxTech2}. 
+Moreover, NURBS are not used as much for near real-time rendering applications compared to triangles or voxels, and so resources pertaining to their use will likely be more scarce \cite{braxTech1}.
 
 
 
 \threesection{Triangles}
 
-The only number of points guaranteed to lie upon exactly one plane in three-dimensional space is three \cite{1}.
-It is for this reason that most mainstream rendering applications rely upon triangles as a means of representing environments that are to be rendered \cite{1}.
-Unlike NURBS, triangles do not require processing parametric equations to establish the contours of their surface because they simply represent a segment of a plane \cite{1}.
-Furthermore, given that triangles need only be represented by three points, as opposed to the many points used for NURBS, they stand as a more spartan representation of surfaces \cite{1}.
-Of course, surfaces made of triangles cannot approximate smooth surfaces as easily as NURBS and also have a maximum resolution \cite{1}.
-As one looks more closely at a triangle-based surface, the individual facets composing the whole become recognizable \cite{1}.
-Additionally, executing volumetric operations with triangles is non-trivial. Just as with NURBS, triangles simply represent the surfaces of objects rather than their volumes \cite{1}.
-Nonetheless, triangles are arguably the most widespread geometric primitive used in computer graphics, so one could expect to have the most resources to work with (such as GPU capabilities) when working with triangles \cite{1}.
+The only number of points guaranteed to lie upon exactly one plane in three-dimensional space is three \cite{braxTech1}.
+It is for this reason that most mainstream rendering applications rely upon triangles as a means of representing environments that are to be rendered \cite{braxTech1}.
+Unlike NURBS, triangles do not require processing parametric equations to establish the contours of their surface because they simply represent a segment of a plane \cite{braxTech1}.
+Furthermore, given that triangles need only be represented by three points, as opposed to the many points used for NURBS, they stand as a more spartan representation of surfaces \cite{braxTech1}.
+Of course, surfaces made of triangles cannot approximate smooth surfaces as easily as NURBS and also have a maximum resolution \cite{braxTech1}.
+As one looks more closely at a triangle-based surface, the individual facets composing the whole become recognizable \cite{braxTech1}.
+Additionally, executing volumetric operations with triangles is non-trivial. Just as with NURBS, triangles simply represent the surfaces of objects rather than their volumes \cite{braxTech1}.
+Nonetheless, triangles are arguably the most widespread geometric primitive used in computer graphics, so one could expect to have the most resources to work with (such as GPU capabilities) when working with triangles \cite{braxTech1}.
 
 
 
 \threesection{Voxels}
 
-Unlike NURBS or triangles, voxels represent a piece of volume in a space rather than a piece of surface \cite{1}.
-Voxels are axis-aligned cubes in a three-dimensional, regular cartesian grid \cite{1}.
-The main implications of this are that locality-based operations such as volumetric addition and subtraction are easier to perform whereas operations pertaining to transformation (translation, rotation, scaling) are much more difficult to perform \cite{1}.
-This is because all modifications to a voxel grid must be done by changing the values local to the affected voxels \cite{1}.
+Unlike NURBS or triangles, voxels represent a piece of volume in a space rather than a piece of surface \cite{braxTech1}.
+Voxels are axis-aligned cubes in a three-dimensional, regular cartesian grid \cite{braxTech1}.
+The main implications of this are that locality-based operations such as volumetric addition and subtraction are easier to perform whereas operations pertaining to transformation (translation, rotation, scaling) are much more difficult to perform \cite{braxTech1}.
+This is because all modifications to a voxel grid must be done by changing the values local to the affected voxels \cite{braxTech1}.
 So, removing a section of an object is simply a matter of overwriting the associated voxels with a value indicating transparency.
 Meanwhile, moving an object requires erasing its at its current position and writing them at its new transformation.
-Furthermore, voxels also have a maximum resolution and do not have the benefit of triangles, which may be oriented in any direction, leaving voxel-based surfaces that are not axis aligned to look jagged, unless the voxel grid is subdivided into a small enough resolution \cite{1}.
+Furthermore, voxels also have a maximum resolution and do not have the benefit of triangles, which may be oriented in any direction, leaving voxel-based surfaces that are not axis aligned to look jagged, unless the voxel grid is subdivided into a small enough resolution \cite{braxTech1}.
 
 
 
 \threesection{Decision}
 
-NURBS and triangles represent only the surfaces of rendered objects, and hence inherently add complexity to performing operations which manipulate the volumes of an object \cite{1}. With voxels, performing volume-based operations requires only the assignment of data to the voxels which occupy the volume in question \cite{1}. Given that the central criteria of this selection is based upon performance in volume-based operations, the clear choice in this matter is to use voxels. 
+NURBS and triangles represent only the surfaces of rendered objects, and hence inherently add complexity to performing operations which manipulate the volumes of an object \cite{braxTech1}. With voxels, performing volume-based operations requires only the assignment of data to the voxels which occupy the volume in question \cite{braxTech1}. Given that the central criteria of this selection is based upon performance in volume-based operations, the clear choice in this matter is to use voxels. 
 
 
 \subsubsection{Organization of Environment Data}
@@ -1234,18 +1234,18 @@ Additionally, should the system be configured to remove or add elements to the d
 
 \threesection{Binary Space Partition (BSP) Tree}
 
-A BSP tree recursively segments the elements in an environment using planes \cite{5}. 
-First, the average location of every element in the environment is found, at which point a plane intersecting this point is used to divide the environment in half \cite{5}.
-Any orientation of this plane meets the requirements of a BSP, so long as it goes through this center point, although certain orientations are considered more optimal \cite{5}.
-For instance, planes which do not cut through any objects make matters generally easier to manage than planes that do \cite{5}.
-Once this initial cut is made, the process of finding a center point and segmenting along a plane is applied recursively on each side of this original cut \cite{5}.
-Once these sections have been subdivided enough ( “enough” meaning different criteria to different people, though this is generally some threshold involving the volume or number of objects in a section ), a binary tree is derived from the segments \cite{5}.
-The organization of this tree corresponds to how the scene was subdivided, with the content of the two branches extending from the root each containing the elements from one side of the initial cut and the other respectively \cite{5}.
-Likewise, branches extending from those branches have elements distributed between them corresponding to the segmentation performed on the second level of recursion \cite{5}.
+A BSP tree recursively segments the elements in an environment using planes \cite{braxTech5}. 
+First, the average location of every element in the environment is found, at which point a plane intersecting this point is used to divide the environment in half \cite{braxTech5}.
+Any orientation of this plane meets the requirements of a BSP, so long as it goes through this center point, although certain orientations are considered more optimal \cite{braxTech5}.
+For instance, planes which do not cut through any objects make matters generally easier to manage than planes that do \cite{braxTech5}.
+Once this initial cut is made, the process of finding a center point and segmenting along a plane is applied recursively on each side of this original cut \cite{braxTech5}.
+Once these sections have been subdivided enough ( “enough” meaning different criteria to different people, though this is generally some threshold involving the volume or number of objects in a section ), a binary tree is derived from the segments \cite{braxTech5}.
+The organization of this tree corresponds to how the scene was subdivided, with the content of the two branches extending from the root each containing the elements from one side of the initial cut and the other respectively \cite{braxTech5}.
+Likewise, branches extending from those branches have elements distributed between them corresponding to the segmentation performed on the second level of recursion \cite{braxTech5}.
 
-The advantage of segmenting an environment like this is that it is much easier to determine which elements are contained within a swath of space by traversing a BSP tree to the sections corresponding to that swath and checking the list of elements attached at the associated leaf nodes \cite{5}.
-This means sections of space not occupied by geometric elements can largely be ignored, as only non-empty content is represented in such a tree \cite{5}.
-Unfortunately, BSP trees are not optimal for operating with voxels, as voxels represent both empty and non-empty spaces, unlike triangles or NURBS \cite{1}.
+The advantage of segmenting an environment like this is that it is much easier to determine which elements are contained within a swath of space by traversing a BSP tree to the sections corresponding to that swath and checking the list of elements attached at the associated leaf nodes \cite{braxTech5}.
+This means sections of space not occupied by geometric elements can largely be ignored, as only non-empty content is represented in such a tree \cite{braxTech5}.
+Unfortunately, BSP trees are not optimal for operating with voxels, as voxels represent both empty and non-empty spaces, unlike triangles or NURBS \cite{braxTech1}.
 This means that the very space which a BSP tree is meant to remove from the representation of a scene will be represented anyway by the voxels contained within its leaf nodes.
 Even if each leaf node in a BSP tree stored only the minimum bounding box of non-empty voxels in its contents as a three-dimensional array, the BSP tree would not have much performance benefit over standard three-dimensional arrays except for environments with sparsely distributed clumps of geometry.
 Furthermore, should each leaf node store the non-empty voxels of its contents as a list, it would operate well with scenes that have very few voxels, regardless of distribution. Nonetheless, it would have increasingly poor performance for environments dense with geometry. 
@@ -1254,25 +1254,25 @@ Thus, a BSP tree offers little advantage in storing voxels, unless one assumes u
 
 \threesection{Sparse Voxel Octree}
 
-An sparse voxel octree uses many of the concepts behind a BSP tree, including recursive segmentation and location-based storage in a tree \cite{3}.
-It is also optimized for voxels \cite{3}.
+An sparse voxel octree uses many of the concepts behind a BSP tree, including recursive segmentation and location-based storage in a tree \cite{braxTech3}.
+It is also optimized for voxels \cite{braxTech3}.
 
-The concept is this: The space representing an environment is an axis-aligned cube. In turn, this cube represents the root of the octree \cite{3}.
-Furthermore, this cube is subdivided evenly into eight octants along each coordinate plane \cite{3}.
-Each of these octants are, themselves, cubes which are represented as the child nodes of the root of the octree \cite{3}.
-Should some voxel at some power-of-two resolution be written to this octree, the octant of the root cube containing that voxel will be recursively subdivided, where only octants containing the written voxel are expanded in the octree \cite{3}. 
-This recursion is performed until a node is added to the octree with the size and location of the written voxel, wherein the data associated with that voxel is stored \cite{3}.
+The concept is this: The space representing an environment is an axis-aligned cube. In turn, this cube represents the root of the octree \cite{braxTech3}.
+Furthermore, this cube is subdivided evenly into eight octants along each coordinate plane \cite{braxTech3}.
+Each of these octants are, themselves, cubes which are represented as the child nodes of the root of the octree \cite{braxTech3}.
+Should some voxel at some power-of-two resolution be written to this octree, the octant of the root cube containing that voxel will be recursively subdivided, where only octants containing the written voxel are expanded in the octree \cite{braxTech3}. 
+This recursion is performed until a node is added to the octree with the size and location of the written voxel, wherein the data associated with that voxel is stored \cite{braxTech3}.
 
-Should a voxel be written to the octant of a cube which renders the content of the cube uniform (for instance all empty, or all blue), that octant and its siblings are pruned from the octree and their data is represented in the parent cube \cite{3}.
+Should a voxel be written to the octant of a cube which renders the content of the cube uniform (for instance all empty, or all blue), that octant and its siblings are pruned from the octree and their data is represented in the parent cube \cite{braxTech3}.
 In this manner, only the resolution that is required to encode the content of a given branch is kept, ensuring that the memory footprint and retrieval time of the octree is kept low.
-Furthermore, the scattered nature of sparse voxel octrees makes the removal and shifting of data through the tree quicker, as shifting voxels is more a matter of shifting the pointers in the tree rather than the data the pointers link to \cite{3}.
+Furthermore, the scattered nature of sparse voxel octrees makes the removal and shifting of data through the tree quicker, as shifting voxels is more a matter of shifting the pointers in the tree rather than the data the pointers link to \cite{braxTech3}.
 
 
 \threesection{Decision}
 
 While three-dimensional arrays likely achieve best random access speed for any given point in space, the access patterns expected of the system being built by this project do not include random read and write operations throughout a space.
 Instead, access and manipulation is expected to be performed in contiguous swaths of space, be they the paths of ray traces or the user's tool tip.
-BSP trees, while favoring access to contiguous sections of a space, generally favor access to geometric elements which do not explicitly represent empty space, such as triangles or NURBS \cite{5}.
+BSP trees, while favoring access to contiguous sections of a space, generally favor access to geometric elements which do not explicitly represent empty space, such as triangles or NURBS \cite{braxTech5}.
 Of the above options, only sparse voxel octrees offer quick access to contiguous sections of voxels as well as efficiency in storing such voxels.
 Therefore, sparse voxel octrees will be used to store the data encoding the environment represented by the system.
 
@@ -1283,7 +1283,7 @@ Therefore, sparse voxel octrees will be used to store the data encoding the envi
 Given the basic definition of the project, the user must be able to manipulate the content of the virtual environment in the system.
 In order to do this, the system needs to give the user an intuitive means of performing this manipulation as well as provide the necessary parameters and code to the GPU to execute this manipulation upon the data representing the scene.
 The code that describes what a GPU does is called a shader.
-Shaders can be compiled dynamically and sent to the GPU for execution, however it is important to consider the model that is used for providing this code to the GPU and who would be able to add code, should the demand for more tools arise \cite{4}.
+Shaders can be compiled dynamically and sent to the GPU for execution, however it is important to consider the model that is used for providing this code to the GPU and who would be able to add code, should the demand for more tools arise \cite{braxTech4}.
 
 \threesection{Criteria}
 
@@ -1304,7 +1304,7 @@ This being said, two obvious downsides to this course of action is that the syst
 
 \threesection{Dynamically Defined Tools}
 
-As stated above, the shader code that informs how a GPU could manipulate the data representing an environment may be compiled while the system is running \cite{4}.
+As stated above, the shader code that informs how a GPU could manipulate the data representing an environment may be compiled while the system is running \cite{braxTech4}.
 This means that users could provide their own shader code files to load into the system, enabling them to create new tools as needed.
 This stands as the most flexible solution, however the increased capabilities of the user means that the team can provide little guarantees about how the system can operate when using custom tools.
 
@@ -1327,13 +1327,908 @@ Additionally, version compatibility would be easier to manage, as the team could
 Given that, on a broad level, most tools in this system operate the same and the operation of tools will largely be determined by code executed at small, key points of operation, it would make sense to use shader code injection.
 The team could benefit from operating via this method when developing tools for the system, as it would allow members to rely upon the pre-made template to handle system management.
 Furthermore, the option for user-defined tools offers a great deal of extensibility to the system and affords less responsibility to the team when it comes to keeping up with demand for new types of tools.
-\pagebreak
-\subsubsection{References}
-\bibliography{braxtonTechRev}
+%\pagebreak
+%\subsubsection{References}
+%\bibliography{braxtonTechRev}
 
 \section{Weekly Blog Posts}
 
+\begin{longtable}{ | l | l | l | l | l | l | }
+ \hline			
+Term/Week & Member & Plans & Problems & Progress & Summary \\ \hline
+Fall/1 & Christopher & 
 
+&
+
+&
+
+&
+
+\\ \hline
+Fall/1 & Richard & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Fall/1 & Braxton & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Fall/2 & Christopher & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Fall/2 & Richard & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Fall/2 & Braxton & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Fall/3 & Christopher & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Fall/3 & Richard & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Fall/3 & Braxton & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Fall/4 & Christopher & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Fall/4 & Richard & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Fall/4 & Braxton & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Fall/5 & Christopher & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Fall/5 & Richard & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Fall/5 & Braxton & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Fall/6 & Christopher & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Fall/6 & Richard & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Fall/6 & Braxton & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Fall/7 & Christopher & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Fall/7 & Richard & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Fall/7 & Braxton & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Fall/8 & Christopher & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Fall/8 & Richard & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Fall/8 & Braxton & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Fall/9 & Christopher & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Fall/9 & Richard & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Fall/9 & Braxton & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Fall/10 & Christopher & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Fall/10 & Richard & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Fall/10 & Braxton & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Fall/11 & Christopher & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Fall/11 & Richard & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Fall/11 & Braxton & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Winter/1 & Christopher & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Winter/1 & Richard & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Winter/1 & Braxton & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Winter/2 & Christopher & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Winter/2 & Richard & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Winter/2 & Braxton & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Winter/3 & Christopher & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Winter/3 & Richard & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Winter/3 & Braxton & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Winter/4 & Christopher & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Winter/4 & Richard & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Winter/4 & Braxton & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Winter/5 & Christopher & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Winter/5 & Richard & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Winter/5 & Braxton & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Winter/6 & Christopher & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Winter/6 & Richard & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Winter/6 & Braxton & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Winter/7 & Christopher & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Winter/7 & Richard & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Winter/7 & Braxton & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Winter/8 & Christopher & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Winter/8 & Richard & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Winter/8 & Braxton & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Winter/9 & Christopher & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Winter/9 & Richard & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Winter/9 & Braxton & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Winter/10 & Christopher & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Winter/10 & Richard & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Winter/10 & Braxton & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Winter/11 & Christopher & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Winter/11 & Richard & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Winter/11 & Braxton & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Spring/1 & Christopher & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Spring/1 & Richard & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Spring/1 & Braxton & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Spring/2 & Christopher & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Spring/2 & Richard & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Spring/2 & Braxton & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Spring/3 & Christopher & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Spring/3 & Richard & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Spring/3 & Braxton & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Spring/4 & Christopher & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Spring/4 & Richard & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Spring/4 & Braxton & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Spring/5 & Christopher & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Spring/5 & Richard & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Spring/5 & Braxton & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Spring/6 & Christopher & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Spring/6 & Richard & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Spring/6 & Braxton & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Spring/7 & Christopher & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Spring/7 & Richard & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Spring/7 & Braxton & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Spring/8 & Christopher & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Spring/8 & Richard & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Spring/8 & Braxton & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Spring/9 & Christopher & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Spring/9 & Richard & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Spring/9 & Braxton & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Spring/10 & Christopher & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Spring/10 & Richard & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Spring/10 & Braxton & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Spring/11 & Christopher & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Spring/11 & Richard & 
+
+&
+
+&
+
+&
+
+\\ \hline
+Spring/11 & Braxton & 
+
+&
+
+&
+
+&
+
+\\ \hline
+\hline 
+\end{longtable}
 
 
 \section{Final Poster}
@@ -1413,6 +2308,8 @@ What have I learned about working in teams?
 \subsubsection{Reflection}
 If I could do it all over, what would I do differently?
 
+\section{References}
+\bibliography{References}
 
 \appendix
 
