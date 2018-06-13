@@ -2499,7 +2499,6 @@ Make midterm report video
 Through cooperation with Chis and Richard, added scene scaling functionality \newline
 Successfully created and submitted all progress report materials 
 
-
 \\ \hline
 Spring/5 & Christopher & 
 New UI controller mappings. Taking out the UI pointers and using analogue mappings instead
@@ -2776,10 +2775,6 @@ Made a skeleton of the Final Report and added in the origional documents.
 
 \section{Project Documentation}
 
-\subsection{Theory of Operation}
-
-
-
 \subsection{System Requirements}
 \subsubsection{Minimal Requirements}
 \begin{itemize}
@@ -2919,29 +2914,31 @@ The main thing that I would have done differently is find some VR tools and hard
 \subsection{Richard Cunard}
 
 \subsubsection{Technical Information Learned}
-What technical information did I learn
+From a technical standpoint, I developed a significant understanding of the Unity game engine, which I spent a majority of my time developing on. This has benefited me significantly when working on other projects in the firld of game development and data visualization. Additionally, I became fluent with C\# as a scripting language, which was a necessity when programming within Unity, which I hope to apply towards other forthcoming projects. Finally, I have become much more familiar with the hardware and software of Virtual Reality and Motion Control technology over the course of working wth VR applications.
 \subsubsection{Non-Technical Information Learned}
-What non-technical information did I learn?
+Probably the best experience I gained from working on this project was professional networking. Since starting this project in the fall, I have gained contacts in both academic and professional space, and as a result, have been given several opportunities for work and further education.
 \subsubsection{Project Work Skills Learned}
-What have I learned about project work?
+I have made improvements in my time budgeting and management, however, my most important gain from this project has been learning to set reasonable project goals. Working with team advisor Bryan Pawlowski helped me significantly in determining where to aim in terms of attainable yet challenging goals.
 \subsubsection{Project Management Skills Learned}
-What have I learned about project management?
+Having been voted as team captain, it became a necessity for me to improve my skills at team coordination, time management, and effective communication across multiple mediums (email, text, face-to-face). Over the course of the year, I significantly improved at managing the schedules of multiple people, as well as making sure that everyone was up to date on current and future plans. Finally, I became much etter at budgeting time for multiple people to accomplish a given task.
 \subsubsection{Teamwork Skills Learned}
-What have I learned about working in teams?
+As with team management, I improved significantly at approximating and budgeting the necessary time for a given task. I improved my ability to coordinate with multiple people using different methods of communication for each person when necessary. This became invaluable, as several people involved in the project preferred to be contacted over different mediums.
 \subsubsection{Reflection}
-If I could do it all over, what would I do differently?
+Ultimately, one of my biggest pitfalls was not working as closely with other team members on their respective tasks. Several technical issues could have been cleared up far more easily and quickly had I had a better understanding of different elements of the project. Had I worked more to understand the technical issues behind Braxton's Yggdrasil Engine, I might have been able to spot the cause of the issue which necessitated our group drop the engine in favor of an inferior graphics engine. Additionally, I should have been more proactive on finishing group assignments, as on more than one occasion, we came down to the last minute before submitting our reports. Finally, I would have studied the SteamVR and OpenVR libraries more closely, as there are a handful of technical limitations related to the VR drivers that I wish I'd had time to fix.
 
 
 \subsection{Braxton Cuneo}
 
 \subsubsection{Technical Information Learned}
 
-In order to attain the performance I wanted from the back end, I taught myself a great deal about the ins and outs of how Unity works and how Unity handles GPU-side resources. If I did not, I would be unable to ascertain the lifetime of resources, whether or not they were initialized, whether or not shaders could simultaneously read and write from them, etc. In addition to this, I taught myself HLSL, as this was the only shading language Unity could consistently compile for compute shaders, which played a central role in my back end designs. I additionally learned a good deal about modern GPU hardware, investigating the average memory throughput, memory capacity, number of processors, cache line size, etc, one would expect for a certain teir of GPU. This informed me on how much I could rely on certain capabilities of the average GPU before processes become bottle necked. 
+In order to attain the performance I wanted from the back end, I taught myself a great deal about the ins and outs of how Unity works and how Unity handles GPU-side resources. I did so to be able to ascertain the lifetime of resources, whether or not they were initialized, whether or not shaders could simultaneously read and write from them, etc. In addition to this, I taught myself HLSL, as this was the only shading language Unity could consistently compile for compute shaders, which played a central role in my back end designs. I additionally learned a good deal about modern GPU hardware, investigating the average memory throughput, memory capacity, number of processors, cache line size, etc, one would expect for a certain teir of GPU. This informed me on how much I could rely on certain capabilities of the average GPU before processes become bottle necked.
+
+In addition to this, I learned a great deal about how to leave a proper trail of documentation, including defining a problem, defining technical requirements, showing evidence of investigation regarding available technologies, defining the design of a system, and relating progress to share holders. This learning was necessitated by the class itself. Without being able to properly construct such documents, the likelihood of this team meeting minimum requirements would be slim to none. Furthermore, managing team efforts and expectations would be more difficult without establishing a common reference for these efforts and expectations, which these documents do.
 
 
 \subsubsection{Non-Technical Information Learned}
 
-What non-technical information did I learn?
+I got to meet several people in industry, notably Bryan Pawlowski, and gained experience in networking.
 
 
 \subsubsection{Project Work Skills Learned}
@@ -2951,7 +2948,7 @@ One aspect of project work have improved on through capstone is setting schedule
 
 \subsubsection{Project Management Skills Learned}
 
-
+I learned how to effectively delegate tasks among a team, taking into account both the strengths of skill and the time available to each member with respect to a specific activity at a specific time. Optimizing work distribution helped the team to work more effectively as a coheasive unit.
 
 
 \subsubsection{Teamwork Skills Learned}
@@ -2961,17 +2958,655 @@ One of the teamwork skills I have honed the most during this project was learnin
 
 \subsubsection{Reflection}
 
-If I could do it all over, what would I do differently?
+I do not have many regrets about what I have done over the course of this project, with the exception of one large one. I wish I could sooner realize that the origional design I had for the back end of PolyVox was not feasible to implement in the time alotted to the project. This would have led to a higher overall quality in the final project, as I would have had more time developing the second back end design. Of course, my original back end design does stand to become one of my courses of research as I pursue post-graduate education, so I do not wish I never came up with the design at all, but I nonetheless think it would have been better to scrap development sooner.
+
+Otherwise, I do not have any regrets. I am glad to have been with the team I was with under the clients I was with. I'm proud of the product I have made and hope that it can come to prosper and positively affect peoples lives. Overall, I would call this capstone project a positive experience for me.
 
 
 \section{References}
 \bibliography{References}
 
-\appendix
+\pagebreak
 
 \section{Appendix 1: Essential Code Listings}
 
-\section{Appendix 2: Additional Media}
+\subsection{Brush Compute Shader}
+\begin{minted}
+[
+frame=lines,
+framesep=2mm,
+baselinestretch=1.2,
+linenos
+]{GLSL}
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel main
+#pragma target 5
+
+// The data associated with the ColorGrid and SurfaceGrid
+RWTexture3D<half4>	ColorData : register(u1);
+RWTexture3D<half4> SurfaceData : register(u2);
+
+// The offset of the block in space
+float3 baseOffset;
+
+// The initial color of the brush
+float4 color0;
+// The ending color of the brush
+float4 color1;
+// Slider values that could be used at a later date
+float4 sliders;
+
+// The number of voxels in the 3D texture
+int texWidth;
+// The width of the block in unity units
+float blockWidth;
+
+// The starting and ending transforms of the brush
+float4x4 start;
+float4x4 end;
+
+
+
+
+[numthreads(8, 8, 8)]
+void main(uint3 id : SV_DispatchThreadID)
+{
+	// The world-space position of the voxel for the work item
+	float4 worldPos = float4((id + 0.5) * blockWidth / ((float)texWidth) + baseOffset, 1.0);
+
+	// Calculates relative start and finish for the voxel's relative position to the brush
+	float3 relStart = mul(start, worldPos).xyz;
+	float3 relEnd = mul(end, worldPos).xyz;
+
+	// The normalized direction of travel for the brush stroke
+	float3 brushDir = normalize(relEnd - relStart);
+
+	// Calculates the parametric time associated with the intersection with the brush tip
+	float before = dot(relStart, brushDir);
+	float after = dot(relEnd, brushDir);
+	float3 pos;
+	float3x3 normMat;
+	float4 norm;
+
+	// If the brush lies before or after the stroke bounds, use the space of the closest
+	// end, otherwise interpolate to the closest point
+	if (before >= 0) {
+		pos = relStart;
+		normMat = transpose(start);
+	}
+	else if (after <= 0) {
+		pos = relEnd;
+		normMat = transpose(end);
+	}
+	else if (before == after) {
+		pos = relStart;
+		normMat = transpose(start);
+	}
+	else {
+		pos = lerp(relStart, relEnd, 1.0 - (after) / (after - before));
+		normMat = transpose(lerp(start, end, 1.0 - (after) / (after - before)));
+	}
+
+	// If the voxel falls into the space of the brush stroke at its closest point
+	// of intersection, it is affected by the brush
+	if (length(pos) <= 1.0) {
+		ColorData[id] = lerp(color0, color1, 1.0 - (after) / (after - before));
+		SurfaceData[id] = float4(normalize(mul(normMat, normalize(pos))), 0.0);
+	}
+
+}
+\end{minted}
+
+\pagebreak
+\subsection{Ray Tracer}
+\begin{minted}
+[
+frame=lines,
+framesep=2mm,
+baselinestretch=1.2,
+linenos
+]{GLSL}
+Shader "Unlit/RayTracer"
+{
+	Properties
+	{
+		// None of the 3D textures used should have default values
+		ColorData("ColorData", 3D) = "" {}
+	SurfaceData("SurfaceData", 3D) = "" {}
+	SkipData("SkipData", 3D) = "" {}
+	}
+		SubShader
+	{
+		// These tags ensure blocks are ordered from back to front
+		// and given full alpha and depth testing
+		Tags{ "Queue" = "Transparent"  "RenderType" = "AlphaTest" }
+		// Standard LOD hint for unlit shaders
+		LOD 100
+		// Ensure the right alpha blending equation is being used
+		Blend SrcAlpha OneMinusSrcAlpha
+		// Enable depth to be manipulated and tested
+		ZWrite On
+		ZTest LEqual
+
+		Pass
+	{
+
+		HLSLPROGRAM
+
+		// Hint to sacrifice precision for speed
+#pragma fragmentoption ARB_precision_hint_fastest
+		// Make sure this shader builds for a high-tier graphics model
+#pragma target 5.0
+
+#pragma vertex vert
+#pragma fragment frag
+
+#include "UnityCG.cginc"
+
+		// Datatype for vertex shader input
+		struct appdata
+	{
+		float4 vertex : POSITION;
+		float3 color : COLOR0;
+	};
+
+	// Datatype for vertex shader output and fragment shader input
+	struct v2f
+	{
+		float3 color : COLOR0;
+		float4 vertex : SV_POSITION;
+		float4 world: POSITION2;
+		float3 camera: O_DIRECTION;
+	};
+
+	// Datatype for fragment shader output
+	struct fOut {
+		float4 color : SV_TARGET;
+		float depth : SV_DEPTH;
+	};
+
+	// Holds the color data for voxels in the rendering block
+	texture3D ColorData;
+	// Holds the normal data for voxels in the rendering block
+	texture3D SurfaceData;
+	// Holds the metadata required for accellerated ray tracing
+	texture3D<int> SkipData;
+	// How many voxels wide the block is
+	int texWidth;
+	// How many Unity units wide the block is
+	float blockWidth;
+
+	// The current transform of the brush
+	//float4x4 brush_transform;
+	// The current color of the brush
+	//float4 brush_color;
+
+
+	/*
+	** The main vertex shader function
+	** Inputs are :
+	**	-  model-space position ( as vertex )
+	**	-  block-space position ( as color )
+	** Outputs are:
+	**  -  block-space position ( as color )
+	**  -  projection-space position ( as color )
+	**  -  world-space position ( as world )
+	**  -  object-space camera position ( as camera )
+	*/
+	v2f vert(appdata v)
+	{
+		v2f result;
+		// Block-space coordinates encoded in color
+		result.color = v.color;
+		// Actual projection-space vertex position
+		result.vertex = UnityObjectToClipPos(v.vertex);
+		// World-space vertex position
+		result.world = mul(unity_ObjectToWorld, v.vertex);
+		// Object-space offset from camera
+		result.camera = ObjSpaceViewDir(v.vertex);
+		return result;
+	}
+
+
+	/*
+	** The function responsible for handling volumetric transparency
+	** sampleAcc: the present value of the ongoing sample accumulator
+	** newSamp: the color value of the newest sample (from the current voxel)
+	** stepSize: the distance the ray is traversing over the voxel
+	*/
+	float4 stepsample(float4 sampleAcc, float4 newSamp,float stepSize) {
+		// Convert basic transparency to effective transparency based
+		// on how much space was traversed by the ray
+		float adjTrans = 1.0 - pow(1.0 - newSamp.w, stepSize);
+		// Calculate new ongoing sample value
+		float4 result = float4(sampleAcc.xyz + newSamp.xyz * (1 - sampleAcc.w) * adjTrans, sampleAcc.w + (1 - sampleAcc.w)* adjTrans);
+		// Clamp sampleAcc alpha to normalized range
+		result.w = clamp(result.w,0.0, 1.0);
+		return result;
+	}
+
+	/*
+	** Scans the SkipGrid in a top-down manner and retrieves required metadata
+	** coord: the coordinates of the voxel the trace is currently in
+	** sCoord: the coordinates of the voxel the trace should sample given its
+	**         current position
+	** mag: the size of the voxel being traversed through ( a power of two )
+	** covered: whether or not the current section of voxels being sampled is
+	**          enclosed by voxels of identical color
+	*/
+	void findLevel(in int3 coord, inout int3 sCoord, out float mag, out bool covered) {
+		// The level in the hierarchy being checked
+		uint level;
+		// The mask used to check if a section/level of the SkipGrid is covered
+		uint covItr = 0x80000000;
+		// Stores samples from the SkipGrid
+		int skDatum;
+		mag = texWidth;
+		covered = false;
+		// Checking levels by powers of two, highest to lowest
+		for (level = texWidth; level > 1; level >>= 1) {
+			skDatum = SkipData[coord / level];
+			covered = ((skDatum & covItr) != 0);
+			// Once similarity flag is found, escape the loop
+			if ((skDatum & (level >> 1)) != 0) {
+				break;
+			}
+			mag = mag / 2;
+			covItr >>= 1;
+		}
+		// If no similarity was found, simply return input coordinates
+		if (level == 0) {
+			sCoord = coord;
+		}
+		// Mask out bits less than the level if similarity is found
+		else {
+			sCoord = coord & (~(level - 1));
+		}
+	}
+
+	/*
+	** Samples the ColorGrid and SurfaceGrid and processes the results prior to calculating
+	** effects upon the sample accumulator
+	**
+	** sampleAcc: the ongoing sample accumulator for the trace
+	** sCoord: the coordinates to use for sampling into the ColorGrid and SurfaceGrid
+	** dist: the distance traveled by the trace during the current step
+	** covered: whether or not the region of voxels being sampled is considered covered
+	*/
+	void processStep(inout float4 sampleAcc, in float3 sCoord, in float dist, in bool covered) {
+		float4 color = ColorData[sCoord];
+		float4 surface;
+		// Count all covered voxels as having a zero normal
+		if (covered) {
+			surface = float4(0, 0, 0, 0);
+		}
+		else {
+			surface = SurfaceData[sCoord];
+		}
+		// Brighten/darken the color of the sample by the normal (a cheap diffuse shading)
+		if (color.w > 0) {
+			color.xyz *= surface.y*0.5 + 0.5;
+		}
+		sampleAcc = stepsample(sampleAcc, color, dist);
+	}
+
+
+
+	/*
+	** The main function of the fragment shader
+	** Inputs are:
+	**  -  block-space position ( as color )
+	**  -  projection-space position ( as color )
+	**  -  world-space position ( as world )
+	**  -  object-space camera position ( as camera )
+	** Outputs are:
+	**  - fragment color (as color)
+	**  - fragment depth (as depth)
+	*/
+	fOut frag(v2f i)
+	{
+
+		// The hard limit for what distance traces may travel
+		float stepMax = sqrt(texWidth*texWidth * 3);
+		// The distance accumulator
+		float stepTotal = 0;
+
+		// The hard limit for how many steps a trace may take
+		int iterMax = texWidth * 3;
+		// Counts the number of steps made by a trace
+		int iter = 0;
+
+		// Normalized direction of travel
+		float3 dirNorm = abs(normalize(i.camera));
+
+		// Sign of the axial components of the direction of travel
+		float3 fSign = 0 - sign(i.camera);
+		int3 iSign = int3(fSign);
+
+		// Floating-point representation of where in the block the
+		// trace is
+		float3 fCoord = i.color * texWidth * 0.9999999;
+
+		// The normalized offset ( or difference ) in position between the
+		// trace and the next voxel boundaries (along each axial plane)
+		// that will trigger a new step
+		float3 diff = 0.5 + fSign * (0.5 - fmod(fCoord, 1.0));
+
+		// Sampling coordinates
+		int3 sCoord;
+
+		// Integer position of trace (for referencing specific voxels)
+		int3 coord = fCoord;
+
+		// Axially decomposed representation of the parametric time required
+		// to hit the next axial plane indicated by diff
+		float3 left;
+		// The parametric time left to the soonest step transition
+		float deltaTime;
+
+		// Accumulates samples made through the life of the trace
+		float4 sampleAcc = float4(0.0, 0.0, 0.0, 0.0);
+
+		// Unit conversion between parametric time and world space
+		float tToZ = blockWidth / texWidth;
+
+		// The magnetude of the voxel being traversed
+		float mag = 1;
+
+		// Indicates whether or not the current voxel is covered
+		bool covered;
+
+		while ((stepTotal < stepMax) && (iter<iterMax)) {
+
+			findLevel(coord, sCoord, mag,covered);
+
+			diff = 0.5 + fSign * (0.5 - fmod(fCoord, 1.0*mag) / mag);
+			left = diff / dirNorm;
+			deltaTime = min(left.x, min(left.y, left.z));
+
+			processStep(sampleAcc, sCoord, deltaTime*mag, covered);
+
+			if (sampleAcc.w >= 0.99) {
+				break;
+			}
+
+			stepTotal += deltaTime * mag + 0.01;
+			fCoord = fCoord + dirNorm * (deltaTime*mag + 0.01) * fSign;
+			coord = fCoord;
+
+			if (any(fCoord < float3(0, 0, 0)) || any(fCoord > float3(texWidth, texWidth, texWidth))) {
+				break;
+			}
+			iter++;
+		}
+
+
+		// The below block of commented code is used for debugging purposes and should not
+		// be uncommented for release builds
+
+		//sampleAcc = float4(float3(fCoord)/texWidth,1.0);
+		//sampleAcc = float4(coord % 2, 1.0);
+		//sampleAcc = float4(diff ,1.0);
+		//sampleAcc = float4(fmod(fCoord, 1.0),1.0);
+		//sampleAcc = float4(left, 1.0);
+		//sampleAcc = float4( float3(t, t, t) / stepMax, 1.0);
+		//sampleAcc = float4(dirNorm*deltaTime, 1.0);
+		//sampleAcc = float4((float3(1,1,1)*stepCount)/stepMax,1.0);
+		//cAvg = normalize(cAvg); sampleAcc = float4(cAvg, 1.0);
+		//sampleAcc = float4(fmod(dirNorm * best,1.0), 1.0);
+		//sampleAcc = float4(/*log2(iter + 0.001) / 8.0*/ ((iter/(1.0*texWidth))), 0.0, 0.0, 1.0);
+
+
+		// The variable to be used as output
+		fOut result;
+
+		// The world-space offset between the default fragment position and the camera
+		float3 fragCamOffset = i.world - _WorldSpaceCameraPos;
+
+		// Calculates the depth of the terminal position of the trace
+		float3 rayHit = i.world + normalize(fragCamOffset) * stepTotal * tToZ;
+		float rayZ = mul(UNITY_MATRIX_VP, float4(rayHit, 1.0)).z;
+
+
+		result.color = float4(0, 0, 0, 0); 
+
+		// Applies the voxel sample to the result
+		if (sampleAcc.w > 0.0) {
+			result.depth = rayZ;
+			result.color = float4(result.color.xyz + (1 - result.color.w) * sampleAcc.xyz / sampleAcc.w,
+				result.color.w + (1 - result.color.w) * sampleAcc.w);
+		}
+
+		// If the result is still transparent, simply discard
+		if (result.color.w <= 0) {
+			discard;
+		}
+
+		// A debug statement for checking the depth written to fragments
+		// result.color = float4(result.depth, result.depth, result.depth,1.0);
+
+		return result;
+
+	}
+	ENDHLSL
+	}
+	}
+}
+
+\end{minted}
+
+\pagebreak
+\subsection{Update Skip Grid Compute Shader}
+\begin{minted}
+[
+frame=lines,
+framesep=2mm,
+baselinestretch=1.2,
+linenos
+]{GLSL}
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel main
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+texture3D   ColorData : register(t1);
+texture3D SurfaceData : register(t2);
+RWTexture3D<int>	SkipData : register(u3);
+RWStructuredBuffer<int> SkipBuffer : register(u4);
+
+int texWidth;
+int lastStart;
+int startLevel;
+int endLevel;
+
+// Converts 3-dimensional coordinates to linear coordinates for the
+// skip buffer
+int toLin(int3 coords) {
+	return coords.x + coords.y * texWidth + coords.z * texWidth * texWidth;
+}
+
+[numthreads(8, 8, 8)]
+void main(uint3 id : SV_DispatchThreadID)
+{
+
+	int itr;
+	int span;
+	float4 fCol = float4(0, 0, 0, 0);
+	float4 fSrf = float4(0, 0, 0, 0);
+	float4 samp = float4(0, 0, 0, 0);
+
+	int3 gCoord;
+	int3 sCoord;
+	bool3 outer;
+	int sSamp;
+	int coverMask;
+	bool matches;
+
+	// This block of code is for an eventual future feature and should not be
+	// deleted or uncommented for the time being
+	/*
+	if (startLevel != 1) {
+	int mask;
+	outer = (id%(startLevel))
+	gCoord = id + int3(startLevel, startLevel, startLevel)*(id%startLevel);
+	mask = (lastStart << 1) - 1;
+	sSamp = SkipBuffer[toLin(gCoord)];
+
+
+	AllMemoryBarrierWithGroupSync();
+	}
+	*/
+
+	// /*
+	bool colorMatch;
+	bool surfaceMatch;
+	bool covered;
+	// This calculates if the voxels associated with each position in the
+	// first level of the skip grid are covered
+	if (startLevel == 1) {
+		covered = true;
+		gCoord = id * 2;
+		fCol = ColorData[gCoord];
+		for (int z = 0; z < 4; z++) {
+			for (int y = 0; y < 4; y++) {
+				for (int x = 0; x < 4; x++) {
+					samp = ColorData[gCoord + int3(x, y, z) - int3(1, 1, 1)];
+					covered = covered && all(samp == fCol);
+				}
+			}
+		}
+	}
+	// */
+
+	// As it stands, this loop should only execute once. This loop is in place
+	// for the eventual inclusion of a future feature.
+	for (int level = startLevel; level <= endLevel; level++) {
+
+		// The largest component of twice the voxel's position
+		itr = max(id.x, max(id.y, id.z));
+		// How far apart voxels should be sampled
+		span = texWidth >> 1;
+		// Coordinates for the section of voxels to be gathered from
+		gCoord = id * (level << 1);
+		sCoord = id << 1;
+		matches = true;
+		colorMatch = true;
+		surfaceMatch = true;
+		covered = true;
+
+		// A section of a level-one component always has similarity
+		// if covered is true.
+		if (level == 1 && covered) {
+			SkipBuffer[toLin(id)] = 0x80000001;
+		}
+		// Limits processing to work groups that have something to
+		// process for the given level
+		else if (itr < span) {
+			// Sample one of the voxels in the grouping
+			fCol = ColorData[gCoord];
+			fSrf = SurfaceData[gCoord];
+
+			// Sample each voxel in the grouping in turn and, if any do
+			// not match, then similarity does not hold
+			for (int z = 0; z < 2; z++) {
+				for (int y = 0; y < 2; y++) {
+					for (int x = 0; x < 2; x++) {
+						samp = ColorData[gCoord + int3(x, y, z)*level];
+						colorMatch = colorMatch && all(samp == fCol);
+						samp = SurfaceData[gCoord + int3(x, y, z)*level];
+						surfaceMatch = surfaceMatch && all(samp == fSrf);
+
+						// Should this be a 2+ level element, similarity and cover
+						// are also checked and only transferred if true for all
+						// components
+						if (level != 1) {
+							sSamp = SkipBuffer[toLin(sCoord + int3(x, y, z))].x;
+							covered = covered && ((sSamp & (0x80000000 >> (level - 2))) != 0);
+							matches = matches && ((sSamp & (level >> 1)) != 0);
+						}
+					}
+				}
+			}
+
+			// A group matches if all have the same colors and either
+			// the same surface or universal coverage
+			matches = matches && colorMatch && (surfaceMatch || covered);
+
+			// Establishes previous state of the element
+			if (level == 1) {
+				sSamp = 0;
+			}
+			else {
+				sSamp = (SkipBuffer[toLin(id)]).x;
+			}
+
+			// Creates bitmask indicating coverage for the current level
+			if (covered) {
+				coverMask = 0x80000000 >> (level - 1);
+			}
+			else {
+				coverMask = 0;
+			}
+
+			// Adds masks to the element
+			if (matches) {
+				sSamp |= level | coverMask;
+			}
+			else {
+				sSamp &= ~(level | coverMask);
+			}
+			// Stores masks back into the element
+			SkipBuffer[toLin(id)] = sSamp;
+
+		}
+		//AllMemoryBarrierWithGroupSync();
+
+	}
+	// Stores SkipBuffer data into the actual SkipData texure
+	SkipData[id] = SkipBuffer[toLin(id)];
+
+}
+\end{minted}
+
+\pagebreak
+\subsection{Wipe Brush Compute Shader}
+\begin{minted}
+[
+frame=lines,
+framesep=2mm,
+baselinestretch=1.2,
+linenos
+]{GLSL}
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel main
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWTexture3D<float4> ColorData;
+RWTexture3D<float4> SurfaceData;
+RWTexture3D<int>	SkipData;
+
+float3 baseOffset;
+float4 color0;
+float4 color1;
+float4 sliders;
+
+int texWidth;
+
+float4x4 start;
+float4x4 end;
+
+[numthreads(8, 8, 8)]
+void main(uint3 id : SV_DispatchThreadID)
+{
+	ColorData[id] = color0;
+	SurfaceData[id] = color1;
+	if (all(id < (texWidth >> 1))) {
+		SkipData[id] = (texWidth << 1) - 1;
+	}
+}
+\end{minted}
+
 
 
 \end{document}
