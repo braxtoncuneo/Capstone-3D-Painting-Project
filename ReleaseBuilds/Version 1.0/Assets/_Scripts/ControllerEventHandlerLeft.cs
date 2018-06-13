@@ -13,8 +13,9 @@
         public GameObject colorPicker, rightController, fileText;
         public Slider alphaSlider;
         public Button saveUI, loadUI;
-        
+        public Text opacityText;
 
+        private int Opacity = 100;
         private bool triggerDown = false, touchpadDown = false, gripDown = false, save = false, load = false;
         private float x, y, hue = 0, sat = 0, val = 0, alpha = 1;
         string f = "";
@@ -43,7 +44,8 @@
                         alpha = 0f;
                     alphaSlider.value = alpha;
                     colorPicker.GetComponent<ColorPicker>().AssignColor(ColorValues.A, alpha);
-
+                    Opacity = (int)(100 * alpha);
+                    opacityText.text = Opacity.ToString();
                 }
                 else
                 {

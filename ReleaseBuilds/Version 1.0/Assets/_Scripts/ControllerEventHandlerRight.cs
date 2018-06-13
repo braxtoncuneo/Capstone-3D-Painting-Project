@@ -151,6 +151,11 @@
                 brush.transform.localScale = new Vector3(scaleXZ, scaleY, scaleXZ);
             }
 
+            if (Input.GetButtonDown("Wipe"))
+            {
+                brush.Wipe();
+            }
+
             //cursor object - will be removed upon later update
             cursorSphere.transform.localScale = new Vector3(scaleXZ + 1.8f, scaleY + 1.8f, scaleXZ + 1.8f);
             sphereMat.color = new Color(color.x, color.y, color.z, color.w);
