@@ -1,5 +1,5 @@
 LATEX	= /usr/local/apps/tex_live/current/bin/x86_64-linux/latex -shell-escape
-BIBTEX	= bibtex
+BIBTEX	= /usr/local/apps/tex_live/current/bin/x86_64-linux/bibtex 
 DVIPS	= dvips
 DVIPDF  = dvipdft
 XDVI	= xdvi -gamma 4
@@ -21,7 +21,7 @@ $(TRG): %.dvi: %.tex $(EXAMPLES)
 	#requires that you \include{pygments.tex} in your preamble
 
 	$(LATEX) $<
-	$(BIBTEX) $(<:%.tex=%i); true
+	$(BIBTEX) $(<:%.tex=%)
 	$(LATEX) $<
 	$(LATEX) $<
 	#remove the pygmentized output to avoid cluttering up the directory
