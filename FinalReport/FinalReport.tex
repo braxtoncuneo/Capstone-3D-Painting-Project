@@ -400,50 +400,83 @@ Should the project be completed ahead of time, or become open source, maintainab
 
 \subsection{Amendments}
 
--\$\$ No requirements have changed
+\threesection{Amendments}
+The Unity game engine clamped us to 60 frames per second so we had to change our requirements slightly. Originally we had set a goal for 90 frames per second. However, after reviewing our platform we found that this was not attainable and set the requirement back to 60 frames per second.
 
-
-\subsection{Gantt Chart}
-\threesection{Gantt Chart}
+\subsection{Revised Gantt Chart}
+\threesection{Revised Gantt Chart}
 \begin{ganttchart}{1}{20}
 	
 	\gantttitle{PolyVox: Task list work flow}{20} \\
 	
 	%Project Tasks
-	\ganttbar{Research}{1}{1}\\
-	\ganttbar{Design}{2}{3}\\
-	\ganttbar{User interface}{4}{8}\\
-	\ganttbar{3D editor}{6}{11}\\
-	\ganttbar{Creation Tools}{9}{11}\\
-	\ganttbar{HMD and motion controls capture}{2}{3} \ganttbar{}{10}{14}\\
-	\ganttbar{Desktop applicaiton}{12}{14}\\
-	\ganttbar{VR application}{15}{17}\\
-	\ganttbar{User tests}{18}{19}\\
-	\ganttbar{Software Limitation tests}{19}{19}\\
-	\ganttbar{Demo Preperation}{20}{20}\\
+	\ganttbar{Research}{1}{1} %Elem0
+	\ganttbar{}{2}{4} %Elem1
+	\ganttbar{}{5}{6} %Elem2
+	\ganttbar{}{7}{9} %Elem3
+	\ganttbar{}{10}{11}\\ %Elem4
+	
+	\ganttbar{Design}{2}{3} %Elem5
+	\ganttbar{}{6}{6} %Elem6
+	\ganttbar{}{10}{10} %Elem7
+	\\
+	
+	\ganttbar{User interface}{4}{6} %Elem8
+	\ganttbar{}{8}{10} %Elem9
+	\ganttbar{}{12}{13}\\ %Elem10
+	
+	
+	\ganttbar{3D editor}{4}{13}\\ %Elem11
+	
+	\ganttbar{Creation Tools}{9}{14}\\ %Elem12
+	
+	\ganttbar{HMD and motion controls capture}{9}{11}\\ %Elem13
+	
+	\ganttbar{Desktop applicaiton}{9}{11}\\ %Elem14
+	
+	\ganttbar{VR application}{12}{12} %Elem15
+	\ganttbar{}{14}{17}\\ %Elem16
+	
+	\ganttbar{User tests}{19}{19}\\ %Elem17
+	
+	\ganttbar{Software tests}{5}{18}\\ %Elem18
+	
+	\ganttbar{Demo Preperation}{20}{20}\\ %Elem19
 	
 	%Links
 	\ganttlink{elem0}{elem5}
-	\ganttlink{elem0}{elem1}
+	\ganttlink{elem0}{elem8}
+	\ganttlink{elem0}{elem11}
+	\ganttlink{elem4}{elem10}
 	
-	\ganttlink{elem1}{elem2}
-	\ganttlink{elem1}{elem3}
-	\ganttlink{elem1}{elem4}
+	\ganttlink{elem5}{elem8}
+	
 	\ganttlink{elem1}{elem6}
-	
-	\ganttlink{elem3}{elem4}
+	\ganttlink{elem6}{elem9}
+	\ganttlink{elem6}{elem12}
+	\ganttlink{elem6}{elem13}
+	\ganttlink{elem6}{elem14}
 	
 	\ganttlink{elem2}{elem7}
+	\ganttlink{elem2}{elem12}
+	\ganttlink{elem2}{elem13}
+	\ganttlink{elem2}{elem13}
+	
 	\ganttlink{elem3}{elem7}
-	\ganttlink{elem4}{elem7}
+	\ganttlink{elem7}{elem10}
 	
-	\ganttlink{elem6}{elem8}
-	\ganttlink{elem7}{elem8}
+	\ganttlink{elem9}{elem15}
+	\ganttlink{elem8}{elem14}
+	\ganttlink{elem10}{elem16}
+	\ganttlink{elem11}{elem16}
+	\ganttlink{elem12}{elem16}
+	\ganttlink{elem13}{elem15}
+	\ganttlink{elem14}{elem15}
+	\ganttlink{elem15}{elem16}
 	
-	\ganttlink{elem8}{elem9}
-	\ganttlink{elem8}{elem10}
-	\ganttlink{elem8}{elem11}
-	
+	\ganttlink{elem16}{elem17}
+	\ganttlink{elem17}{elem19}
+		
 	%MILESTONES
 	\ganttmilestone{MILESTONES}{3}
 	\ganttmilestone{}{8}
@@ -1348,12 +1381,21 @@ Fall/1 & Christopher &
 
 \\ \hline
 Fall/1 & Richard & 
+Submit bids for projects \newline
+Write first draft of personal bio  \newline
+Edit resume during class on Tuesday, 9/26/2017  \newline
+Put together OneNote and share with instructors
 
 &
 
 &
+Submitted project bids, including favored projects, unfavored projects and students I do not wish to work with \newline
+Put together OneNote for class, and shared with both instructors \newline
+Contacted Dr. Mike Bailey about bidding directly on his project
 
 &
+Most of the work performed this week was preparations for my senior project and the class as a whole.  
+I put together my OneNote, submitted bids and edited my resume. After looking over projects and speaking with Braxton Cuneo, he and I decided to bid directly on the VR painting project put forward by Dr. Mike Bailey, who we have both worked with previously. He was very  receptive and agreed to submit a request to have us and a student of our choice placed on the project. 
 
 \\ \hline
 Fall/1 & Braxton & Get my project assignments taken care of.
@@ -1374,13 +1416,20 @@ Fall/2 & Christopher &
 
 \\ \hline
 Fall/2 & Richard & 
+Complete first draft of project problem statement \newline
+Schedule a regular meeting with Dr. Bailey \newline
+Coordinate with group members
 
 &
+Due to coming down with a cold, I made less progress on drafting my problem statement than I intended. 
+&
+Set a regular meeting time with Dr. Bailey. \newline
+Met and coordinated with group members. \newline
+Set up a group calendar for the project. \newline
+Began work on first draft of problem statement. 
 
 &
-
-&
-
+Having already formed our group last week, meeting and coordinating with them did not require much effort. After coordinating with them and Dr. Bailey, we agreed to meet Wednesdays during odd numbered weeks (with relation to term week numbering) from 4:00PM to 5:00PM. Additionally, I created a communal google calendar for use in the project. I began work on the first draft of the problem statement for the project, however, I made less progress than intended, partially due to coming down with a cold. 
 \\ \hline
 Fall/2 & Braxton & 
 Await team assignment confirmation. 
@@ -1401,13 +1450,24 @@ Fall/3 & Christopher &
 
 \\ \hline
 Fall/3 & Richard & 
+Meet with group and Dr. Bailey \newline
+Research VR SDK's \newline
+Research VR support in Unity and Unreal engines \newline
+Research capabilities of different VR systems \newline
+Work on final draft of problem statement 
 
 &
 
 &
+Met with Dr. Bailey and had a productive discussion about the direction of the project. \newline
+Coordinated with Andrew Emmott and determined a suitable meeting time for the four of us. \newline
+Set a meeting time to create a unified final draft of our problem statement. \newline
+Did preliminary research on VR support, but I have yet to make a decision as to which engine I support. \newline
+As we were informed that we would be supplied with an HTC Vive, we will be focusing development on it's specific hardware for the time being.  
 
 &
-
+This week was fairly productive. Out group met with Dr. Bailey on Wednesday and discussed high level technical decisions for the project. While little was set in stone, we did decide that all geometry within our program, regardless of how it is implemented, would be exclusively comprised of legal solids. We still need to determine which game engine we will be building our program in, as Unity and Unreal both have distinct advantages. We will further discuss the matter after we have all done research on the differences in the engines' respective VR support.  
+Additionally, I finished my rough draft of the problem statement for our project. Braxton, Chris and myself have agreed to meet Monday the 15th to coordinate our drafts and begin work on a final, unified draft, which we will then send to Dr. Bailey for approval. 
 \\ \hline
 Fall/3 & Braxton & 
 Finish up initial preparation for project \newline
@@ -1431,12 +1491,22 @@ Fall/4 & Christopher &
 
 \\ \hline
 Fall/4 & Richard & 
+Discuss project details with team. \newline
+Determine content for final draft of problem statement. \newline
+Write final draft of problem statement \newline
+Meet with Dr. Winters to discuss project. \newline
 
 &
+The primary challenge this week was scheduling, due partly to this week having the OSU career fair and Networking Night, as well as personal schedule conflicts with myself, Braxton and Chris. This caused the group to wait until the eleventh hour to finish our final draft of the problem statement. 
+&
+Met with Dr. Winters 
+Finished final draft of Problem statement \newline
+Discussed specifications for project with team \newline
+Determined working project and team names \newline
 
 &
-
-&
+This week was fairly hectic due to various scheduling conflicts. I had several personal matters to attend to, Chris became sick, and Braxton had several meetings regarding honors college. We met with Dr. Winters to discuss the project, particularly our current plans, decisions we had made with regards to design, and challenges we were having. While the meeting did not make much progress on the design of the project, it served to bring Dr. Winters up to speed on the state of the project. 
+The primary work accomplished this week was the completion of the final draft of the Problem statement. The team met early in the week to discuss what elements of our drafts should be present in the final paper, as well as what else we may have all left out hen writing individually. While we were together, we briefly spoke about possible design decisions, as well as possible names for the program. We finished our draft Thursday night, and were able to turn it in nine hours before the due time, in the proper format. 
 
 \\ \hline
 Fall/4 & Braxton & 
@@ -1471,13 +1541,22 @@ Fall/5 & Christopher &
 
 \\ \hline
 Fall/5 & Richard & 
+Begin work on requirements document. \newline
+Speak with contacts about possible VR resources. \newline
+Begin testing prospective game engines. \newline
+Meet with Dr. Bailey \newline
+Meet with Andrew Emmott. 
 
 &
 
 &
+Wrote the first draft of the project requirements document. \newline
+Spoke with Dr. Cindy Grimm and Todd Kesterson about the project. Dr. Grimm sent me some resources relating to previous 3D art programs she has encountered, and Kesterson agreed to meet next week. \newline
+Met with Andrew and discussed the basic outline of our project. \newline
+Met with Dr. Bailey and Dr. Winters and discussed some of the technical specifications of the project. \newline
 
 &
-
+Our group had a relatively productive week. We met with Andrew Emmott for the first time, where we discussed the outline of our project. I spoke with Dr. Grimm and Instructor Kesterson, inquiring if they might be able to aid our project in some way. Dr. Grimm sent some materials relating to similar projects she has seen, and Kesterson has agreed to meet with me next week. Our group met with Dr. Bailey and Dr. Winters, where we spoke more about technical specifications for the project. Finally, our group wrote and submitted the draft of our requirements document on Friday. 
 \\ \hline
 Fall/5 & Braxton & 
 
@@ -1508,13 +1587,21 @@ Fall/6 & Christopher &
 
 \\ \hline
 Fall/6 & Richard & 
+Meet with Todd Kesterson. \newline
+Weekly meeting with Andrew Emmott. \newline
+Submit requirements document draft to Dr. Bailey for approval. \newline
+Finalize requirements document for submission. 
 
 &
 
 &
+Wrote the first draft of the project requirements document. \newline
+Spoke with Dr. Cindy Grimm and Todd Kesterson about the project. Dr. Grimm sent me some resources relating to previous 3D art programs she has encountered, and Kesterson agreed to meet next week. \newline
+Met with Andrew and discussed the basic outline of our project. \newline
+Met with Dr. Bailey and Dr. Winters and discussed some of the technical specifications of the project. \newline
 
 &
-
+The week was relatively productive. I had a meeting with Todd Kesterson relating to use of the New Media Communications' VR lab. He gave permission to use the lab's equipment for testing our project, and suggested I contact the VR club on campus.. Additionally, the group completed our final draft on the requirements document, and got approval from Dr. Bailey.  
 \\ \hline
 Fall/6 & Braxton & 
 
@@ -1545,13 +1632,18 @@ Fall/7 & Christopher &
 
 \\ \hline
 Fall/7 & Richard & 
+Begin work on tech review. \newline
+Meet with Andrew Emmott. \newline
+Meet with Dr. Bailey 
 
 &
+Due to confusion regarding Dr. Bailey's schedule, he was unexpectedly not present for this week's meeting. 
+&
+Dr. Bailey was able to meet with Intel, who were very excited to work with us, and offered to supply additional materials if needed. \newline
+Began work on tech review. 
 
 &
-
-&
-
+The week was not terribly eventful, with the exception of Intel expressing a strong interest in our project. Beyond that, the group has begun coordinating on putting together our tech reviews. Dr. Winters has agreed to begin the process to get us access to a VR rig for early development testing. 
 \\ \hline
 Fall/7 & Braxton & 
 
@@ -1586,13 +1678,19 @@ Fall/8 & Christopher &
 
 \\ \hline
 Fall/8 & Richard & 
+Meet with Andrew. \newline
+Finish draft of tech review. 
 
 &
+Made a mistake on the subject of the tech review, and will need to significantly rewrite a section. \newline
+Developed another cold, resulting in me missing the capstone lecture on Thursday.  
 
 &
+Wrote tech review draft. \newline
+Met with Andrew, who gave advice for review. 
 
 &
-
+The week was relatively calm. Beyond meeting with Andrew, who gave advice regarding how the tech review should be structured, and writing the first draft of the review, little occurred. I will need to rewrite a section of my review, and perform minor editing, but otherwise my review came out solidly enough. 
 \\ \hline
 Fall/8 & Braxton & 
 
@@ -1624,13 +1722,17 @@ Fall/9 & Christopher &
 
 \\ \hline
 Fall/9 & Richard & 
+Finish tech review. \newline
+Begin work on design document. 
 
 &
+Due to Thanksgiving weekend, I had little time to work due to travel time and staying in an area with limited internet access. 
+&
+Finished work on tech review. \newline
+Began work on design document. 
 
 &
-
-&
-
+There was not much done this week due to the Thanksgiving weekend. I was able to finish my tech review and begin work on the design document. However, I was unable to attend the Wednesday meeting. Due to similar schedule conflicts, the group agreed to change our meeting to next Wednesday.
 \\ \hline
 Fall/9 & Braxton & 
 
@@ -1662,13 +1764,20 @@ Fall/10 & Christopher &
 
 \\ \hline
 Fall/10 & Richard & 
+Finish Standard Design Description for turn in. \newline
+Construct final presentation. \newline
+Write progress report. 
 
 &
+The week was exceedingly busy due to responsibilities from other classes, leading to several projects being turned in last minute. \newline
+The weekly meeting with Dr. Winters and Dr. Bailey was canceled once again due to schedule conflicts on both of their parts. 
 
 &
+Finished draft of the SDD by the appropriate turn in date. \newline
+Compiled a list of hardware to request from Intel for use in the project. 
 
 &
-
+Much of the week was spent scrambling due to assignments from other classes. Most of the work put into the SDD was done on Wednesday, Thursday and Friday. However, the team was able to finish the SDD on time and of satisfactory quality.  
 \\ \hline
 Fall/10 & Braxton & 
 
