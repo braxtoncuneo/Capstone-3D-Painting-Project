@@ -400,50 +400,83 @@ Should the project be completed ahead of time, or become open source, maintainab
 
 \subsection{Amendments}
 
--\$\$ No requirements have changed
+\threesection{Amendments}
+The Unity game engine clamped us to 60 frames per second so we had to change our requirements slightly. Originally we had set a goal for 90 frames per second. However, after reviewing our platform we found that this was not attainable and set the requirement back to 60 frames per second.
 
-
-\subsection{Gantt Chart}
-\threesection{Gantt Chart}
+\subsection{Revised Gantt Chart}
+\threesection{Revised Gantt Chart}
 \begin{ganttchart}{1}{20}
 	
 	\gantttitle{PolyVox: Task list work flow}{20} \\
 	
 	%Project Tasks
-	\ganttbar{Research}{1}{1}\\
-	\ganttbar{Design}{2}{3}\\
-	\ganttbar{User interface}{4}{8}\\
-	\ganttbar{3D editor}{6}{11}\\
-	\ganttbar{Creation Tools}{9}{11}\\
-	\ganttbar{HMD and motion controls capture}{2}{3} \ganttbar{}{10}{14}\\
-	\ganttbar{Desktop applicaiton}{12}{14}\\
-	\ganttbar{VR application}{15}{17}\\
-	\ganttbar{User tests}{18}{19}\\
-	\ganttbar{Software Limitation tests}{19}{19}\\
-	\ganttbar{Demo Preperation}{20}{20}\\
+	\ganttbar{Research}{1}{1} %Elem0
+	\ganttbar{}{2}{4} %Elem1
+	\ganttbar{}{5}{6} %Elem2
+	\ganttbar{}{7}{9} %Elem3
+	\ganttbar{}{10}{11}\\ %Elem4
+	
+	\ganttbar{Design}{2}{3} %Elem5
+	\ganttbar{}{6}{6} %Elem6
+	\ganttbar{}{10}{10} %Elem7
+	\\
+	
+	\ganttbar{User interface}{4}{6} %Elem8
+	\ganttbar{}{8}{10} %Elem9
+	\ganttbar{}{12}{13}\\ %Elem10
+	
+	
+	\ganttbar{3D editor}{4}{13}\\ %Elem11
+	
+	\ganttbar{Creation Tools}{9}{14}\\ %Elem12
+	
+	\ganttbar{HMD and motion controls capture}{9}{11}\\ %Elem13
+	
+	\ganttbar{Desktop applicaiton}{9}{11}\\ %Elem14
+	
+	\ganttbar{VR application}{12}{12} %Elem15
+	\ganttbar{}{14}{17}\\ %Elem16
+	
+	\ganttbar{User tests}{19}{19}\\ %Elem17
+	
+	\ganttbar{Software tests}{5}{18}\\ %Elem18
+	
+	\ganttbar{Demo Preperation}{20}{20}\\ %Elem19
 	
 	%Links
 	\ganttlink{elem0}{elem5}
-	\ganttlink{elem0}{elem1}
+	\ganttlink{elem0}{elem8}
+	\ganttlink{elem0}{elem11}
+	\ganttlink{elem4}{elem10}
 	
-	\ganttlink{elem1}{elem2}
-	\ganttlink{elem1}{elem3}
-	\ganttlink{elem1}{elem4}
+	\ganttlink{elem5}{elem8}
+	
 	\ganttlink{elem1}{elem6}
-	
-	\ganttlink{elem3}{elem4}
+	\ganttlink{elem6}{elem9}
+	\ganttlink{elem6}{elem12}
+	\ganttlink{elem6}{elem13}
+	\ganttlink{elem6}{elem14}
 	
 	\ganttlink{elem2}{elem7}
+	\ganttlink{elem2}{elem12}
+	\ganttlink{elem2}{elem13}
+	\ganttlink{elem2}{elem13}
+	
 	\ganttlink{elem3}{elem7}
-	\ganttlink{elem4}{elem7}
+	\ganttlink{elem7}{elem10}
 	
-	\ganttlink{elem6}{elem8}
-	\ganttlink{elem7}{elem8}
+	\ganttlink{elem9}{elem15}
+	\ganttlink{elem8}{elem14}
+	\ganttlink{elem10}{elem16}
+	\ganttlink{elem11}{elem16}
+	\ganttlink{elem12}{elem16}
+	\ganttlink{elem13}{elem15}
+	\ganttlink{elem14}{elem15}
+	\ganttlink{elem15}{elem16}
 	
-	\ganttlink{elem8}{elem9}
-	\ganttlink{elem8}{elem10}
-	\ganttlink{elem8}{elem11}
-	
+	\ganttlink{elem16}{elem17}
+	\ganttlink{elem17}{elem19}
+		
 	%MILESTONES
 	\ganttmilestone{MILESTONES}{3}
 	\ganttmilestone{}{8}
