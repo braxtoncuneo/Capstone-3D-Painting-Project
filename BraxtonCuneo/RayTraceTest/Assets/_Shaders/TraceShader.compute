@@ -1,0 +1,43 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel main
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWTexture2D<float4>	color_texture;
+Texture2D<float>  	old_depth;
+//RWTexture2D<float>	new_depth;
+
+
+int2 screen_dims;
+
+[numthreads(8,8,1)]
+void main (uint3 id : SV_DispatchThreadID)
+{
+
+
+    int i;
+    float f = modf( old_depth[id.xy] * 1000, i );
+
+    int step = 0;
+    float3 ray_pos = float3( (id.xy - (screen_dims / 2.0))/screen_dims, 1);
+    float3 ray_dir = normalize(ray_pos);
+    ray_pos += float3(0.0,0.0,-50.0);
+
+
+    //if( ((((id.x / 32) + (id.y / 32)) % 2) == 0) ) {
+    	for(step = 0; step < 35; step++){
+    		if(length(ray_pos) < 10.0 ){
+    			if(length(ray_pos+float3(0.0,0.0,50.0)) < (old_depth[id.xy]*100.0) ){
+        			color_texture[id.xy] = float4(1.0,0.0,0.0,1.0); 
+        		}
+        		break;
+        	} else {
+        		ray_pos += ray_dir * (length(ray_pos) - 9.95) * 0.5;
+        	}
+    	}
+    //}
+
+    //new_depth = old_depth;
+
+}
+

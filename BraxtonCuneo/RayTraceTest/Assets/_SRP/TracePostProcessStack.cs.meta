@@ -1,0 +1,13 @@
+fileFormatVersion: 2
+guid: 59e7a6dd5a8612e9599dbad224c70e3c
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - tracer: {fileID: 7200000, guid: ca9e56e3092540049be4d0b98518c5f0, type: 3}
+  - blitter: {fileID: 4800000, guid: 4bc5a79ec6372ed25a57c9ebeef2138e, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
