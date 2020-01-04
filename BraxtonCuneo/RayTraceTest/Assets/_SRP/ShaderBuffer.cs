@@ -20,10 +20,10 @@ public class ShaderBuffer : ScriptableObject
 
 
 	public void init(){
-		Debug.Log("INIT_ATTEMPT");
+		//Debug.Log("INIT_ATTEMPT");
 		if(compute_buffer == null){
 			if(inited == true){
-				Debug.Log("RE-INITED");
+				//Debug.Log("RE-INITED");
 			}
 			compute_buffer = new ComputeBuffer(1,4,type);
 		}
@@ -32,7 +32,7 @@ public class ShaderBuffer : ScriptableObject
 				return;
 			}
 			if(inited == true){
-				Debug.Log("RE-INITED");
+				//Debug.Log("RE-INITED");
 			}
 			buffer = new int[1];
 		}
@@ -63,7 +63,7 @@ public class ShaderBuffer : ScriptableObject
 
 	}
 
-	protected void write(int dest_idx, float src) {
+	protected void write_float(int dest_idx, float src) {
 
 		buffer [dest_idx] = BitConverter.ToInt32(BitConverter.GetBytes(src),0);
 
@@ -89,6 +89,7 @@ public class ShaderBuffer : ScriptableObject
 
 		for (int i = 0; i < 4; i++) {
 			buffer [dest_idx + i] = BitConverter.ToInt32(BitConverter.GetBytes(src [i]),0);
+			Debug.Log(src[i]);
 		}
 
 	}
@@ -116,6 +117,45 @@ public class ShaderBuffer : ScriptableObject
 
 	}
 
+	protected float read_float(int src_idx){
+		
+		return BitConverter.ToSingle(BitConverter.GetBytes(buffer [src_idx]),0);
+
+	}
+
+	protected Vector2 read_Vector2(int src_idx){
+
+		return new Vector2(read_float(src_idx),read_float(src_idx+1));
+
+	}
+
+	protected Vector3 read_Vector3(int src_idx){
+
+		return new Vector3(read_float(src_idx),read_float(src_idx+1),read_float(src_idx+2));
+
+	}
+
+	protected Vector4 read_Vector4(int src_idx){
+
+		return new Vector4(read_float(src_idx),read_float(src_idx+1),read_float(src_idx+2),read_float(src_idx+3));
+
+	}
+
+	protected Vector2Int read_Vector2Int(int src_idx){
+
+		return new Vector2Int(buffer[src_idx],buffer[src_idx+1]);
+
+	}
+
+	protected Vector3Int read_Vector3Int(int src_idx){
+
+		return new Vector3Int(buffer[src_idx],buffer[src_idx+1],buffer[src_idx+2]);
+
+	}
+
+
+
+
 	/*
 	protected void write(int dest_idx, Vector4Int src) {
 
@@ -134,15 +174,18 @@ public class ShaderBuffer : ScriptableObject
 			(compute_buffer.count == buffer.Length) && 
 			(new_size == buffer.Length) 
 		){
-			Debug.Log("ABORTING");
+			//Debug.Log("ABORTING");
 			return;
 		}
 
+		/*
 		Debug.Log("RESIZING");
 		Debug.Log((compute_buffer != null));
 		Debug.Log((buffer != null));
 		Debug.Log((compute_buffer.count == buffer.Length));
 		Debug.Log((new_size == buffer.Length));
+		*/
+
 
 		init();
 
@@ -210,10 +253,13 @@ public class ShaderBuffer : ScriptableObject
 
 		init();
 
+		/*
 		Debug.Log(inited);
 		Debug.Log(compute_buffer);
 		Debug.Log(buffer);
 		Debug.Log(buffer.Length);
+		*/
+
 
 		compute_buffer.SetData (buffer,0,0,buffer.Length);
 		//compute_buffer.GetData (buffer,0,0,buffer.Length);

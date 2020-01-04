@@ -13,4 +13,5 @@ MonoBehaviour:
   m_Name: TRACE_PPS
   m_EditorClassIdentifier: 
   tracer: {fileID: 7200000, guid: 57e3def607ada13edabaeb67a8e70407, type: 3}
+  drawer: {fileID: 7200000, guid: 26ba83d48092f6453bdb8af121505717, type: 3}
   blitter: {fileID: 4800000, guid: 4bc5a79ec6372ed25a57c9ebeef2138e, type: 3}

@@ -30,6 +30,11 @@ public class TracePipeline : RenderPipeline {
 	protected override void Render (
 		ScriptableRenderContext renderContext, Camera[] cameras
 	) {
+
+		defaultStack.Draw(post_proc_buffer);
+		renderContext.ExecuteCommandBuffer (post_proc_buffer);
+		post_proc_buffer.Clear ();
+
 		//base.Render (renderContext, cameras);
 		foreach (var camera in cameras) {
 			Render (renderContext, camera);
@@ -41,6 +46,7 @@ public class TracePipeline : RenderPipeline {
 
 
 		context.SetupCameraProperties(camera);
+
 
 		/*
 		if (defaultStack) {

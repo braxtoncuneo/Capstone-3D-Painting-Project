@@ -1,0 +1,31 @@
+#!/bin/bash
+
+shade_dir=./Assets/_Shaders
+
+draw_hlsl=$shade_dir/SmartDraw.compute
+draw_meta=$shade_dir/SmartDraw.compute.meta
+draw_glsl=$shade_dir/SmartDraw.comp
+
+draw_guid=$(grep guid $draw_meta)
+draw_guid=${draw_guid#guid: }
+
+meta_file=$(find -name $draw_guid)
+vrsn_line=$(grep --text -n "#version" $meta_file)
+vrsn_line=${vrsn_line%%:*}
+cat $meta_file > meta_file
+cat $meta_file | tail -n +$vrsn_line > temp_meta_file
+grep --text -n -P "\x00" temp_meta_file > temp_meta_lines
+last_line=$(tr -c '[:print:]\n' '[ *]' < temp_meta_lines | tail -n +2 | head -n 1) 
+last_line=${last_line%%:*}
+last_line=$(( last_line + vrsn_line - 1 ))
+
+tail -n +$last_line $meta_file > draw_meta_end
+head -n $(( vrsn_line - 1 )) $meta_file > draw_meta_beg
+
+cat draw_meta_beg $draw_glsl draw_meta_end > good_meta
+
+cp -f good_meta $meta_file
+
+#echo $vrsn_line
+#echo $last_line
+
