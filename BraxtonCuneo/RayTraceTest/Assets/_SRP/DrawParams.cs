@@ -10,7 +10,7 @@ public class DrawParams :  ShaderBuffer
 
 	public void init() {
 		base.init ();
-		resize ( 4 );
+		resize ( 8 );
 		Debug.Log("INIT DRAW");
 
 	}
@@ -22,10 +22,10 @@ public class DrawParams :  ShaderBuffer
 
 	public Vector3 brush_center {
 		get {
-			return read_Vector3(1);
+			return read_Vector3(4);
 		}
 		set {
-			write(1,value);
+			write(4,value);
 		}
 	}
 

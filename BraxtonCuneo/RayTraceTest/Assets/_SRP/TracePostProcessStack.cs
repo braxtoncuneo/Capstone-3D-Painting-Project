@@ -135,6 +135,7 @@ public class TracePostProcessStack : ScriptableObject {
 
 
 
+
 	void InitializeDraw(){
 
 		if(draw_kernel_index == -1){
@@ -167,12 +168,12 @@ public class TracePostProcessStack : ScriptableObject {
 
 		drawer.SetBuffer(draw_kernel_index, noUnrollId, no_unroll_buffer);
 
-
+		//*
 		wg_count_buffer.work_group_count.x = 64;
 		wg_count_buffer.work_group_count.y = 1;
 		wg_count_buffer.work_group_count.z = 1;
 		wg_count_buffer	.push(drawer);
-
+		//*/
 
 
 	}
@@ -226,11 +227,12 @@ public class TracePostProcessStack : ScriptableObject {
 		tp.bind(tracer, trace_kernel_index, traceParamId);
 		tp.push();
 
-
+		//*
 		wg_count_buffer.work_group_count.x = 64;
 		wg_count_buffer.work_group_count.y = 1;
 		wg_count_buffer.work_group_count.z = 1;
 		wg_count_buffer	.push(tracer);
+		//*/
 
 
 	}
@@ -238,7 +240,8 @@ public class TracePostProcessStack : ScriptableObject {
 
 	public void Draw (CommandBuffer cb) {
 
-		//*
+
+		/*
 
 		InitializeStatic();
 		InitializeDraw();
@@ -250,7 +253,9 @@ public class TracePostProcessStack : ScriptableObject {
 
 
 		if( (frame % 100) == 0){
-			geom_buffer[1] = 0;
+			int[] nu_buff = {0};
+			no_unroll_buffer.SetData (nu_buff,0,0,1);
+			geom_buffer[1] = 0;//1 << ((frame % 300)/3);
 			geom_buffer.push();
 		}
 
