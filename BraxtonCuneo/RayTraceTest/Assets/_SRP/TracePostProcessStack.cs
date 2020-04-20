@@ -65,7 +65,7 @@ public class TracePostProcessStack : ScriptableObject {
 
 		//Debug.Log("HMMM");
 		//Debug.Log(data_buffer);
-		if(data_buffer == null){
+		if(data_buffer == null) {
 			//Debug.Log("YUP");
 			data_buffer		= ScriptableObject.CreateInstance<DataBuffer>();
 			geom_buffer		= ScriptableObject.CreateInstance<DataBuffer>();
@@ -238,10 +238,12 @@ public class TracePostProcessStack : ScriptableObject {
 	}
 
 
+
+
 	public void Draw (CommandBuffer cb) {
 
 
-		/*
+		//*/
 
 		InitializeStatic();
 		InitializeDraw();
@@ -252,17 +254,17 @@ public class TracePostProcessStack : ScriptableObject {
 		task_buffer.prime();
 
 
-		if( (frame % 100) == 0){
-			int[] nu_buff = {0};
-			no_unroll_buffer.SetData (nu_buff,0,0,1);
-			geom_buffer[1] = 0;//1 << ((frame % 300)/3);
+		//if( (frame % 100) == 0){
+			//int[] nu_buff = {0};
+			//no_unroll_buffer.SetData (nu_buff,0,0,1);
+			geom_buffer[1] = 0;//1 << ((frame /100) % 32);
 			geom_buffer.push();
-		}
+		//}
 
 		draw_params.push(drawer);
 
 
-
+		//Debug.Log("Drawer is: "+draw_kernel_index.ToString());
 
 
 		cb.DispatchCompute (drawer, draw_kernel_index, 64,1,1);//camera.pixelWidth / 8, camera.pixelHeight / 8, 1);

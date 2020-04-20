@@ -2,14 +2,14 @@
 
 static const uint3 gl_WorkGroupSize = uint3(8u, 8u, 1u);
 
-static const uint _273[18] = { 64132284u, 50872888u, 26350396u, 26358936u, 43315464u, 64020664u, 26272920u, 63316496u, 64119996u, 26374296u, 26408100u, 59958460u, 30442524u, 59937976u, 64021564u, 64021536u, 38954148u, 0u };
-static const uint _2850[32] = { 20u, 8u, 9u, 19u, 27u, 9u, 19u, 27u, 1u, 27u, 20u, 8u, 9u, 18u, 20u, 25u, 27u, 20u, 23u, 15u, 27u, 3u, 8u, 1u, 18u, 27u, 17u, 21u, 15u, 20u, 5u, 0u };
-static const uint _2852[10] = { 2u, 1u, 4u, 27u, 1u, 12u, 12u, 15u, 3u, 0u };
-static const uint _2854[9] = { 2u, 1u, 4u, 27u, 6u, 18u, 5u, 5u, 0u };
+static const uint _269[18] = { 64132284u, 50872888u, 26350396u, 26358936u, 43315464u, 64020664u, 26272920u, 63316496u, 64119996u, 26374296u, 26408100u, 59958460u, 30442524u, 59937976u, 64021564u, 64021536u, 38954148u, 0u };
+static const uint _2829[32] = { 20u, 8u, 9u, 19u, 27u, 9u, 19u, 27u, 1u, 27u, 20u, 8u, 9u, 18u, 20u, 25u, 27u, 20u, 23u, 15u, 27u, 3u, 8u, 1u, 18u, 27u, 17u, 21u, 15u, 20u, 5u, 0u };
+static const uint _2831[10] = { 2u, 1u, 4u, 27u, 1u, 12u, 12u, 15u, 3u, 0u };
+static const uint _2833[9] = { 2u, 1u, 4u, 27u, 6u, 18u, 5u, 5u, 0u };
 
 RWStructuredBuffer<uint> mem_man  : register(u2); 
 RWStructuredBuffer<uint> trace  : register(u3); 
-RWByteAddressBuffer no_unroll : register(u7);
+RWStructuredBuffer<uint> no_unroll  : register(u7); 
 RWStructuredBuffer<uint> geom  : register(u6); 
 RWStructuredBuffer<uint> debug_log  : register(u0); 
 RWStructuredBuffer<uint> data  : register(u1); 
@@ -34,8 +34,6 @@ static bool _log_overflow;
 static uint _current_chunk;
 static uint _log_pos;
 static uint uint_to_exact_table;
-static uint all_locked_treelet;
-static uint all_free_treelet;
 static bool actually_alloced;
 static uint bucket;
 static uint last;
@@ -51,13 +49,13 @@ static uint gid;
 static uint _charbuff[5];
 static uint hmm;
 
-uint _388;
-uint _779;
-uint _859;
-uint _939;
-uint _997;
-uint _1086;
-uint _1144;
+uint _384;
+uint _775;
+uint _855;
+uint _935;
+uint _993;
+uint _1081;
+uint _1138;
 
 void galloc_initialize()
 {
@@ -71,35 +69,35 @@ void galloc_initialize()
 
 bool uniforms_bad()
 {
-    bool _2335 = any(bool2(uint2(trace[(0)/4],trace[(0)/4+1]).x < uint2(0u, 0u).x, uint2(trace[(0)/4],trace[(0)/4+1]).y < uint2(0u, 0u).y));
-    bool _2345;
-    if (!_2335)
+    bool _2312 = any(bool2(uint2(trace[(0)/4],trace[(0)/4+1]).x < uint2(0u, 0u).x, uint2(trace[(0)/4],trace[(0)/4+1]).y < uint2(0u, 0u).y));
+    bool _2322;
+    if (!_2312)
     {
-        _2345 = any(bool2(uint2(trace[(0)/4],trace[(0)/4+1]).x > uint2(10000u, 10000u).x, uint2(trace[(0)/4],trace[(0)/4+1]).y > uint2(10000u, 10000u).y));
+        _2322 = any(bool2(uint2(trace[(0)/4],trace[(0)/4+1]).x > uint2(10000u, 10000u).x, uint2(trace[(0)/4],trace[(0)/4+1]).y > uint2(10000u, 10000u).y));
     }
     else
     {
-        _2345 = _2335;
+        _2322 = _2312;
     }
-    bool _2357;
-    if (!_2345)
+    bool _2334;
+    if (!_2322)
     {
-        _2357 = any(bool4(asfloat(uint4(trace[(16)/4],trace[(16)/4+1],trace[(16)/4+2],trace[(16)/4+3])).x <= 0.0f.xxxx.x, asfloat(uint4(trace[(16)/4],trace[(16)/4+1],trace[(16)/4+2],trace[(16)/4+3])).y <= 0.0f.xxxx.y, asfloat(uint4(trace[(16)/4],trace[(16)/4+1],trace[(16)/4+2],trace[(16)/4+3])).z <= 0.0f.xxxx.z, asfloat(uint4(trace[(16)/4],trace[(16)/4+1],trace[(16)/4+2],trace[(16)/4+3])).w <= 0.0f.xxxx.w));
+        _2334 = any(bool4(asfloat(uint4(trace[(16)/4],trace[(16)/4+1],trace[(16)/4+2],trace[(16)/4+3])).x <= 0.0f.xxxx.x, asfloat(uint4(trace[(16)/4],trace[(16)/4+1],trace[(16)/4+2],trace[(16)/4+3])).y <= 0.0f.xxxx.y, asfloat(uint4(trace[(16)/4],trace[(16)/4+1],trace[(16)/4+2],trace[(16)/4+3])).z <= 0.0f.xxxx.z, asfloat(uint4(trace[(16)/4],trace[(16)/4+1],trace[(16)/4+2],trace[(16)/4+3])).w <= 0.0f.xxxx.w));
     }
     else
     {
-        _2357 = _2345;
+        _2334 = _2322;
     }
-    bool _2367;
-    if (!_2357)
+    bool _2344;
+    if (!_2334)
     {
-        _2367 = length(asfloat(uint3(trace[(48)/4],trace[(48)/4+1],trace[(48)/4+2]))) >= 100000.9921875f;
+        _2344 = length(asfloat(uint3(trace[(48)/4],trace[(48)/4+1],trace[(48)/4+2]))) >= 100000.9921875f;
     }
     else
     {
-        _2367 = _2357;
+        _2344 = _2334;
     }
-    return _2367;
+    return _2344;
 }
 
 uint FNV1_a_hash_combine(uint old_hash, uint val)
@@ -226,17 +224,17 @@ void read_leaflet(uint treelet, uint index, inout uint left, out uint right)
     {
         if (leaflet < 80u)
         {
-            bool _542 = (leaflet & 3u) == 3u;
-            bool _549;
-            if (!_542)
+            bool _537 = (leaflet & 3u) == 3u;
+            bool _544;
+            if (!_537)
             {
-                _549 = (leaflet & 12u) == 12u;
+                _544 = (leaflet & 12u) == 12u;
             }
             else
             {
-                _549 = _542;
+                _544 = _537;
             }
-            if (_549)
+            if (_544)
             {
                 uint param_3 = leaflet;
                 uint param_4;
@@ -280,17 +278,17 @@ bool all_locked_or_free(uint treelet)
         read_leaflet(param, param_1, param_2, param_3);
         left = param_2;
         right = param_3;
-        bool _669 = (left & mask) != 0u;
-        bool _677;
-        if (!_669)
+        bool _664 = (left & mask) != 0u;
+        bool _672;
+        if (!_664)
         {
-            _677 = (right & mask) != 0u;
+            _672 = (right & mask) != 0u;
         }
         else
         {
-            _677 = _669;
+            _672 = _664;
         }
-        if (_677)
+        if (_672)
         {
             return false;
         }
@@ -336,15 +334,15 @@ uint encode_single_exact(uint left, uint right)
     {
         code = left >> uint(4);
         uint param = right;
-        uint _502 = to_triple(param);
-        part = _502;
+        uint _497 = to_triple(param);
+        part = _497;
     }
     else
     {
         code = 3u + (right >> uint(4));
         uint param_1 = left;
-        uint _509 = to_triple(param_1);
-        part = _509;
+        uint _504 = to_triple(param_1);
+        part = _504;
     }
     return ((code << uint(3)) + 80u) | part;
 }
@@ -352,10 +350,10 @@ uint encode_single_exact(uint left, uint right)
 uint encode_double_partial(uint left, uint right)
 {
     uint param = left;
-    uint _341 = to_triple(param);
+    uint _337 = to_triple(param);
     uint param_1 = right;
-    uint _345 = to_triple(param_1);
-    return (_341 << uint(3)) | _345;
+    uint _341 = to_triple(param_1);
+    return (_337 << uint(3)) | _341;
 }
 
 uint write_leaflet(inout uint treelet, uint index, uint left, uint right)
@@ -443,8 +441,8 @@ uint part_alloc(uint treelet, uint index, inout uint succ)
         uint param_6 = leaflet_idx;
         uint param_7 = left;
         uint param_8 = right;
-        uint _769 = write_leaflet(param_5, param_6, param_7, param_8);
-        return _769;
+        uint _765 = write_leaflet(param_5, param_6, param_7, param_8);
+        return _765;
     }
     else
     {
@@ -460,9 +458,9 @@ uint retry_modify(uint idx, uint new_value, inout uint old_value)
     {
         return 0u;
     }
-    uint _1375;
-    InterlockedCompareExchange(mem_man[(idx * 4 + 4)/4], old_value, new_value, _1375);
-    uint swap = _1375;
+    uint _1368;
+    InterlockedCompareExchange(mem_man[(idx * 4 + 4)/4], old_value, new_value, _1368);
+    uint swap = _1368;
     uint result = uint((swap == old_value) ? 0 : 2);
     if (swap == old_value)
     {
@@ -480,8 +478,8 @@ uint retry_modify(uint idx, uint new_value, inout uint old_value)
 uint try_part_alloc(uint tier, uint tier_index, uint local_index)
 {
     uint param = tier;
-    uint _1399 = tier_offset(param);
-    uint true_index = tier_index + _1399;
+    uint _1392 = tier_offset(param);
+    uint true_index = tier_index + _1392;
     uint old_treelet = mem_man[(true_index * 4 + 4)/4];
     uint succ = 0u;
     uint ch_succ = 2u;
@@ -491,17 +489,17 @@ uint try_part_alloc(uint tier, uint tier_index, uint local_index)
         uint true_old = old_treelet;
         uint param_1 = old_treelet;
         uint param_2 = local_index;
-        uint _1425 = part_alloc(param_1, param_2, param_3);
+        uint _1418 = part_alloc(param_1, param_2, param_3);
         succ = param_3;
-        uint new_treelet = _1425;
+        uint new_treelet = _1418;
         if (succ != 2u)
         {
             uint param_4 = true_index;
             uint param_5 = new_treelet;
             uint param_6 = old_treelet;
-            uint _1438 = retry_modify(param_4, param_5, param_6);
+            uint _1431 = retry_modify(param_4, param_5, param_6);
             old_treelet = param_6;
-            ch_succ = max(succ, _1438);
+            ch_succ = max(succ, _1431);
         }
     }
     return ch_succ;
@@ -539,8 +537,8 @@ uint leaf_alloc(uint treelet, uint index, inout uint succ)
         uint param_5 = leaflet_idx;
         uint param_6 = left;
         uint param_7 = right;
-        uint _986 = write_leaflet(param_4, param_5, param_6, param_7);
-        uint new_treelet = _986;
+        uint _982 = write_leaflet(param_4, param_5, param_6, param_7);
+        uint new_treelet = _982;
         uint param_8 = treelet;
         succ = uint(!all_locked_or_free(param_8));
         return new_treelet;
@@ -567,7 +565,7 @@ uint write_range(uint treelet, uint level, uint index, uint val)
     uint result = head;
     for (uint i = index; i < lim; i++)
     {
-        result = result << uint(7);
+        result = result << 7u;
         result |= val;
     }
     result = result << (start * 7u);
@@ -613,9 +611,9 @@ uint try_modify(uint idx, uint new_value, uint old_value)
     {
         return 0u;
     }
-    uint _1346;
-    InterlockedCompareExchange(mem_man[(idx * 4 + 4)/4], old_value, new_value, _1346);
-    uint swap = _1346;
+    uint _1339;
+    InterlockedCompareExchange(mem_man[(idx * 4 + 4)/4], old_value, new_value, _1339);
+    uint swap = _1339;
     if (swap == old_value)
     {
         last_modify = new_value;
@@ -637,9 +635,9 @@ uint try_base_alloc(uint true_index, uint subtier, uint level_index)
         uint param = old_treelet;
         uint param_1 = level_index;
         uint param_2;
-        uint _1659 = leaf_alloc(param, param_1, param_2);
+        uint _1650 = leaf_alloc(param, param_1, param_2);
         succ = param_2;
-        new_treelet = _1659;
+        new_treelet = _1650;
     }
     else
     {
@@ -647,9 +645,9 @@ uint try_base_alloc(uint true_index, uint subtier, uint level_index)
         uint param_4 = subtier;
         uint param_5 = level_index >> uint(1);
         uint param_6;
-        uint _1670 = range_alloc(param_3, param_4, param_5, param_6);
+        uint _1661 = range_alloc(param_3, param_4, param_5, param_6);
         succ = param_6;
-        new_treelet = _1670;
+        new_treelet = _1661;
     }
     if (succ == 2u)
     {
@@ -658,8 +656,8 @@ uint try_base_alloc(uint true_index, uint subtier, uint level_index)
     uint param_7 = true_index;
     uint param_8 = new_treelet;
     uint param_9 = old_treelet;
-    uint _1685 = try_modify(param_7, param_8, param_9);
-    return max(succ, _1685);
+    uint _1676 = try_modify(param_7, param_8, param_9);
+    return max(succ, _1676);
 }
 
 void print_treelet(uint treelet)
@@ -709,8 +707,8 @@ uint part_lock(inout uint treelet, uint index, inout uint succ)
         uint param_5 = leaflet_idx;
         uint param_6 = left;
         uint param_7 = right;
-        uint _928 = write_leaflet(param_4, param_5, param_6, param_7);
-        treelet = _928;
+        uint _924 = write_leaflet(param_4, param_5, param_6, param_7);
+        treelet = _924;
         uint param_8 = treelet;
         succ = uint(!all_locked_or_free(param_8));
         return treelet;
@@ -725,8 +723,8 @@ uint part_lock(inout uint treelet, uint index, inout uint succ)
 uint try_part_lock(uint tier, uint tier_index, uint local_index)
 {
     uint param = tier;
-    uint _1448 = tier_offset(param);
-    uint true_index = tier_index + _1448;
+    uint _1441 = tier_offset(param);
+    uint true_index = tier_index + _1441;
     uint old_treelet = mem_man[(true_index * 4 + 4)/4];
     uint succ = 0u;
     uint ch_succ = 2u;
@@ -735,17 +733,17 @@ uint try_part_lock(uint tier, uint tier_index, uint local_index)
     {
         uint param_1 = old_treelet;
         uint param_2 = local_index;
-        uint _1472 = part_lock(param_1, param_2, param_3);
+        uint _1465 = part_lock(param_1, param_2, param_3);
         succ = param_3;
-        uint new_treelet = _1472;
+        uint new_treelet = _1465;
         if (succ != 2u)
         {
             uint param_4 = true_index;
             uint param_5 = new_treelet;
             uint param_6 = old_treelet;
-            uint _1485 = retry_modify(param_4, param_5, param_6);
+            uint _1478 = retry_modify(param_4, param_5, param_6);
             old_treelet = param_6;
-            ch_succ = max(succ, _1485);
+            ch_succ = max(succ, _1478);
         }
     }
     if (ch_succ != 2u)
@@ -789,13 +787,13 @@ uint part_free(inout uint treelet, uint index, inout uint succ)
         uint param_5 = leaflet_idx;
         uint param_6 = left;
         uint param_7 = right;
-        uint _843 = write_leaflet(param_4, param_5, param_6, param_7);
-        treelet = _843;
+        uint _839 = write_leaflet(param_4, param_5, param_6, param_7);
+        treelet = _839;
         uint param_8 = treelet;
         succ = uint(!all_free(param_8));
         if (succ == 0u)
         {
-            treelet = all_locked_treelet;
+            treelet = 156411210u;
         }
         return treelet;
     }
@@ -809,8 +807,8 @@ uint part_free(inout uint treelet, uint index, inout uint succ)
 uint try_part_free(uint tier, uint tier_index, uint local_index)
 {
     uint param = tier;
-    uint _1599 = tier_offset(param);
-    uint true_index = tier_index + _1599;
+    uint _1590 = tier_offset(param);
+    uint true_index = tier_index + _1590;
     uint old_treelet = mem_man[(true_index * 4 + 4)/4];
     uint succ = 0u;
     uint ch_succ = 2u;
@@ -820,17 +818,17 @@ uint try_part_free(uint tier, uint tier_index, uint local_index)
         uint true_old = old_treelet;
         uint param_1 = old_treelet;
         uint param_2 = local_index;
-        uint _1625 = part_free(param_1, param_2, param_3);
+        uint _1616 = part_free(param_1, param_2, param_3);
         succ = param_3;
-        uint new_treelet = _1625;
+        uint new_treelet = _1616;
         if (succ != 2u)
         {
             uint param_4 = true_index;
             uint param_5 = new_treelet;
             uint param_6 = old_treelet;
-            uint _1638 = retry_modify(param_4, param_5, param_6);
+            uint _1629 = retry_modify(param_4, param_5, param_6);
             old_treelet = param_6;
-            ch_succ = max(succ, _1638);
+            ch_succ = max(succ, _1629);
         }
     }
     return ch_succ;
@@ -868,13 +866,13 @@ uint leaf_free(uint treelet, uint index, inout uint succ)
         uint param_5 = leaflet_idx;
         uint param_6 = left;
         uint param_7 = right;
-        uint _1131 = write_leaflet(param_4, param_5, param_6, param_7);
-        uint new_treelet = _1131;
+        uint _1126 = write_leaflet(param_4, param_5, param_6, param_7);
+        uint new_treelet = _1126;
         uint param_8 = new_treelet;
         if (all_free(param_8))
         {
             succ = 0u;
-            new_treelet = all_locked_treelet;
+            new_treelet = 156411210u;
         }
         else
         {
@@ -923,7 +921,7 @@ uint range_free(uint treelet, inout uint level, uint index, inout uint succ)
     if (all_free(param_10))
     {
         succ = 0u;
-        new_treelet = all_locked_treelet;
+        new_treelet = 156411210u;
     }
     else
     {
@@ -945,17 +943,17 @@ uint try_base_free(uint true_index, uint subtier, uint level_index)
         {
             uint param = old_treelet;
             uint param_1 = level_index;
-            uint _1715 = leaf_free(param, param_1, param_2);
+            uint _1706 = leaf_free(param, param_1, param_2);
             succ = param_2;
-            new_treelet = _1715;
+            new_treelet = _1706;
             if (succ != 2u)
             {
                 uint param_3 = true_index;
                 uint param_4 = new_treelet;
                 uint param_5 = old_treelet;
-                uint _1728 = retry_modify(param_3, param_4, param_5);
+                uint _1719 = retry_modify(param_3, param_4, param_5);
                 old_treelet = param_5;
-                ch_succ = max(succ, _1728);
+                ch_succ = max(succ, _1719);
             }
         }
     }
@@ -967,17 +965,17 @@ uint try_base_free(uint true_index, uint subtier, uint level_index)
             uint param_6 = old_treelet;
             uint param_7 = subtier;
             uint param_8 = level_index >> uint(1);
-            uint _1750 = range_free(param_6, param_7, param_8, param_9);
+            uint _1741 = range_free(param_6, param_7, param_8, param_9);
             succ = param_9;
-            new_treelet = _1750;
+            new_treelet = _1741;
             if (succ != 2u)
             {
                 uint param_10 = true_index;
                 uint param_11 = new_treelet;
                 uint param_12 = old_treelet;
-                uint _1763 = retry_modify(param_10, param_11, param_12);
+                uint _1754 = retry_modify(param_10, param_11, param_12);
                 old_treelet = param_12;
-                ch_succ = max(succ, _1763);
+                ch_succ = max(succ, _1754);
             }
         }
     }
@@ -990,18 +988,18 @@ uint try_base_free(uint true_index, uint subtier, uint level_index)
 uint try_resolve(uint tier, uint tier_index)
 {
     uint param = tier;
-    uint _1548 = tier_offset(param);
-    uint true_index = tier_index + _1548;
+    uint _1541 = tier_offset(param);
+    uint true_index = tier_index + _1541;
     uint old_treelet = mem_man[(true_index * 4 + 4)/4];
     uint succ = 0u;
     uint ch_succ = 2u;
     uint new_treelet;
     while ((succ != 2u) && (ch_succ == 2u))
     {
-        if (old_treelet == all_locked_treelet)
+        if (old_treelet == 156411210u)
         {
             succ = 0u;
-            new_treelet = all_free_treelet;
+            new_treelet = 135274560u;
         }
         else
         {
@@ -1015,9 +1013,9 @@ uint try_resolve(uint tier, uint tier_index)
             uint param_2 = true_index;
             uint param_3 = new_treelet;
             uint param_4 = old_treelet;
-            uint _1589 = retry_modify(param_2, param_3, param_4);
+            uint _1580 = retry_modify(param_2, param_3, param_4);
             old_treelet = param_4;
-            ch_succ = max(succ, _1589);
+            ch_succ = max(succ, _1580);
         }
     }
     return ch_succ;
@@ -1051,17 +1049,17 @@ uint upward_free(uint treelet, uint part_index, inout uint succ)
     }
     else
     {
-        bool _1042 = val < 16u;
-        bool _1049;
-        if (_1042)
+        bool _1038 = val < 16u;
+        bool _1045;
+        if (_1038)
         {
-            _1049 = (val & mask) != 0u;
+            _1045 = (val & mask) != 0u;
         }
         else
         {
-            _1049 = _1042;
+            _1045 = _1038;
         }
-        if (_1049)
+        if (_1045)
         {
             uint new_val = val & (~mask);
             if (pos == 0u)
@@ -1076,12 +1074,12 @@ uint upward_free(uint treelet, uint part_index, inout uint succ)
             uint param_5 = leaflet_idx;
             uint param_6 = left;
             uint param_7 = right;
-            uint _1073 = write_leaflet(param_4, param_5, param_6, param_7);
-            uint new_treelet = _1073;
+            uint _1069 = write_leaflet(param_4, param_5, param_6, param_7);
+            uint new_treelet = _1069;
             uint param_8 = new_treelet;
             if (all_free(param_8))
             {
-                new_treelet = all_locked_treelet;
+                new_treelet = 156411210u;
                 succ = 0u;
             }
             else
@@ -1101,8 +1099,8 @@ uint upward_free(uint treelet, uint part_index, inout uint succ)
 uint try_upward_free(uint tier, uint tier_index, uint local_index)
 {
     uint param = tier;
-    uint _1499 = tier_offset(param);
-    uint true_index = tier_index + _1499;
+    uint _1492 = tier_offset(param);
+    uint true_index = tier_index + _1492;
     uint old_treelet = mem_man[(true_index * 4 + 4)/4];
     uint succ = 0u;
     uint ch_succ = 2u;
@@ -1112,17 +1110,17 @@ uint try_upward_free(uint tier, uint tier_index, uint local_index)
         uint true_old = old_treelet;
         uint param_1 = old_treelet;
         uint param_2 = local_index;
-        uint _1525 = upward_free(param_1, param_2, param_3);
+        uint _1518 = upward_free(param_1, param_2, param_3);
         succ = param_3;
-        uint new_treelet = _1525;
+        uint new_treelet = _1518;
         if (succ != 2u)
         {
             uint param_4 = true_index;
             uint param_5 = new_treelet;
             uint param_6 = old_treelet;
-            uint _1538 = retry_modify(param_4, param_5, param_6);
+            uint _1531 = retry_modify(param_4, param_5, param_6);
             old_treelet = param_6;
-            ch_succ = max(succ, _1538);
+            ch_succ = max(succ, _1531);
         }
     }
     return ch_succ;
@@ -1155,23 +1153,23 @@ bool try_free(inout uint level, inout uint index, uint top_tier)
     tier_index = param_8;
     level_index = param_9;
     uint param_10 = tier;
-    uint _1813 = tier_offset(param_10);
-    uint true_index = last_tier_index + _1813;
+    uint _1804 = tier_offset(param_10);
+    uint true_index = last_tier_index + _1804;
     uint succ;
     if (is_lowest)
     {
         uint param_11 = 0u;
         uint param_12 = last_tier_index;
         uint param_13 = (last_level_index * 2u) + lowest_bit;
-        uint _1827 = try_part_lock(param_11, param_12, param_13);
-        succ = _1827;
+        uint _1818 = try_part_lock(param_11, param_12, param_13);
+        succ = _1818;
         uint param_14 = last_modify;
         print_treelet(param_14);
         uint param_15 = 0u;
         uint param_16 = last_tier_index;
         uint param_17 = (last_level_index * 2u) + lowest_bit;
-        uint _1839 = try_part_free(param_15, param_16, param_17);
-        succ = _1839;
+        uint _1830 = try_part_free(param_15, param_16, param_17);
+        succ = _1830;
         uint param_18 = last_modify;
         print_treelet(param_18);
     }
@@ -1180,8 +1178,8 @@ bool try_free(inout uint level, inout uint index, uint top_tier)
         uint param_19 = true_index;
         uint param_20 = subtier;
         uint param_21 = last_level_index;
-        uint _1850 = try_base_free(param_19, param_20, param_21);
-        succ = _1850;
+        uint _1841 = try_base_free(param_19, param_20, param_21);
+        succ = _1841;
         uint param_22 = last_modify;
         print_treelet(param_22);
     }
@@ -1202,8 +1200,8 @@ bool try_free(inout uint level, inout uint index, uint top_tier)
         uint param_23 = tier + 1u;
         uint param_24 = tier_index;
         uint param_25 = level_index;
-        uint _1878 = try_part_lock(param_23, param_24, param_25);
-        parent_succ = _1878;
+        uint _1869 = try_part_lock(param_23, param_24, param_25);
+        parent_succ = _1869;
         uint param_26 = last_modify;
         print_treelet(param_26);
     }
@@ -1220,8 +1218,8 @@ bool try_free(inout uint level, inout uint index, uint top_tier)
     }
     uint param_27 = tier;
     uint param_28 = last_tier_index;
-    uint _1897 = try_resolve(param_27, param_28);
-    succ = _1897;
+    uint _1888 = try_resolve(param_27, param_28);
+    succ = _1888;
     uint param_29 = last_modify;
     print_treelet(param_29);
     if (succ == 2u)
@@ -1252,8 +1250,8 @@ bool try_free(inout uint level, inout uint index, uint top_tier)
         uint param_32 = climb_tier;
         uint param_33 = last_tier_index;
         uint param_34 = last_level_index;
-        uint _1946 = try_upward_free(param_32, param_33, param_34);
-        succ = _1946;
+        uint _1937 = try_upward_free(param_32, param_33, param_34);
+        succ = _1937;
         if (succ == 1u)
         {
             return true;
@@ -1266,8 +1264,8 @@ bool try_free(inout uint level, inout uint index, uint top_tier)
         uint param_36 = climb_tier + 1u;
         uint param_37 = tier_index;
         uint param_38 = level_index;
-        uint _1964 = try_part_lock(param_36, param_37, param_38);
-        uint next_succ = _1964;
+        uint _1955 = try_part_lock(param_36, param_37, param_38);
+        uint next_succ = _1955;
         uint param_39 = last_modify;
         print_treelet(param_39);
         if (next_succ == 2u)
@@ -1275,8 +1273,8 @@ bool try_free(inout uint level, inout uint index, uint top_tier)
         }
         uint param_40 = climb_tier;
         uint param_41 = last_tier_index;
-        uint _1976 = try_resolve(param_40, param_41);
-        succ = _1976;
+        uint _1967 = try_resolve(param_40, param_41);
+        succ = _1967;
         uint param_42 = last_modify;
         print_treelet(param_42);
         if (succ == 2u)
@@ -1293,15 +1291,15 @@ bool try_free(inout uint level, inout uint index, uint top_tier)
         uint param_43 = climb_tier;
         uint param_44 = tier_index;
         uint param_45 = level_index;
-        uint _2002 = try_part_free(param_43, param_44, param_45);
-        succ = _2002;
+        uint _1993 = try_part_free(param_43, param_44, param_45);
+        succ = _1993;
         uint param_46 = last_modify;
         print_treelet(param_46);
         if (succ == 0u)
         {
             uint param_47 = climb_tier;
             uint param_48 = tier_index;
-            uint _2014 = try_resolve(param_47, param_48);
+            uint _2005 = try_resolve(param_47, param_48);
             uint param_49 = last_modify;
             print_treelet(param_49);
         }
@@ -1336,16 +1334,16 @@ bool try_alloc(inout uint level, inout uint index)
     uint lowest_bit = param_6;
     bool is_lowest = param_7;
     uint param_8 = tier;
-    uint _2056 = tier_offset(param_8);
-    uint true_index = tier_index + _2056;
+    uint _2047 = tier_offset(param_8);
+    uint true_index = tier_index + _2047;
     uint succ;
     if (is_lowest)
     {
         uint param_9 = 0u;
         uint param_10 = tier_index;
         uint param_11 = (level_index * 2u) + lowest_bit;
-        uint _2070 = try_part_alloc(param_9, param_10, param_11);
-        succ = _2070;
+        uint _2061 = try_part_alloc(param_9, param_10, param_11);
+        succ = _2061;
     }
     else
     {
@@ -1353,8 +1351,8 @@ bool try_alloc(inout uint level, inout uint index)
         uint param_12 = true_index;
         uint param_13 = subtier;
         uint param_14 = level_index;
-        uint _2080 = try_base_alloc(param_12, param_13, param_14);
-        succ = _2080;
+        uint _2071 = try_base_alloc(param_12, param_13, param_14);
+        succ = _2071;
         if (succ != 2u)
         {
         }
@@ -1384,8 +1382,8 @@ bool try_alloc(inout uint level, inout uint index)
         uint param_18 = climb_tier;
         uint param_19 = tier_index;
         uint param_20 = level_index;
-        uint _2127 = try_part_alloc(param_18, param_19, param_20);
-        succ = _2127;
+        uint _2118 = try_part_alloc(param_18, param_19, param_20);
+        succ = _2118;
         if (succ != 2u)
         {
             uint param_21 = last_modify;
@@ -1400,8 +1398,8 @@ bool try_alloc(inout uint level, inout uint index)
     uint param_22 = old_level;
     uint param_23 = old_index;
     uint param_24 = climb_tier;
-    bool _2149 = try_free(param_22, param_23, param_24);
-    bool good_free = _2149;
+    bool _2140 = try_free(param_22, param_23, param_24);
+    bool good_free = _2140;
     if (!good_free)
     {
     }
@@ -1410,15 +1408,9 @@ bool try_alloc(inout uint level, inout uint index)
 
 uint alloc(uint level)
 {
-    if (bucket != 3735928559u)
-    {
-        uint ret = bucket;
-        bucket = 3735928559u;
-        return ret;
-    }
     uint param = level;
-    uint _2208 = next_alloc_idx(param);
-    uint index = _2208;
+    uint _2191 = next_alloc_idx(param);
+    uint index = _2191;
     uint tries = 0u;
     tries = 0u;
     for (; tries < (30u * (no_unroll_shared + 1u)); tries++)
@@ -1429,14 +1421,14 @@ uint alloc(uint level)
         }
         uint param_1 = level;
         uint param_2 = index;
-        bool _2231 = try_alloc(param_1, param_2);
-        if (_2231)
+        bool _2214 = try_alloc(param_1, param_2);
+        if (_2214)
         {
             break;
         }
         uint param_3 = level;
-        uint _2237 = next_alloc_idx(param_3);
-        index = _2237;
+        uint _2220 = next_alloc_idx(param_3);
+        index = _2220;
     }
     if (tries >= 30u)
     {
@@ -1451,16 +1443,11 @@ uint alloc(uint level)
 bool free(uint level, uint adr)
 {
     uint index = adr / 1u;
-    if (bucket == 3735928559u)
-    {
-        bucket = adr;
-        return true;
-    }
     uint param = level;
     uint param_1 = index;
     uint param_2 = 3u;
-    bool _2266 = try_free(param, param_1, param_2);
-    return _2266;
+    bool _2243 = try_free(param, param_1, param_2);
+    return _2243;
 }
 
 float3 get_col(uint val, inout uint x, inout uint y)
@@ -1500,7 +1487,7 @@ void galloc_finalize()
         uint param = 1u;
         uint param_1 = index;
         uint param_2 = 3u;
-        bool _2323 = try_free(param, param_1, param_2);
+        bool _2300 = try_free(param, param_1, param_2);
     }
 }
 
@@ -1510,19 +1497,17 @@ void comp_main()
     _current_chunk = 3735928559u;
     _log_pos = 32u;
     uint_to_exact_table = 2340u;
-    all_locked_treelet = 156411210u;
-    all_free_treelet = 135274560u;
     actually_alloced = false;
     bucket = 3735928559u;
     last = 0u;
     last_succ_adr = 0u;
     fail_count = 1u;
     na_hash = 0u;
-    num_sprites = _273;
+    num_sprites = _269;
     galloc_initialize();
     if (gl_LocalInvocationIndex == 0u)
     {
-        no_unroll_shared = min(no_unroll.Load(0), 0u);
+        no_unroll_shared = min(no_unroll[(0)/4], 0u);
     }
     GroupMemoryBarrierWithGroupSync();
     uint3 sWG = gl_WorkGroupSize;
@@ -1567,8 +1552,8 @@ void comp_main()
         while (i < 1)
         {
             uint param = 1u;
-            uint _2604 = alloc(param);
-            ptr_l = _2604;
+            uint _2581 = alloc(param);
+            ptr_l = _2581;
             if (ptr_l == 3735928559u)
             {
                 i = 8;
@@ -1577,8 +1562,8 @@ void comp_main()
             {
                 uint param_1 = 1u;
                 uint param_2 = ptr_l;
-                bool _2613 = free(param_1, param_2);
-                freeness = _2613;
+                bool _2590 = free(param_1, param_2);
+                freeness = _2590;
                 good_free = good_free || freeness;
                 res *= 2.0f;
             }
@@ -1624,11 +1609,14 @@ void comp_main()
             color = float3(0.0f, 0.100000001490116119384765625f, 0.100000001490116119384765625f);
         }
         uint2 p_pos = uint2(0u, trace[(4)/4]) - uint2(gid_2d);
-        uint param_3 = geom[(8)/4];
+        uint _2736;
+        InterlockedAdd(geom[(8)/4], 0u, _2736);
+        uint val = _2736;
+        uint param_3 = val;
         uint param_4 = p_pos.x;
         uint param_5 = p_pos.y;
-        float3 _2767 = get_col(param_3, param_4, param_5);
-        color += _2767;
+        float3 _2746 = get_col(param_3, param_4, param_5);
+        color += _2746;
         color = (color * (30.0f - float(last_fail_count))) / 30.0f.xxx;
         depth /= (asfloat(trace[(28)/4]) - asfloat(trace[(24)/4]));
         int2 gid_2d_i = gid_2d;

@@ -31,9 +31,12 @@ public class TracePipeline : RenderPipeline {
 		ScriptableRenderContext renderContext, Camera[] cameras
 	) {
 
+		//Debug.Log("Drawing!");
+
 		defaultStack.Draw(post_proc_buffer);
 		renderContext.ExecuteCommandBuffer (post_proc_buffer);
 		post_proc_buffer.Clear ();
+
 
 		//base.Render (renderContext, cameras);
 		foreach (var camera in cameras) {

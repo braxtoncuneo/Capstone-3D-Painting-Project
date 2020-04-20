@@ -89,7 +89,7 @@ public class ShaderBuffer : ScriptableObject
 
 		for (int i = 0; i < 4; i++) {
 			buffer [dest_idx + i] = BitConverter.ToInt32(BitConverter.GetBytes(src [i]),0);
-			Debug.Log(src[i]);
+			//Debug.Log(src[i]);
 		}
 
 	}
